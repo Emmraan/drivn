@@ -3,8 +3,27 @@
 import { useTheme } from '@/utils/theme/ThemeContext';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="p-2 rounded-lg glass">
+        <div className="w-5 h-5" />
+      </div>
+    );
+  }
+
+  return <ThemeToggleClient />;
+}
+
+function ThemeToggleClient() {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -26,7 +45,7 @@ export default function ThemeToggle() {
         {theme === 'light' ? (
           <SunIcon className="w-5 h-5 text-yellow-500" />
         ) : (
-          <MoonIcon className="w-5 h-5 text-blue-400" />
+          <MoonIcon className="w-5 h-5 text-blue-400 rotate-[75deg]" />
         )}
       </motion.div>
     </motion.button>

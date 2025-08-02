@@ -31,16 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'loading') return;
 
     if (session?.user) {
-      // User authenticated via NextAuth (Google OAuth)
       setUser({
-        _id: (session.user as any).id,
+        _id: session.user.id,
         email: session.user.email!,
         name: session.user.name!,
         image: session.user.image || undefined,
-        emailVerified: new Date(), // Google users are pre-verified
+        emailVerified: new Date(),
       });
     } else {
-      // Check for custom JWT authentication
       checkAuthStatus();
     }
 

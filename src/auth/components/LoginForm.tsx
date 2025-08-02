@@ -50,7 +50,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto backdrop-blur-xl">
       <div className="text-center mb-8">
         <motion.h1
           className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"
@@ -151,7 +151,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
             <div className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-background text-gray-500">Or continue with</span>
+            <span className="px-2 bg-background text-gray-500 rounded-xl">Or continue with</span>
           </div>
         </motion.div>
 
@@ -199,7 +199,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
           transition={{ delay: 0.8 }}
         >
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               onClick={onToggleMode}
               className="font-medium text-primary-600 hover:text-primary-500 transition-colors"

@@ -1,25 +1,17 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/auth/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/utils/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Custom color palette for glassmorphism
-        glass: {
-          light: 'rgba(255, 255, 255, 0.25)',
-          dark: 'rgba(0, 0, 0, 0.25)',
-          border: {
-            light: 'rgba(255, 255, 255, 0.18)',
-            dark: 'rgba(255, 255, 255, 0.125)',
-          },
-        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -44,17 +36,11 @@ const config: Config = {
           800: '#86198f',
           900: '#701a75',
         },
+        foreground: 'var(--foreground)',
+        background: 'var(--background)',
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
-        'glass-gradient-dark': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
-        'hero-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'hero-gradient-dark': 'linear-gradient(135deg, #4c63d2 0%, #5a4fcf 100%)',
-      },
-      backdropBlur: {
-        xs: '2px',
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -87,11 +73,8 @@ const config: Config = {
         },
         glow: {
           '0%': { boxShadow: '0 0 20px rgba(103, 126, 234, 0.5)' },
-          '100%': { boxShadow: '0 0 30px rgba(103, 126, 234, 0.8)' },
+          '100%': { boxShadow: '0 0 40px rgba(103, 126, 234, 0.6)' },
         },
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
@@ -102,6 +85,6 @@ const config: Config = {
     },
   },
   plugins: [],
-};
+}
 
-export default config;
+export default config

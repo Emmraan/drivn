@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Button from '@/components/ui/Button';
 import AuthModal from '@/auth/components/AuthModal';
-import { CloudArrowUpIcon, ShieldCheckIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, ShieldCheckIcon, GlobeAltIcon,BoltIcon } from '@heroicons/react/24/outline';
 
 export default function HeroSection() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -16,10 +16,10 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-end justify-center pt-[5rem] pb-4 overflow-hidden">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" />
-      
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -61,8 +61,8 @@ export default function HeroSection() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
-              🚀 100% Open Source • S3-Compatible
+            <span className="flex gap-2 text-sm font-medium text-primary-600 dark:text-primary-400">
+              <BoltIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" /> 100% Open Source • S3-Compatible
             </span>
           </motion.div>
 
@@ -81,12 +81,12 @@ export default function HeroSection() {
 
           {/* Subtitle */}
           <motion.p
-            className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+            className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            DRIVN is the open-source, secure cloud storage platform that gives you complete control over your data. 
+            DRIVN is the open-source, secure cloud storage platform that gives you complete control over your data.
             S3-compatible, privacy-first, and built for the modern web.
           </motion.p>
 
@@ -144,31 +144,6 @@ export default function HeroSection() {
           >
             <p>Trusted by developers worldwide • No credit card required</p>
           </motion.div>
-        </motion.div>
-
-        {/* Floating Elements */}
-        <motion.div
-          className="absolute top-20 left-10 w-20 h-20 glass rounded-2xl flex items-center justify-center"
-          animate={{ y: [-10, 10, -10] }}
-          transition={{ duration: 4, repeat: Infinity }}
-        >
-          <CloudArrowUpIcon className="w-8 h-8 text-primary-500" />
-        </motion.div>
-
-        <motion.div
-          className="absolute top-40 right-20 w-16 h-16 glass rounded-xl flex items-center justify-center"
-          animate={{ y: [10, -10, 10] }}
-          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-        >
-          <ShieldCheckIcon className="w-6 h-6 text-green-500" />
-        </motion.div>
-
-        <motion.div
-          className="absolute bottom-40 left-20 w-24 h-24 glass rounded-3xl flex items-center justify-center"
-          animate={{ y: [-15, 15, -15] }}
-          transition={{ duration: 5, repeat: Infinity, delay: 2 }}
-        >
-          <GlobeAltIcon className="w-10 h-10 text-blue-500" />
         </motion.div>
       </div>
 

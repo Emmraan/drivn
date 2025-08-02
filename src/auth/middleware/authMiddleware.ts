@@ -17,8 +17,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
   }
 }
 
-export function requireAuth(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
+export function requireAuth(handler: (request: NextRequest, ...args: unknown[]) => Promise<Response>) {
+  return async (request: NextRequest, ...args: unknown[]) => {
     const user = await getAuthenticatedUser(request);
     
     if (!user) {
@@ -29,7 +29,7 @@ export function requireAuth(handler: Function) {
     }
 
     // Add user to request context
-    (request as any).user = user;
+    (request as NextRequest & { user: typeof user }).user = user;
     
     return handler(request, ...args);
   };

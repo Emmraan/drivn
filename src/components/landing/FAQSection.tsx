@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: 'Is DRIVN really compatible with Amazon S3?',
-    answer: 'Yes! DRIVN implements the full S3 API specification, meaning you can use existing tools like AWS CLI, Boto3, Terraform, and any S3-compatible application without any modifications. Simply change your endpoint URL and credentials.',
+    answer: 'Yes! DRIVN implements the full S3 SDK specification, meaning you can use existing S3 Providers like Cloudflare R2, Wasabi, DigitalOcean Spaces, MinIO, Tebi, Backblaze, and any S3-compatible application without any modifications. Simply change your endpoint URL and credentials.',
   },
   {
     question: 'How secure is my data with DRIVN?',
@@ -24,15 +24,11 @@ const faqs = [
   },
   {
     question: 'What are the pricing plans?',
-    answer: 'DRIVN offers transparent, pay-as-you-use pricing with no hidden fees. We have a generous free tier for personal use, and competitive rates for businesses. Unlike other providers, we don\'t charge for API requests or data transfer between regions.',
+    answer: 'No Drivn doesn\'t have any pricing plans because it\'s open source, However you get 15GB of free storage by default or use you own S3 Credentials for more.',
   },
   {
     question: 'How does version control work?',
     answer: 'DRIVN automatically versions your files with intelligent deduplication to save space. You can access previous versions of any file, restore deleted files, and track changes over time. Version history is encrypted and stored securely.',
-  },
-  {
-    question: 'Is there an API for developers?',
-    answer: 'Yes! DRIVN provides both S3-compatible APIs and our own enhanced REST API with additional features. We offer SDKs for popular programming languages and comprehensive API documentation with examples.',
   },
   {
     question: 'What happens if I want to migrate away from DRIVN?',
@@ -80,7 +76,7 @@ export default function FAQSection() {
               <Card hover={false} className="overflow-hidden">
                 <button
                   onClick={() => toggleFAQ(index)}
-                  className="w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-inset"
+                  className="w-full text-left p-6 focus-ring"
                 >
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white pr-4">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -10,9 +11,8 @@ import { Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/outlin
 
 const navigation = [
   { name: 'Features', href: '#features' },
-  { name: 'Pricing', href: '#pricing' },
   { name: 'Docs', href: '/docs' },
-  { name: 'Community', href: '/community' },
+  { name: 'Github', href: '/github' },
 ];
 
 export default function Header() {
@@ -41,11 +41,11 @@ export default function Header() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <a href="/" className="flex items-center">
+            <Link href="/" className="flex items-center">
               <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
                 DRIVN
               </span>
-            </a>
+            </Link>
           </motion.div>
 
           {/* Desktop Navigation */}

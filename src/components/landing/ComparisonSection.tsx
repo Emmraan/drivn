@@ -8,7 +8,7 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 const features = [
   'End-to-End Encryption',
   'Open Source',
-  'S3-Compatible API',
+  'S3-Compatible SDK',
   'Self-Hostable',
   'Zero-Knowledge Architecture',
   'Transparent Pricing',
@@ -155,7 +155,7 @@ export default function ComparisonSection() {
               Start Free Trial
             </button>
             <button className="px-8 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              View Pricing
+              View on Github
             </button>
           </div>
         </motion.div>

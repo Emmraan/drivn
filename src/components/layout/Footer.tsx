@@ -7,31 +7,21 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 const footerLinks = {
   Product: [
     { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'API Documentation', href: '/docs' },
     { name: 'Status', href: '/status' },
-  ],
-  Company: [
-    { name: 'About', href: '/about' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Careers', href: '/careers' },
-    { name: 'Contact', href: '/contact' },
   ],
   Resources: [
     { name: 'Documentation', href: '/docs' },
-    { name: 'Guides', href: '/guides' },
     { name: 'Community', href: '/community' },
     { name: 'Support', href: '/support' },
   ],
   Legal: [
     { name: 'Privacy Policy', href: '/privacy' },
     { name: 'Terms of Service', href: '/terms' },
-    { name: 'Security', href: '/security' },
-    { name: 'Compliance', href: '/compliance' },
   ],
 };
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -126,7 +116,7 @@ export default function Footer() {
         >
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              © 2025 DRIVN. All rights reserved. Built with ❤️ for developers.
+              {currentYear} DRIVN. MIT Licence.
             </p>
             <div className="mt-4 md:mt-0 flex items-center space-x-6">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">

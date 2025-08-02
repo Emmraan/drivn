@@ -67,7 +67,7 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-24 bg-gray-50 dark:bg-gray-900">
+    <section id='features' className="py-24 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           className="text-center mb-16"
@@ -130,15 +130,16 @@ export default function FeaturesSection() {
                 Drop-in S3 Replacement
               </h3>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                DRIVN is fully compatible with the Amazon S3 API. Use your existing tools, 
-                libraries, and workflows without any changes.
+                DRIVN is fully compatible with the Amazon S3 SDK. Use your existing S3 Provider, 
+                Credientials without any changes.
               </p>
               <div className="flex flex-wrap justify-center gap-4 text-sm">
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">AWS CLI</span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Boto3</span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Terraform</span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">MinIO Client</span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Cyberduck</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Cloudflare R2</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">MinIO</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">DigitalOcean Spaces</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Wasabi</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Tebi</span>
+                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full">Backblaze</span>
               </div>
             </div>
           </Card>
