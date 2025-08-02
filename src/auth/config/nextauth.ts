@@ -16,11 +16,9 @@ export const authOptions: NextAuthOptions = {
         try {
           await connectDB();
           
-          // Check if user already exists
           const existingUser = await User.findOne({ email: user.email });
           
           if (existingUser) {
-            // Update existing user with Google info if not already set
             if (!existingUser.googleId && account.providerAccountId) {
               existingUser.googleId = account.providerAccountId;
               existingUser.provider = 'google';
@@ -29,7 +27,6 @@ export const authOptions: NextAuthOptions = {
               await existingUser.save();
             }
           } else {
-            // Create new user
             await User.create({
               email: user.email,
               name: user.name,

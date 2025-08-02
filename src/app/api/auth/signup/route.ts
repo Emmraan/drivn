@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, name } = body;
 
-    // Validation
     if (!email || !password || !name) {
       return NextResponse.json(
         { success: false, message: 'Email, password, and name are required' },
@@ -14,7 +13,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -23,7 +21,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Password validation
     if (password.length < 8) {
       return NextResponse.json(
         { success: false, message: 'Password must be at least 8 characters long' },
@@ -31,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Name validation
     if (name.trim().length < 2) {
       return NextResponse.json(
         { success: false, message: 'Name must be at least 2 characters long' },

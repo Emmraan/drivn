@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (result.success && result.token) {
-      // Set HTTP-only cookie
       const response = NextResponse.json({
         success: result.success,
         message: result.message,
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
+        maxAge: 7 * 24 * 60 * 60,
         path: '/',
       });
 
