@@ -70,7 +70,7 @@ export class AuthService {
     }
   }
 
-  static async login(data: LoginData): Promise<{ success: boolean; message: string; user?: Partial<IUser>; token?: string }> {
+  static async login(data: LoginData): Promise<{ success: boolean; message: string; user?: Partial<IUser>; token?: string; requiresVerification?: boolean }> {
     try {
       await connectDB();
 
@@ -84,6 +84,15 @@ export class AuthService {
       const isValidPassword = await bcrypt.compare(data.password, user.password);
       if (!isValidPassword) {
         return { success: false, message: 'Invalid email or password' };
+      }
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        return {
+          success: false,
+          message: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+          requiresVerification: true
+        };
       }
 
       // Generate JWT token
@@ -143,6 +152,45 @@ export class AuthService {
       return await User.findById(decoded.userId).select('-password');
     } catch (error) {
       return null;
+    }
+  }
+
+  static async resendVerificationEmail(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      await connectDB();
+
+      // Find user
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      if (!user) {
+        return { success: false, message: 'User not found' };
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        return { success: false, message: 'Email is already verified' };
+      }
+
+      // Delete existing verification tokens
+      await VerificationToken.deleteMany({ email: email.toLowerCase().trim() });
+
+      // Generate new verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+
+      await VerificationToken.create({
+        email: email.toLowerCase().trim(),
+        token: verificationToken,
+      });
+
+      // Send verification email
+      await emailService.sendVerificationEmail(email.toLowerCase().trim(), verificationToken);
+
+      return {
+        success: true,
+        message: 'Verification email sent successfully. Please check your inbox.',
+      };
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      return { success: false, message: 'An error occurred while sending verification email' };
     }
   }
 }

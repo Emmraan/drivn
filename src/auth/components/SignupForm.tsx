@@ -78,7 +78,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto backdrop-blur-xl">
       <div className="text-center mb-8">
         <motion.h1
           className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"

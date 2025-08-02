@@ -20,12 +20,17 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setShowResendVerification(false);
+    setResendMessage('');
 
     try {
       const result = await login(email, password);
@@ -33,6 +38,10 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
         onSuccess?.();
       } else {
         setError(result.message);
+        // Show resend verification option if user needs email verification
+        if ((result as any).requiresVerification) {
+          setShowResendVerification(true);
+        }
       }
     } catch (error) {
       setError('An unexpected error occurred');
@@ -46,6 +55,40 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
       setError('Failed to sign in with Google');
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+
+    setResendLoading(true);
+    setResendMessage('');
+
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setResendMessage('Verification email sent! Please check your inbox.');
+        setShowResendVerification(false);
+        setError('');
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError('Failed to resend verification email. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -123,6 +166,38 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
             className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
           >
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </motion.div>
+        )}
+
+        {showResendVerification && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+          >
+            <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+              Need a new verification email?
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResendVerification}
+              loading={resendLoading}
+              className="w-full"
+            >
+              Resend Verification Email
+            </Button>
+          </motion.div>
+        )}
+
+        {resendMessage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+          >
+            <p className="text-sm text-green-600 dark:text-green-400">{resendMessage}</p>
           </motion.div>
         )}
 

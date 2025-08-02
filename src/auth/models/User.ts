@@ -59,7 +59,7 @@ const UserSchema = new Schema<IUser>({
   // Future S3 integration fields
   storageQuota: {
     type: Number,
-    default: 5 * 1024 * 1024 * 1024, // 5GB default
+    default: 15 * 1024 * 1024 * 1024, // 15GB default
   },
   storageUsed: {
     type: Number,

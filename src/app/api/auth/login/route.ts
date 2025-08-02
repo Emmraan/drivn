@@ -36,7 +36,12 @@ export async function POST(request: NextRequest) {
 
       return response;
     } else {
-      return NextResponse.json(result, { status: 401 });
+      // Pass through requiresVerification flag for unverified users
+      return NextResponse.json({
+        success: result.success,
+        message: result.message,
+        requiresVerification: (result as any).requiresVerification || false,
+      }, { status: 401 });
     }
   } catch (error) {
     console.error('Login API error:', error);
