@@ -11,7 +11,6 @@ export interface IUser extends Document {
   googleId?: string;
   createdAt: Date;
   updatedAt: Date;
-  // Future S3 integration fields
   storageQuota?: number;
   storageUsed?: number;
   s3Config?: {
@@ -77,9 +76,6 @@ const UserSchema = new Schema<IUser>({
   timestamps: true,
 });
 
-// Indexes for performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ googleId: 1 });
 UserSchema.index({ provider: 1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

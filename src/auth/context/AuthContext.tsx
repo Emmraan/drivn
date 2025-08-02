@@ -1,10 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface User {
-  _id: string;
+  _id?: string;
   email: string;
   name: string;
   emailVerified?: Date;
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
+      await signOut({ redirect: false }); // Invalidate NextAuth.js session
     } catch (error) {
       console.error('Logout error:', error);
     }
