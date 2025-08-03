@@ -81,7 +81,7 @@ export default function HeroSection() {
 
           {/* Subtitle */}
           <motion.p
-            className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+            className="text-xl  text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -103,7 +103,7 @@ export default function HeroSection() {
             </div>
             <div className="flex items-center px-4 py-2 rounded-full glass">
               <GlobeAltIcon className="w-5 h-5 text-blue-500 mr-2" />
-              <span className="text-sm font-medium">S3-Compatible API</span>
+              <span className="text-sm font-medium">S3-Compatible SDK</span>
             </div>
             <div className="flex items-center px-4 py-2 rounded-full glass">
               <CloudArrowUpIcon className="w-5 h-5 text-purple-500 mr-2" />

@@ -54,6 +54,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Update selected provider when endpoint changes
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
 
   const handleInputChange = (field: keyof S3ConfigData, value: string | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
-    setTestResult(null); // Clear test result when config changes
+    setTestResult(null);
   };
 
   const handleTest = async () => {
@@ -111,8 +112,31 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
     }
   };
 
-  const isFormValid = config.accessKeyId && config.secretAccessKey && config.region && config.bucket;
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+  const codeText = `<?xml version='1.0' encoding='UTF-8'?>
+<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+    <CORSRule>
+        <AllowedOrigin>${APP_URL}</AllowedOrigin>
+        <AllowedMethod>HEAD</AllowedMethod>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedMethod>DELETE</AllowedMethod>
+        <AllowedHeader>*</AllowedHeader>
+        <MaxAgeSeconds>3000</MaxAgeSeconds>
+    </CORSRule>
+</CORSConfiguration>`;
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(codeText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const isFormValid = config.accessKeyId && config.secretAccessKey && config.region && config.bucket;
 
   return (
     <Card className="p-6">
@@ -284,27 +308,21 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
 
         {/* CORS Configuration */}
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
+          <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-3">
             <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-700 dark:text-yellow-300">
+            <div className="text-sm text-yellow-700 dark:text-yellow-300 w-full overflow-x-auto">
               <p className="font-medium mb-2">Required CORS Configuration</p>
               <p className="mb-3">
                 To prevent CORS errors, add this configuration to your S3 bucket CORS policy:
               </p>
-              <div className="bg-gray-900 dark:bg-gray-800 rounded-md p-3 font-mono text-xs text-gray-100 overflow-x-auto">
-                <pre>{`<?xml version='1.0' encoding='UTF-8'?>
-<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <CORSRule>
-        <AllowedOrigin>${APP_URL}</AllowedOrigin>
-        <AllowedMethod>HEAD</AllowedMethod>
-        <AllowedMethod>GET</AllowedMethod>
-        <AllowedMethod>POST</AllowedMethod>
-        <AllowedMethod>PUT</AllowedMethod>
-        <AllowedMethod>DELETE</AllowedMethod>
-        <AllowedHeader>*</AllowedHeader>
-        <MaxAgeSeconds>3000</MaxAgeSeconds>
-    </CORSRule>
-</CORSConfiguration>`}</pre>
+              <div className="relative bg-gray-900 dark:bg-gray-800 rounded-md p-3 font-mono text-xs text-gray-100 overflow-x-auto max-w-full">
+                <button
+                  onClick={handleCopy}
+                  className="absolute top-1 right-1 bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded transition-all duration-300"
+                >
+                  {copied ? '✅ Copied!' : '📋 Copy'}
+                </button>
+                <code className="whitespace-pre max-w-full">{codeText}</code>
               </div>
             </div>
           </div>
