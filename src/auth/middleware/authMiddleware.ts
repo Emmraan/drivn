@@ -28,7 +28,6 @@ export function requireAuth(handler: (request: NextRequest, ...args: unknown[]) 
       );
     }
 
-    // Add user to request context
     (request as NextRequest & { user: typeof user }).user = user;
     
     return handler(request, ...args);

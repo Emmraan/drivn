@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -14,13 +13,9 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const nextAuthToken = await getToken({ 
-      req: request, 
-      secret: process.env.NEXTAUTH_SECRET 
-    });
     const customToken = request.cookies.get('auth-token')?.value;
     
-    const isAuthenticated = !!(nextAuthToken || customToken);
+    const isAuthenticated = !!customToken;
 
     const publicRoutes = ['/auth/verify'];
     const authRoutes = ['/login', '/signup'];
@@ -31,6 +26,10 @@ export async function middleware(request: NextRequest) {
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
     const isHomeRoute = pathname === '/';
 
+    if(isPublicRoute) {
+      return NextResponse.next();
+    }
+
     if (isAuthenticated) {
       if (isAuthRoute || isHomeRoute) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -39,9 +38,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isProtectedRoute) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL('/', request.url));
     }
 
     return NextResponse.next();
