@@ -35,6 +35,7 @@ const commonProviders = [
   { name: 'Backblaze B2', endpoint: 's3.us-west-004.backblazeb2.com', region: 'us-west-004' },
   { name: 'Wasabi', endpoint: 's3.wasabisys.com', region: 'us-east-1' },
   { name: 'DigitalOcean Spaces', endpoint: 'nyc3.digitaloceanspaces.com', region: 'nyc3' },
+  { name: 'TEBI', endpoint: 's3.tebi.io', region: 'global' },
   { name: 'Custom', endpoint: '', region: '' },
 ];
 
@@ -84,7 +85,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
-    
+
     try {
       const result = await onTest(config);
       setTestResult(result);
@@ -100,7 +101,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
 
   const handleSave = async () => {
     setSaving(true);
-    
+
     try {
       await onSave(config);
     } catch (error) {
@@ -111,6 +112,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
   };
 
   const isFormValid = config.accessKeyId && config.secretAccessKey && config.region && config.bucket;
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
   return (
     <Card className="p-6">
@@ -287,22 +289,23 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
             <div className="text-sm text-yellow-700 dark:text-yellow-300">
               <p className="font-medium mb-2">Required CORS Configuration</p>
               <p className="mb-3">
-                To prevent CORS errors, add this configuration to your S3 bucket's CORS policy:
+                To prevent CORS errors, add this configuration to your S3 bucket CORS policy:
               </p>
               <div className="bg-gray-900 dark:bg-gray-800 rounded-md p-3 font-mono text-xs text-gray-100 overflow-x-auto">
-                <pre>{`[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag", "x-amz-meta-*"],
-    "MaxAgeSeconds": 3000
-  }
-]`}</pre>
+                <pre>{`<?xml version='1.0' encoding='UTF-8'?>
+<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+    <CORSRule>
+        <AllowedOrigin>${APP_URL}</AllowedOrigin>
+        <AllowedMethod>HEAD</AllowedMethod>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedMethod>DELETE</AllowedMethod>
+        <AllowedHeader>*</AllowedHeader>
+        <MaxAgeSeconds>3000</MaxAgeSeconds>
+    </CORSRule>
+</CORSConfiguration>`}</pre>
               </div>
-              <p className="mt-2 text-xs">
-                For production, replace "*" in AllowedOrigins with your domain (e.g., "https://yourdomain.com")
-              </p>
             </div>
           </div>
         </div>
