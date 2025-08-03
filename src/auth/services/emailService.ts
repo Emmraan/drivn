@@ -19,6 +19,7 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {
+    const currentYear = new Date().getFullYear();
     const verificationUrl = `${APP_URL}/auth/verify?token=${token}`;
 
     const mailOptions = {
@@ -71,7 +72,7 @@ class EmailService {
           </div>
           
           <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-            <p>&copy; 2025 ${APP_NAME}. All rights reserved.</p>
+            <p>&copy; ${currentYear} ${APP_NAME}. All rights reserved.</p>
             <p>100% Open Source • S3-Compatible Storage</p>
           </div>
         </body>
