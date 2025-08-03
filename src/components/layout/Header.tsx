@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import AuthModal from '@/auth/components/AuthModal';
-import { Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Features', href: '#features' },
@@ -17,25 +16,10 @@ const navigation = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const { user, logout } = useAuth();
-
-  const openAuthModal = (mode: 'login' | 'signup') => {
-    setAuthMode(mode);
-    setAuthModalOpen(true);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-  };
+  const router = useRouter();
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-40 ${
-      authModalOpen
-        ? 'glass border-glass-border-light dark:border-glass-border-dark'
-        : 'backdrop-blur-md glass border-glass-border-light dark:border-glass-border-dark'
-    }`}>
+    <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-md glass border-glass-border-light dark:border-glass-border-dark">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -76,46 +60,23 @@ export default function Header() {
             transition={{ duration: 0.5 }}
           >
             <ThemeToggle />
-            
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <UserCircleIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {user.name}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                >
-                  Sign Out
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => window.location.href = '/dashboard'}
-                >
-                  Dashboard
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openAuthModal('login')}
-                >
-                  Sign In
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => openAuthModal('signup')}
-                >
-                  Get Started
-                </Button>
-              </>
-            )}
+
+            {/* Only show auth buttons for unauthenticated users on public routes */}
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/login')}
+              >
+                Sign In
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => router.push('/signup')}
+              >
+                Get Started
+              </Button>
+            </>
           </motion.div>
 
           {/* Mobile menu button */}
@@ -158,62 +119,32 @@ export default function Header() {
                 ))}
                 
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  {user ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center px-3 py-2">
-                        <UserCircleIcon className="w-6 h-6 text-gray-600 dark:text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {user.name}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => window.location.href = '/dashboard'}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        Dashboard
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          openAuthModal('login');
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        Sign In
-                      </button>
-                      <button
-                        onClick={() => {
-                          openAuthModal('signup');
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        Get Started
-                      </button>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        router.push('/login');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => {
+                        router.push('/signup');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Get Started
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </nav>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        initialMode={authMode}
-      />
     </header>
   );
 }

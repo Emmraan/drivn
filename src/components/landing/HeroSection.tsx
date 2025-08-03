@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import AuthModal from '@/auth/components/AuthModal';
-import { CloudArrowUpIcon, ShieldCheckIcon, GlobeAltIcon,BoltIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, ShieldCheckIcon, GlobeAltIcon, BoltIcon } from '@heroicons/react/24/outline';
 
 export default function HeroSection() {
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
+  const router = useRouter();
 
-  const openAuthModal = (mode: 'login' | 'signup') => {
-    setAuthMode(mode);
-    setAuthModalOpen(true);
+  const handleGetStarted = () => {
+    router.push('/signup');
+  };
+
+  const handleViewGitHub = () => {
+    window.open('https://github.com/your-username/drivn', '_blank');
   };
 
   return (
@@ -120,7 +122,7 @@ export default function HeroSection() {
           >
             <Button
               size="xl"
-              onClick={() => openAuthModal('signup')}
+              onClick={handleGetStarted}
               className="w-full sm:w-auto"
             >
               Get Started Free
@@ -128,10 +130,10 @@ export default function HeroSection() {
             <Button
               variant="outline"
               size="xl"
-              onClick={() => openAuthModal('login')}
+              onClick={handleViewGitHub}
               className="w-full sm:w-auto"
             >
-              Sign In
+              View on GitHub
             </Button>
           </motion.div>
 
@@ -147,12 +149,7 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        initialMode={authMode}
-      />
+
     </section>
   );
 }

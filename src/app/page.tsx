@@ -9,18 +9,21 @@ import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import ComparisonSection from '@/components/landing/ComparisonSection';
 import FAQSection from '@/components/landing/FAQSection';
+import { LandingPageTransition } from '@/components/ui/PageTransition';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <HeroSection />
-        <FeaturesSection />
-        <ComparisonSection />
-        <FAQSection />
-      </main>
-      <Footer />
-    </div>
+    <LandingPageTransition>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main>
+          <HeroSection />
+          <FeaturesSection />
+          <ComparisonSection />
+          <FAQSection />
+        </main>
+        <Footer />
+      </div>
+    </LandingPageTransition>
   );
 }

@@ -35,12 +35,14 @@ export interface ButtonProps
     'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration'>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
+  loadingText?: string;
+  loadingType?: 'spinner' | 'dots' | 'pulse' | 'progress';
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, leftIcon, rightIcon, children, disabled, ...props }, ref) => {
+  ({ className, variant, size, loading, loadingText, loadingType = 'spinner', leftIcon, rightIcon, children, disabled, ...props }, ref) => {
     return (
       <motion.div
         whileHover={{ scale: disabled || loading ? 1 : 1.02 }}
@@ -53,7 +55,26 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           disabled={disabled || loading}
           {...props}
         >
-        {loading && (
+        {loading && loadingType === 'dots' && (
+          <motion.div className="flex space-x-1 mr-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-1.5 h-1.5 bg-current rounded-full"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+        {loading && loadingType !== 'dots' && (
           <svg
             className="animate-spin -ml-1 mr-2 h-4 w-4"
             xmlns="http://www.w3.org/2000/svg"
@@ -76,7 +97,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {!loading && leftIcon && <span className="mr-2">{leftIcon}</span>}
-        {children}
+        <motion.span
+          animate={loading ? { opacity: [0.75, 1, 0.75] } : { opacity: 1 }}
+          transition={loading ? { duration: 1.5, repeat: Infinity } : undefined}
+        >
+          {loading && loadingText ? loadingText : children}
+        </motion.span>
         {!loading && rightIcon && <span className="ml-2">{rightIcon}</span>}
         </button>
       </motion.div>

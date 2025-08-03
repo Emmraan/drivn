@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
@@ -24,11 +25,12 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderProps) {
   const { logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
       await logout();
-      window.location.href = '/';
+      router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
     }

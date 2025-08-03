@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import Dropdown from '@/components/ui/Dropdown';
 import { cn } from '@/utils/cn';
 import {
   CloudIcon,
@@ -159,17 +160,15 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Storage Provider
           </label>
-          <select
+          <Dropdown
+            options={commonProviders.map(provider => ({
+              value: provider.name,
+              label: provider.name
+            }))}
             value={selectedProvider}
-            onChange={(e) => handleProviderChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            {commonProviders.map((provider) => (
-              <option key={provider.name} value={provider.name}>
-                {provider.name}
-              </option>
-            ))}
-          </select>
+            onChange={handleProviderChange}
+            placeholder="Select a storage provider"
+          />
         </div>
 
         {/* Access Key ID */}

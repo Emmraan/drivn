@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
+import { LoginLoading } from '@/components/ui/LoadingScreens';
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 interface LoginFormProps {
@@ -35,17 +36,19 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
     try {
       const result = await login(email, password);
       if (result.success) {
+        // Keep loading state active and call success immediately
         onSuccess?.();
+        return; // Don't set loading to false to prevent form flash
       } else {
         setError(result.message);
         // Show resend verification option if user needs email verification
         if ((result as any).requiresVerification) {
           setShowResendVerification(true);
         }
+        setLoading(false);
       }
     } catch (error) {
       setError('An unexpected error occurred');
-    } finally {
       setLoading(false);
     }
   };
@@ -94,24 +97,35 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
 
   return (
     <Card className="w-full max-w-md mx-auto backdrop-blur-xl">
-      <div className="text-center mb-8">
-        <motion.h1
-          className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          Welcome Back
-        </motion.h1>
-        <motion.p
-          className="text-gray-600 dark:text-gray-400 mt-2"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          Sign in to your DRIVN account
-        </motion.p>
-      </div>
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <LoginLoading message="Accessing your secure storage..." />
+        ) : (
+          <motion.div
+            key="login-form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="text-center mb-8">
+              <motion.h1
+                className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                Welcome Back
+              </motion.h1>
+              <motion.p
+                className="text-gray-600 dark:text-gray-400 mt-2"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Sign in to your DRIVN account
+              </motion.p>
+            </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <motion.div
@@ -266,24 +280,27 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
         </motion.div>
       </form>
 
-      {onToggleMode && (
-        <motion.div
-          className="mt-6 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don&apos;t have an account?{' '}
-            <button
-              onClick={onToggleMode}
-              className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
-            >
-              Sign up
-            </button>
-          </p>
-        </motion.div>
-      )}
+            {onToggleMode && (
+              <motion.div
+                className="mt-6 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Don&apos;t have an account?{' '}
+                  <button
+                    onClick={onToggleMode}
+                    className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+                  >
+                    Sign up
+                  </button>
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   );
 }

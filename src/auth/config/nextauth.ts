@@ -14,10 +14,14 @@ export const authOptions: any = {
       if (account?.provider === 'google') {
         try {
           await connectDB();
-          
+
           const existingUser = await User.findOne({ email: user.email });
-          
+
           if (existingUser) {
+            if (existingUser.provider === 'credentials' && !existingUser.googleId) {
+              return '/login?error=OAuthAccountNotLinked';
+            }
+
             if (!existingUser.googleId && account.providerAccountId) {
               existingUser.googleId = account.providerAccountId;
               existingUser.provider = 'google';
@@ -35,14 +39,14 @@ export const authOptions: any = {
               emailVerified: new Date(),
             });
           }
-          
+
           return true;
         } catch (error) {
           console.error('Error during Google sign in:', error);
           return false;
         }
       }
-      
+
       return true;
     },
     async jwt({ token, user, account }: { token: any; user: any; account: any }) {
