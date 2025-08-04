@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/auth/context/AuthContext';
 import S3ConfigForm, { S3ConfigData } from '@/components/dashboard/S3ConfigForm';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -25,7 +24,6 @@ interface S3ConfigStatus {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
   const [configStatus, setConfigStatus] = useState<S3ConfigStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{
@@ -133,7 +131,7 @@ export default function SettingsPage() {
           type: 'success',
           message: 'S3 configuration deleted successfully!',
         });
-        await loadS3Config(); // Reload config status
+        await loadS3Config();
       } else {
         setNotification({
           type: 'error',

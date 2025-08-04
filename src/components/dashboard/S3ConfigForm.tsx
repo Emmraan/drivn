@@ -13,6 +13,8 @@ import {
   EyeIcon,
   EyeSlashIcon,
   InformationCircleIcon,
+  DocumentDuplicateIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 interface S3ConfigFormProps {
@@ -319,7 +321,17 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
                   onClick={handleCopy}
                   className="absolute top-1 right-1 bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded transition-all duration-300"
                 >
-                  {copied ? '✅ Copied!' : '📋 Copy'}
+                  {copied ? (
+                    <span className="flex items-center gap-1">
+                      <CheckIcon className="h-4 w-4" />
+                      Copied!
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <DocumentDuplicateIcon className="h-4 w-4" />
+                      Copy!
+                    </span>
+                  )}
                 </button>
                 <code className="whitespace-pre max-w-full">{codeText}</code>
               </div>
