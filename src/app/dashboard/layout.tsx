@@ -57,10 +57,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main content */}
         <div className="lg:pl-64">
           {/* Header */}
-          <DashboardHeader
+          {user && <DashboardHeader
             user={user}
             onMenuClick={() => setSidebarOpen(true)}
-          />
+          />}
 
           {/* Page content */}
           <main className="py-6">
