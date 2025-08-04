@@ -31,7 +31,7 @@ export default function SignupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <SkeletonCard />
         </div>
@@ -41,22 +41,8 @@ export default function SignupPage() {
 
   return (
     <AuthPageTransition>
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Page Title */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-            DRIVN
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Create your account to get started
-          </p>
-        </motion.div>
 
         {/* Signup Form */}
         <SignupForm onSuccess={handleSignupSuccess} />

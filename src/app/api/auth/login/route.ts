@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    // Validation
     if (!email || !password) {
       return NextResponse.json(
         { success: false, message: 'Email and password are required' },
@@ -36,7 +35,6 @@ export async function POST(request: NextRequest) {
 
       return response;
     } else {
-      // Pass through requiresVerification flag for unverified users
       return NextResponse.json({
         success: result.success,
         message: result.message,

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
@@ -66,7 +66,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
               {/* User avatar */}
               <div className="flex items-center space-x-2">
                 {user.image ? (
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name}
                     className="h-8 w-8 rounded-full"
