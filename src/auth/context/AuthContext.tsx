@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
-      await signOut({ redirect: false }); // Invalidate NextAuth.js session
+      await signOut({ redirect: false });
     } catch (error) {
       console.error('Logout error:', error);
     }
