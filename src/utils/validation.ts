@@ -2,8 +2,8 @@ export const validateName = (name: string): string => {
   if (!name) {
     return 'Name is required.';
   }
-  if (name.trim().length < 2) {
-    return 'Name must be at least 2 characters long.';
+  if (name.trim().length < 2 || name.trim().length > 20) {
+    return 'Name must be at least 2 characters and no more than 20 characters.';
   }
   return '';
 };
