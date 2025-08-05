@@ -13,6 +13,7 @@ export interface IUser extends Document {
   updatedAt: Date;
   storageQuota?: number;
   storageUsed?: number;
+  canUseDrivnS3?: boolean;
   s3Config?: {
     accessKeyId?: string;
     secretAccessKey?: string;
@@ -59,11 +60,15 @@ const UserSchema = new Schema<IUser>({
   // Future S3 integration fields
   storageQuota: {
     type: Number,
-    default: 15 * 1024 * 1024 * 1024, // 15GB default
+    default: 15 * 1024 * 1024 * 1024,
   },
   storageUsed: {
     type: Number,
     default: 0,
+  },
+  canUseDrivnS3: {
+    type: Boolean,
+    default: false,
   },
   s3Config: {
     accessKeyId: String,

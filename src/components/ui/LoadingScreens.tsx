@@ -71,7 +71,7 @@ export function AccountCreationLoading({ message }: LoadingScreenProps) {
           { label: 'Validating', delay: 0 },
           { label: 'Securing', delay: 0.5 },
           { label: 'Finalizing', delay: 1 }
-        ].map((step, index) => (
+        ].map((step) => (
           <motion.div
             key={step.label}
             className="flex items-center space-x-2"

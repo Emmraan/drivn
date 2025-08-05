@@ -31,7 +31,7 @@ const VerificationTokenSchema = new Schema<IVerificationToken>({
 
 // Indexes for performance and cleanup
 VerificationTokenSchema.index({ email: 1 });
-VerificationTokenSchema.index({ token: 1 });
+// Note: token field already has unique index from schema definition
 VerificationTokenSchema.index({ expires: 1 }, { expireAfterSeconds: 0 }); // Auto-delete expired tokens
 
 export default mongoose.models.VerificationToken || mongoose.model<IVerificationToken>('VerificationToken', VerificationTokenSchema);

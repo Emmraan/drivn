@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/auth/context/AuthContext';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
+import FileUpload from '@/components/dashboard/FileUpload';
+import CreateFolder from '@/components/dashboard/CreateFolder';
 import {
   CloudIcon,
   FolderIcon,
@@ -12,21 +15,22 @@ import {
   CogIcon,
   PlusIcon,
   ArrowUpTrayIcon,
+  DocumentIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-const quickActions = [
+const getQuickActions = (setShowUploadModal: (show: boolean) => void, setShowCreateFolderModal: (show: boolean) => void) => [
   {
     name: 'Upload Files',
     description: 'Upload files to your cloud storage',
-    href: '/dashboard/files/upload',
+    onClick: () => setShowUploadModal(true),
     icon: ArrowUpTrayIcon,
     color: 'bg-blue-500',
   },
   {
     name: 'Create Folder',
     description: 'Organize your files with folders',
-    href: '/dashboard/files/new-folder',
+    onClick: () => setShowCreateFolderModal(true),
     icon: PlusIcon,
     color: 'bg-green-500',
   },
@@ -39,32 +43,106 @@ const quickActions = [
   },
 ];
 
-const stats = [
-  {
-    name: 'Total Files',
-    value: '0',
-    icon: FolderIcon,
-    change: '+0%',
-    changeType: 'neutral' as const,
-  },
-  {
-    name: 'Storage Used',
-    value: '0 GB',
-    icon: CloudIcon,
-    change: '0 GB available',
-    changeType: 'neutral' as const,
-  },
-  {
-    name: 'Bandwidth',
-    value: '0 GB',
-    icon: ChartBarIcon,
-    change: 'This month',
-    changeType: 'neutral' as const,
-  },
-];
+
+
+interface DashboardStats {
+  totalFiles: number;
+  totalFolders: number;
+  storageUsed: number;
+  totalDownloads: number;
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalFiles: 0,
+    totalFolders: 0,
+    storageUsed: 0,
+    totalDownloads: 0,
+  });
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/analytics?timeRange=30d');
+      const data = await response.json();
+
+      if (data.success) {
+        setStats({
+          totalFiles: data.data.totalFiles,
+          totalFolders: data.data.totalFolders,
+          storageUsed: data.data.storageUsed,
+          totalDownloads: data.data.totalDownloads,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const handleUploadComplete = () => {
+    loadDashboardData(); // Refresh dashboard data
+    setShowUploadModal(false);
+  };
+
+  const handleFolderCreated = () => {
+    loadDashboardData(); // Refresh dashboard data
+    setShowCreateFolderModal(false);
+  };
+
+  const quickActions = getQuickActions(setShowUploadModal, setShowCreateFolderModal);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const dashboardStats = [
+    {
+      name: 'Total Files',
+      value: stats.totalFiles.toString(),
+      icon: DocumentIcon,
+      change: 'Files uploaded',
+      changeType: 'neutral' as const,
+    },
+    {
+      name: 'Total Folders',
+      value: stats.totalFolders.toString(),
+      icon: FolderIcon,
+      change: 'Folders created',
+      changeType: 'neutral' as const,
+    },
+    {
+      name: 'Storage Used',
+      value: formatBytes(stats.storageUsed),
+      icon: CloudIcon,
+      change: 'Total storage',
+      changeType: 'neutral' as const,
+    },
+    {
+      name: 'Downloads',
+      value: stats.totalDownloads.toString(),
+      icon: ChartBarIcon,
+      change: 'Total downloads',
+      changeType: 'neutral' as const,
+    },
+  ];
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -89,9 +167,9 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat) => (
           <Card key={stat.name} className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -127,8 +205,8 @@ export default function DashboardPage() {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {quickActions.map((action, index) => (
-            <Link key={action.name} href={action.href}>
+          {quickActions.map((action) => {
+            const content = (
               <Card hover className="p-6 h-full">
                 <div className="flex items-center">
                   <div className={`flex-shrink-0 p-3 rounded-lg ${action.color}`}>
@@ -144,8 +222,26 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </Card>
-            </Link>
-          ))}
+            );
+
+            if (action.href) {
+              return (
+                <Link key={action.name} href={action.href}>
+                  {content}
+                </Link>
+              );
+            } else {
+              return (
+                <button
+                  key={action.name}
+                  onClick={action.onClick}
+                  className="text-left w-full"
+                >
+                  {content}
+                </button>
+              );
+            }
+          })}
         </div>
       </motion.div>
 
@@ -175,6 +271,19 @@ export default function DashboardPage() {
           </div>
         </Card>
       </motion.div>
+
+      {/* Modals */}
+      <FileUpload
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploadComplete={handleUploadComplete}
+      />
+
+      <CreateFolder
+        isOpen={showCreateFolderModal}
+        onClose={() => setShowCreateFolderModal(false)}
+        onFolderCreated={handleFolderCreated}
+      />
     </div>
   );
 }

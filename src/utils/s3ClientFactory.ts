@@ -3,6 +3,9 @@ import { NextRequest } from 'next/server';
 import { S3Config } from './encryption';
 import { S3ConfigService } from '@/services/s3ConfigService';
 import { getS3ConfigFromCookie } from './cookieManager';
+import { drivnS3Service } from '@/services/drivnS3Service';
+import connectDB from './database';
+import User from '@/auth/models/User';
 
 /**
  * S3 Client Factory
@@ -10,7 +13,7 @@ import { getS3ConfigFromCookie } from './cookieManager';
  */
 
 /**
- * Create S3 client from user's stored configuration
+ * Create S3 client from user's stored configuration or DRIVN's managed S3
  * @param userId - User ID to retrieve configuration for
  * @param request - Optional NextRequest for cookie-based config (fallback)
  * @returns S3Client instance or null if no configuration found
@@ -20,14 +23,23 @@ export async function createS3Client(
   request?: NextRequest
 ): Promise<S3Client | null> {
   try {
-    // First, try to get config from database
+    // Check if user has permission to use DRIVN's managed S3
+    await connectDB();
+    const user = await User.findById(userId);
+
+    if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
+      console.log('Using DRIVN managed S3 for user:', userId);
+      return drivnS3Service.getClient();
+    }
+
+    // Fall back to user's personal S3 configuration
     let s3Config = await S3ConfigService.getS3Config(userId);
-    
+
     // Fallback to cookie-based config if database config not found
     if (!s3Config && request) {
       s3Config = getS3ConfigFromCookie<S3Config>(request, userId);
     }
-    
+
     if (!s3Config) {
       console.log('No S3 configuration found for user:', userId);
       return null;
@@ -94,7 +106,7 @@ export function createS3ClientWithConfig(config: S3Config): S3Client {
 }
 
 /**
- * Get S3 configuration for a user (without creating client)
+ * Get S3 configuration for a user (DRIVN managed or personal)
  * @param userId - User ID
  * @param request - Optional NextRequest for cookie fallback
  * @returns S3 configuration or null
@@ -104,18 +116,56 @@ export async function getS3Config(
   request?: NextRequest
 ): Promise<S3Config | null> {
   try {
-    // First, try database
+    // Check if user has permission to use DRIVN's managed S3
+    await connectDB();
+    const user = await User.findById(userId);
+
+    if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
+      return drivnS3Service.getConfig();
+    }
+
+    // Fall back to user's personal S3 configuration
     let s3Config = await S3ConfigService.getS3Config(userId);
-    
+
     // Fallback to cookie
     if (!s3Config && request) {
       s3Config = getS3ConfigFromCookie<S3Config>(request, userId);
     }
-    
+
     return s3Config;
   } catch (error) {
     console.error('Error getting S3 config for user:', userId, error);
     return null;
+  }
+}
+
+/**
+ * Get bucket name for a user (DRIVN managed or personal)
+ * @param userId - User ID
+ * @param request - Optional NextRequest for cookie fallback
+ * @returns Bucket name or null
+ */
+export async function getS3BucketName(
+  userId: string,
+  request?: NextRequest
+): Promise<string | null> {
+  const config = await getS3Config(userId, request);
+  return config?.bucket || null;
+}
+
+/**
+ * Check if user is using DRIVN managed S3
+ * @param userId - User ID
+ * @returns boolean indicating if user is using DRIVN S3
+ */
+export async function isUsingDrivnS3(userId: string): Promise<boolean> {
+  try {
+    await connectDB();
+    const user = await User.findById(userId);
+    return !!(user?.canUseDrivnS3 && drivnS3Service.isAvailable());
+  } catch (error) {
+    console.error('Error checking DRIVN S3 usage for user:', userId, error);
+    return false;
   }
 }
 
