@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
+import { isAdminEmail } from '@/auth/middleware/adminMiddleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Check if user is admin
+    const isAdmin = isAdminEmail(user.email);
+
     return NextResponse.json({
       success: true,
       user: {
@@ -20,6 +24,8 @@ export async function GET(request: NextRequest) {
         name: user.name,
         emailVerified: user.emailVerified,
         image: user.image,
+        role: isAdmin ? 'Admin' : 'User',
+        isAdmin,
       },
     });
   } catch (error) {

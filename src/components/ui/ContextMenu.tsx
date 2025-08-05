@@ -18,9 +18,11 @@ interface ContextMenuProps {
   items: ContextMenuItem[];
   children: React.ReactNode;
   className?: string;
+  enableLeftClick?: boolean; // New prop to enable left-click
+  itemType?: 'file' | 'folder'; // New prop to specify item type
 }
 
-export default function ContextMenu({ items, children, className }: ContextMenuProps) {
+export default function ContextMenu({ items, children, className, enableLeftClick = false, itemType }: ContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
@@ -29,7 +31,7 @@ export default function ContextMenu({ items, children, className }: ContextMenuP
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const rect = triggerRef.current?.getBoundingClientRect();
     if (rect) {
       setPosition({
@@ -37,6 +39,23 @@ export default function ContextMenu({ items, children, className }: ContextMenuP
         y: e.clientY,
       });
       setIsOpen(true);
+    }
+  };
+
+  const handleLeftClick = (e: React.MouseEvent) => {
+    // Only enable left-click for files, not folders
+    if (enableLeftClick && itemType === 'file') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setPosition({
+          x: e.clientX,
+          y: e.clientY,
+        });
+        setIsOpen(true);
+      }
     }
   };
 
@@ -98,6 +117,7 @@ export default function ContextMenu({ items, children, className }: ContextMenuP
       <div
         ref={triggerRef}
         onContextMenu={handleContextMenu}
+        onClick={handleLeftClick}
         className={cn('cursor-pointer', className)}
       >
         {children}
@@ -162,10 +182,15 @@ export function useContextMenu() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [targetItem, setTargetItem] = useState<any>(null);
 
-  const openContextMenu = (e: React.MouseEvent, item?: any) => {
+  const openContextMenu = (e: React.MouseEvent, item?: any, itemType?: 'file' | 'folder') => {
+    // For left-click, only allow files
+    if (e.type === 'click' && itemType !== 'file') {
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     setPosition({
       x: e.clientX,
       y: e.clientY,

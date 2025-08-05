@@ -13,6 +13,7 @@ import {
   CogIcon,
   XMarkIcon,
   ShieldCheckIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 
 interface AdminSidebarProps {
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Users', href: '/admin-dashboard/users', icon: UsersIcon },
   { name: 'Storage', href: '/admin-dashboard/storage', icon: CloudIcon },
   { name: 'Analytics', href: '/admin-dashboard/analytics', icon: ChartBarIcon },
+  { name: 'Schema Management', href: '/admin-dashboard/update-schema', icon: WrenchScrewdriverIcon },
   { name: 'Settings', href: '/admin-dashboard/settings', icon: CogIcon },
 ];
 

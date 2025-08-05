@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { CircularProgress } from '@/components/ui/ProgressBar';
 
 interface UploadFile {
   file: File;
@@ -322,7 +322,12 @@ export default function UploadPage() {
                 
                 <div className="flex items-center ml-4">
                   {uploadFile.status === 'uploading' && (
-                    <LoadingSpinner size="sm" />
+                    <CircularProgress
+                      progress={uploadFile.progress}
+                      size={20}
+                      strokeWidth={2}
+                      glassmorphism
+                    />
                   )}
                   {uploadFile.status === 'success' && (
                     <CheckCircleIcon className="h-6 w-6 text-green-500" />

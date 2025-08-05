@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { isAdminEmail } from '@/auth/middleware/adminMiddleware';
 
 interface User {
   _id?: string;
@@ -9,6 +10,8 @@ interface User {
   name: string;
   emailVerified?: Date;
   image?: string;
+  role?: string;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -31,12 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'loading') return;
 
     if (session?.user) {
+      const isAdmin = isAdminEmail(session.user.email!);
       setUser({
         _id: session.user.id,
         email: session.user.email!,
         name: session.user.name!,
         image: session.user.image || undefined,
         emailVerified: new Date(),
+        role: isAdmin ? 'Admin' : 'User',
+        isAdmin,
       });
     } else {
       checkAuthStatus();

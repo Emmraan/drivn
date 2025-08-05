@@ -97,7 +97,7 @@ export default function Dropdown({
             transition={{ duration: 0.2 }}
             className={cn(
               'absolute z-50 mt-2 w-full glass rounded-lg border border-gray-300 dark:border-gray-600',
-              'backdrop-blur-md shadow-lg max-h-60 overflow-auto'
+              'backdrop-blur-md shadow-lg max-h-60 overflow-y-auto overflow-x-hidden'
             )}
           >
             <div className="py-1">
@@ -110,6 +110,7 @@ export default function Dropdown({
                     'w-full px-4 py-3 text-left text-sm transition-colors duration-150',
                     'hover:bg-white/20 dark:hover:bg-gray-800/20',
                     'focus:bg-white/20 dark:focus:bg-gray-800/20 focus:outline-none',
+                    'truncate', // Prevent text overflow
                     value === option.value && 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                   )}
                   whileHover={{ x: 4 }}

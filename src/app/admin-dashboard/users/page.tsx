@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { TableSkeleton } from '@/components/ui/SkeletonLoader';
+import Card from '@/components/ui/Card';
 
 interface User {
   _id: string;
@@ -156,11 +157,11 @@ export default function AdminUsersPage() {
 
       {/* Users Table */}
       {loading ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <Card className="p-6">
           <TableSkeleton rows={10} columns={5} />
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <Card className="overflow-hidden" padding="none">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
@@ -295,7 +296,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

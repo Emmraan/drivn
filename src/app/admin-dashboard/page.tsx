@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
+import Card from '@/components/ui/Card';
 
 interface AdminStats {
   totalUsers: number;
@@ -112,54 +113,65 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+      >
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.name}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, type: 'spring', stiffness: 80 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {stat.name}
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                  {stat.value}
-                </p>
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {stat.name}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className={`p-3 rounded-lg ${stat.color}`}>
+                  <stat.icon className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className={`p-3 rounded-lg ${stat.color}`}>
-                <stat.icon className="h-6 w-6 text-white" />
+              <div className="mt-4 flex items-center">
+                <span
+                  className={`text-sm font-medium ${
+                    stat.changeType === 'positive'
+                      ? 'text-green-600 dark:text-green-400'
+                      : stat.changeType === 'negative'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  {stat.change}
+                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                  {stat.name === 'DRIVN S3 Users' ? 'of total users' : 'from last month'}
+                </span>
               </div>
-            </div>
-            <div className="mt-4 flex items-center">
-              <span
-                className={`text-sm font-medium ${
-                  stat.changeType === 'positive'
-                    ? 'text-green-600 dark:text-green-400'
-                    : stat.changeType === 'negative'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                {stat.change}
-              </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
-                {stat.name === 'DRIVN S3 Users' ? 'of total users' : 'from last month'}
-              </span>
-            </div>
+            </Card>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <motion.a
             href="/admin-dashboard/users"
             whileHover={{ scale: 1.02 }}
@@ -204,8 +216,9 @@ export default function AdminDashboardPage() {
               View detailed analytics and usage reports
             </p>
           </motion.a>
-        </div>
-      </div>
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 }

@@ -180,3 +180,107 @@ export function DashboardSkeleton() {
     </div>
   );
 }
+
+export function LoginFormSkeleton() {
+  return (
+    <div className="p-8 space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <Skeleton variant="text" width="60%" height="2.5rem" className="mx-auto" />
+        <Skeleton variant="text" width="80%" height="1.25rem" className="mx-auto" />
+      </div>
+
+      {/* Form Fields */}
+      <div className="space-y-6">
+        {/* Email Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="20%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Password Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="25%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Submit Button */}
+        <Skeleton variant="rounded" height="3rem" />
+
+        {/* Divider */}
+        <div className="relative py-4">
+          <Skeleton variant="text" width="40%" height="1rem" className="mx-auto" />
+        </div>
+
+        {/* Google Button */}
+        <Skeleton variant="rounded" height="3rem" />
+      </div>
+
+      {/* Footer */}
+      <div className="text-center">
+        <Skeleton variant="text" width="70%" height="1rem" className="mx-auto" />
+      </div>
+    </div>
+  );
+}
+
+export function SignupFormSkeleton() {
+  return (
+    <div className="p-8 space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <Skeleton variant="text" width="50%" height="2.5rem" className="mx-auto" />
+        <Skeleton variant="text" width="85%" height="1.25rem" className="mx-auto" />
+      </div>
+
+      {/* Form Fields */}
+      <div className="space-y-6">
+        {/* Name Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="25%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Email Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="20%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Password Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="25%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Confirm Password Field */}
+        <div className="space-y-2">
+          <Skeleton variant="text" width="35%" height="1rem" />
+          <Skeleton variant="rounded" height="3rem" />
+        </div>
+
+        {/* Terms Checkbox */}
+        <div className="flex items-start space-x-3">
+          <Skeleton variant="rounded" width="1.25rem" height="1.25rem" />
+          <Skeleton variant="text" width="90%" height="1rem" />
+        </div>
+
+        {/* Submit Button */}
+        <Skeleton variant="rounded" height="3rem" />
+
+        {/* Divider */}
+        <div className="relative py-4">
+          <Skeleton variant="text" width="40%" height="1rem" className="mx-auto" />
+        </div>
+
+        {/* Google Button */}
+        <Skeleton variant="rounded" height="3rem" />
+      </div>
+
+      {/* Footer */}
+      <div className="text-center">
+        <Skeleton variant="text" width="65%" height="1rem" className="mx-auto" />
+      </div>
+    </div>
+  );
+}

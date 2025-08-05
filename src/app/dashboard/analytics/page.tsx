@@ -13,7 +13,7 @@ import {
   CalendarIcon,
 } from '@heroicons/react/24/outline';
 import Card from '@/components/ui/Card';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { StatCardSkeleton, CardSkeleton } from '@/components/ui/SkeletonLoader';
 
 interface AnalyticsData {
   totalFiles: number;
@@ -117,8 +117,30 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg w-32 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-80 animate-pulse"></div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="animate-pulse">
+              <StatCardSkeleton />
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Card key={index} className="animate-pulse">
+              <CardSkeleton />
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

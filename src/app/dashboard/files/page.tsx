@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   FolderIcon,
@@ -15,6 +15,7 @@ import {
   ArrowDownTrayIcon,
   DocumentDuplicateIcon,
   EllipsisVerticalIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { FileItemSkeleton } from '@/components/ui/SkeletonLoader';
@@ -23,6 +24,7 @@ import CreateFolder from '@/components/dashboard/CreateFolder';
 import ContextMenu, { ContextMenuItem } from '@/components/ui/ContextMenu';
 import FilePreviewModal from '@/components/dashboard/FilePreviewModal';
 import RenameModal from '@/components/ui/RenameModal';
+import { useSync } from '@/hooks/useSync';
 import DeleteModal from '@/components/ui/DeleteModal';
 
 interface FileItem {
@@ -70,23 +72,21 @@ export default function FilesPage() {
   const [deleteItem, setDeleteItem] = useState<{ id: string; name: string; type: 'file' | 'folder' } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => {
-    loadFolderContents(currentFolderId);
-  }, [currentFolderId]);
+  // Use sync hook for real-time synchronization
+  const { syncStatus, isLoading: isSyncing, performSync, startPeriodicSync, stopPeriodicSync } = useSync();
 
-  const loadFolderContents = async (folderId: string) => {
+  const loadFolderContents = useCallback(async (folderId: string) => {
     try {
       setLoading(true);
 
-      // First sync database with S3 to ensure consistency
+      // First perform full sync to ensure consistency
       try {
-        await fetch('/api/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'sync' }),
-        });
+        const syncResult = await performSync('full');
+        if (syncResult.success) {
+          console.log('Sync completed successfully:', syncResult.message);
+        }
       } catch (syncError) {
-        console.warn('Sync failed, continuing with folder load:', syncError);
+        console.warn('Full sync failed, continuing with folder load:', syncError);
       }
 
       const response = await fetch(`/api/folders?parentId=${folderId === 'root' ? '' : folderId}`);
@@ -102,7 +102,18 @@ export default function FilesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [performSync]);
+
+  useEffect(() => {
+    loadFolderContents(currentFolderId);
+  }, [currentFolderId, loadFolderContents]);
+
+  // Auto-start periodic sync on component mount
+  useEffect(() => {
+    if (!syncStatus.isActive) {
+      startPeriodicSync();
+    }
+  }, [syncStatus.isActive, startPeriodicSync]);
 
   const navigateToFolder = (folderId: string) => {
     setCurrentFolderId(folderId);
@@ -310,10 +321,25 @@ export default function FilesPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Files</h1>
           <p className="text-gray-600 dark:text-gray-400">
             Manage your files and folders
+            {syncStatus.isActive && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                Auto-sync enabled
+              </span>
+            )}
           </p>
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => performSync('full')}
+            leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+            disabled={isSyncing}
+            className="text-gray-600 dark:text-gray-400"
+          >
+            {isSyncing ? 'Syncing...' : 'Sync'}
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -409,7 +435,7 @@ export default function FilesPage() {
         <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4' : 'space-y-2'}>
           {/* Folders */}
           {filteredFolders.map((folder) => (
-            <ContextMenu key={folder._id} items={getFolderContextMenuItems(folder)}>
+            <ContextMenu key={folder._id} items={getFolderContextMenuItems(folder)} itemType="folder">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -441,9 +467,9 @@ export default function FilesPage() {
                     }}
                     className={`${
                       viewMode === 'grid'
-                        ? 'absolute top-2 right-2 opacity-0 group-hover:opacity-100'
-                        : 'ml-2 opacity-0 group-hover:opacity-100'
-                    } p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all`}
+                        ? 'absolute top-2 right-2'
+                        : 'ml-2'
+                    } p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all opacity-80 hover:opacity-100`}
                   >
                     <EllipsisVerticalIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </button>
@@ -454,7 +480,7 @@ export default function FilesPage() {
 
           {/* Files */}
           {filteredFiles.map((file) => (
-            <ContextMenu key={file._id} items={getFileContextMenuItems(file)}>
+            <ContextMenu key={file._id} items={getFileContextMenuItems(file)} enableLeftClick={true} itemType="file">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -489,9 +515,9 @@ export default function FilesPage() {
                     }}
                     className={`${
                       viewMode === 'grid'
-                        ? 'absolute top-2 right-2 opacity-0 group-hover:opacity-100'
-                        : 'ml-2 opacity-0 group-hover:opacity-100'
-                    } p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all`}
+                        ? 'absolute top-2 right-2'
+                        : 'ml-2'
+                    } p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all opacity-80 hover:opacity-100`}
                   >
                     <EllipsisVerticalIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </button>

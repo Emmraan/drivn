@@ -16,6 +16,7 @@ export interface FileUploadData {
   folderId?: string;
   tags?: string[];
   metadata?: Record<string, any>;
+  bucketType?: 'platform' | 'user';
 }
 
 export interface FolderCreateData {
@@ -33,10 +34,25 @@ export class FileService {
     try {
       await connectDB();
 
-      // Get S3 client and bucket for user
-      const s3Client = await getS3Client(userId);
-      const bucketName = await getS3BucketName(userId);
-      const isUsingDrivn = await isUsingDrivnS3(userId);
+      // Get S3 client and bucket for user based on bucketType preference
+      let s3Client, bucketName, isUsingDrivn;
+
+      if (fileData.bucketType === 'platform') {
+        // Force use of platform bucket
+        s3Client = await getS3Client(userId, true); // Force DRIVN S3
+        bucketName = await getS3BucketName(userId, true);
+        isUsingDrivn = true;
+      } else if (fileData.bucketType === 'user') {
+        // Force use of user's own bucket
+        s3Client = await getS3Client(userId, false); // Force user's S3
+        bucketName = await getS3BucketName(userId, false);
+        isUsingDrivn = false;
+      } else {
+        // Default behavior - use existing logic
+        s3Client = await getS3Client(userId);
+        bucketName = await getS3BucketName(userId);
+        isUsingDrivn = await isUsingDrivnS3(userId);
+      }
 
       if (!s3Client || !bucketName) {
         return {
@@ -174,6 +190,34 @@ export class FileService {
 
       await folder.save();
 
+      // Create folder marker in S3
+      try {
+        const s3Client = await getS3Client(userId);
+        const bucketName = await getS3BucketName(userId);
+
+        if (s3Client && bucketName) {
+          const folderKey = `${userId}${folderPath}/`;
+
+          const putCommand = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: folderKey,
+            Body: '',
+            ContentType: 'application/x-directory',
+            Metadata: {
+              'folder-name': folderData.name,
+              'user-id': userId,
+              'created-at': new Date().toISOString(),
+            },
+          });
+
+          await s3Client.send(putCommand);
+          console.log(`Created folder marker in S3: ${folderKey}`);
+        }
+      } catch (error) {
+        console.warn('Failed to create folder marker in S3:', error);
+        // Don't fail the entire operation if S3 folder creation fails
+      }
+
       // Update parent folder count if applicable
       if (parentFolder) {
         await Folder.findByIdAndUpdate(parentFolder._id, {
@@ -286,11 +330,15 @@ export class FileService {
     storageUsed: number;
     storageQuota: number;
     bucketType: 'user' | 'drivn' | 'mixed';
+    platformStorageUsed?: number;
+    userStorageUsed?: number;
+    canUseDrivnS3?: boolean;
+    hasOwnS3Config?: boolean;
   }> {
     try {
       await connectDB();
 
-      const [fileStats, folderCount, user] = await Promise.all([
+      const [fileStats, bucketStats, folderCount, user] = await Promise.all([
         File.aggregate([
           { $match: { userId: new Types.ObjectId(userId) } },
           {
@@ -302,12 +350,26 @@ export class FileService {
             },
           },
         ]),
+        File.aggregate([
+          { $match: { userId: new Types.ObjectId(userId) } },
+          {
+            $group: {
+              _id: '$bucketType',
+              totalSize: { $sum: '$size' },
+              fileCount: { $sum: 1 },
+            },
+          },
+        ]),
         Folder.countDocuments({ userId }),
         User.findById(userId),
       ]);
 
       const stats = fileStats[0] || { totalFiles: 0, totalSize: 0, bucketTypes: [] };
-      
+
+      // Calculate storage by bucket type
+      const platformStorage = bucketStats.find(b => b._id === 'drivn');
+      const userStorage = bucketStats.find(b => b._id === 'user');
+
       let bucketType: 'user' | 'drivn' | 'mixed' = 'user';
       if (stats.bucketTypes.length > 1) {
         bucketType = 'mixed';
@@ -315,12 +377,19 @@ export class FileService {
         bucketType = 'drivn';
       }
 
+      // Check if user has S3 config
+      const hasOwnS3Config = !!(user?.s3Config?.bucket && user?.s3Config?.accessKeyId);
+
       return {
         totalFiles: stats.totalFiles,
         totalFolders: folderCount,
         storageUsed: stats.totalSize,
         storageQuota: user?.storageQuota || 15 * 1024 * 1024 * 1024, // 15GB default
         bucketType,
+        platformStorageUsed: platformStorage?.totalSize || 0,
+        userStorageUsed: userStorage?.totalSize || 0,
+        canUseDrivnS3: user?.canUseDrivnS3 || false,
+        hasOwnS3Config,
       };
     } catch (error) {
       console.error('Error getting storage stats:', error);
@@ -330,6 +399,10 @@ export class FileService {
         storageUsed: 0,
         storageQuota: 15 * 1024 * 1024 * 1024,
         bucketType: 'user',
+        platformStorageUsed: 0,
+        userStorageUsed: 0,
+        canUseDrivnS3: false,
+        hasOwnS3Config: false,
       };
     }
   }

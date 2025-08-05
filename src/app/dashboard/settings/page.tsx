@@ -188,10 +188,10 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`p-4 rounded-lg flex items-center space-x-3 ${
+          className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${
             notification.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+              ? 'border-green-200 dark:border-green-800'
+              : 'border-red-200 dark:border-red-800'
           }`}
         >
           {notification.type === 'success' ? (

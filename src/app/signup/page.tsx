@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
 import SignupForm from '@/auth/components/SignupForm';
-import { SkeletonCard } from '@/components/ui/Skeleton';
+import { SignupFormSkeleton } from '@/components/ui/SkeletonLoader';
 import { AuthPageTransition } from '@/components/ui/PageTransition';
 
 export default function SignupPage() {
@@ -33,7 +33,9 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <SkeletonCard />
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-gray-700/50 animate-pulse">
+            <SignupFormSkeleton />
+          </div>
         </div>
       </div>
     );

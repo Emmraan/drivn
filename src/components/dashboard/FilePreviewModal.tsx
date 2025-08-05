@@ -9,7 +9,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Skeleton } from '@/components/ui/SkeletonLoader';
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -141,8 +141,17 @@ export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewM
           {/* Content */}
           <div className="p-6">
             {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <LoadingSpinner size="lg" />
+              <div className="h-96 space-y-4 p-4">
+                {/* Preview skeleton */}
+                <div className="space-y-2">
+                  <Skeleton variant="text" width="40%" height="1.5rem" />
+                  <Skeleton variant="text" width="60%" />
+                </div>
+                <Skeleton variant="rounded" height="20rem" className="animate-pulse" />
+                <div className="flex justify-center space-x-4">
+                  <Skeleton variant="rounded" width="6rem" height="2.5rem" />
+                  <Skeleton variant="rounded" width="8rem" height="2.5rem" />
+                </div>
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center h-96 text-center">

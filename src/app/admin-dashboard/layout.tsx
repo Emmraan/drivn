@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/auth/context/AuthContext';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -15,50 +15,38 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!loading) {
-        if (!user) {
-          router.push('/login');
-          return;
-        }
+    setMounted(true);
+  }, []);
 
-        try {
-          // Check admin status by making a test API call
-          const response = await fetch('/api/admin/users?limit=1');
-          const adminStatus = response.status !== 403;
-
-          setIsAdmin(adminStatus);
-          setCheckingAdmin(false);
-
-          if (!adminStatus) {
-            router.push('/dashboard');
-            return;
-          }
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-          setCheckingAdmin(false);
-          router.push('/dashboard');
-        }
+  useEffect(() => {
+    if (!loading && mounted) {
+      if (!user) {
+        router.push('/login');
+        return;
       }
-    };
 
-    checkAdminStatus();
-  }, [user, loading, router]);
+      // Since middleware already validates admin access for /admin-dashboard routes,
+      // we can trust that if the user reached this component, they are an admin.
+      // This eliminates the race condition and API call dependency.
+    }
+  }, [user, loading, router, mounted]);
 
-  if (loading || checkingAdmin) {
+  // Show loading skeleton while auth is loading or component is mounting
+  if (loading || !mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <DashboardSkeleton />
+        </div>
       </div>
     );
   }
 
-  if (!user || !isAdmin) {
+  // If no user, don't render anything (redirect will happen in useEffect)
+  if (!user) {
     return null;
   }
 

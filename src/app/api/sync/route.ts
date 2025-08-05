@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { action = 'sync' } = body;
 
     let result;
-    
+
     switch (action) {
       case 'sync':
         result = await SyncService.syncUserFiles(user._id);
@@ -31,9 +31,18 @@ export async function POST(request: NextRequest) {
       case 'orphaned':
         result = await SyncService.findOrphanedS3Files(user._id);
         break;
+      case 'import':
+        result = await SyncService.importOrphanedS3Files(user._id);
+        break;
+      case 'folders':
+        result = await SyncService.syncFoldersToS3(user._id);
+        break;
+      case 'full':
+        result = await SyncService.performFullSync(user._id);
+        break;
       default:
         return NextResponse.json(
-          { success: false, message: 'Invalid action' },
+          { success: false, message: 'Invalid action. Valid actions: sync, check, orphaned, import, folders, full' },
           { status: 400 }
         );
     }

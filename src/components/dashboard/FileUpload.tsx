@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
@@ -8,9 +8,11 @@ import {
   DocumentIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
+  CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ProgressBar, { CircularProgress } from '@/components/ui/ProgressBar';
+import { UploadLoadingScreen } from '@/components/ui/LoadingScreens';
 
 interface FileUploadProps {
   isOpen: boolean;
@@ -31,22 +33,86 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [tags, setTags] = useState('');
+  const [selectedBucket, setSelectedBucket] = useState<'platform' | 'user'>('platform');
+  const [userBucketAccess, setUserBucketAccess] = useState<{
+    canUseDrivnS3: boolean;
+    hasOwnS3Config: boolean;
+  }>({ canUseDrivnS3: false, hasOwnS3Config: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
+  // Fetch user's bucket access information
+  useEffect(() => {
+    const fetchBucketAccess = async () => {
+      try {
+        const response = await fetch('/api/storage/stats');
+        const data = await response.json();
+
+        if (data.success && data.stats) {
+          setUserBucketAccess({
+            canUseDrivnS3: data.stats.canUseDrivnS3 || false,
+            hasOwnS3Config: data.stats.hasOwnS3Config || false,
+          });
+
+          // Set default bucket selection
+          if (data.stats.canUseDrivnS3) {
+            setSelectedBucket('platform');
+          } else if (data.stats.hasOwnS3Config) {
+            setSelectedBucket('user');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching bucket access:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchBucketAccess();
+    }
+  }, [isOpen]);
+
+  // Validate file sizes when bucket selection changes
+  useEffect(() => {
+    if (selectedBucket === 'platform') {
+      const maxSize = 1024 * 1024 * 1024; // 1GB
+      setFiles(prev => prev.map(file => {
+        const isTooBig = file.file.size > maxSize;
+        return {
+          ...file,
+          status: isTooBig ? 'error' as const : (file.status === 'error' && file.error?.includes('1GB limit') ? 'pending' as const : file.status),
+          error: isTooBig ? 'File size exceeds 1GB limit for platform storage' : (file.error?.includes('1GB limit') ? undefined : file.error),
+        };
+      }));
+    } else {
+      // Remove size limit errors for user bucket
+      setFiles(prev => prev.map(file => ({
+        ...file,
+        status: file.error?.includes('1GB limit') ? 'pending' as const : file.status,
+        error: file.error?.includes('1GB limit') ? undefined : file.error,
+      })));
+    }
+  }, [selectedBucket]);
+
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
-    const uploadFiles: UploadFile[] = fileArray.map(file => ({
-      file,
-      id: generateId(),
-      progress: 0,
-      status: 'pending',
-    }));
+    const uploadFiles: UploadFile[] = fileArray.map(file => {
+      const maxSize = 1024 * 1024 * 1024; // 1GB in bytes
+      const isTooPlatformBucket = selectedBucket === 'platform' && file.size > maxSize;
+
+      return {
+        file,
+        id: generateId(),
+        progress: 0,
+        status: isTooPlatformBucket ? 'error' as const : 'pending' as const,
+        error: isTooPlatformBucket ? 'File size exceeds 1GB limit for platform storage' : undefined,
+      };
+    });
 
     setFiles(prev => [...prev, ...uploadFiles]);
-  }, []);
+  }, [selectedBucket]);
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
@@ -87,60 +153,122 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
     if (files.length === 0) return;
 
     setIsUploading(true);
+    setShowLoadingScreen(true);
 
-    try {
-      const formData = new FormData();
-      
-      files.forEach(({ file }) => {
-        formData.append('files', file);
-      });
+    // Upload files one by one for better progress tracking
+    for (const uploadFile of files) {
+      try {
+        // Update file to uploading status
+        setFiles(prev => prev.map(f =>
+          f.id === uploadFile.id
+            ? { ...f, status: 'uploading' as const, progress: 0 }
+            : f
+        ));
 
-      if (folderId) {
-        formData.append('folderId', folderId);
+        const formData = new FormData();
+        formData.append('files', uploadFile.file);
+
+        if (folderId) {
+          formData.append('folderId', folderId);
+        }
+
+        if (tags.trim()) {
+          formData.append('tags', tags.trim());
+        }
+
+        // Add bucket selection if user has access to both
+        if (userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config) {
+          formData.append('bucketType', selectedBucket);
+        }
+
+        // Use XMLHttpRequest for progress tracking
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+              setFiles(prev => prev.map(f =>
+                f.id === uploadFile.id
+                  ? { ...f, progress }
+                  : f
+              ));
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const result = JSON.parse(xhr.responseText);
+                if (result.success) {
+                  setFiles(prev => prev.map(f =>
+                    f.id === uploadFile.id
+                      ? { ...f, status: 'success' as const, progress: 100 }
+                      : f
+                  ));
+                  resolve();
+                } else {
+                  setFiles(prev => prev.map(f =>
+                    f.id === uploadFile.id
+                      ? { ...f, status: 'error' as const, error: result.message || 'Upload failed' }
+                      : f
+                  ));
+                  reject(new Error(result.message || 'Upload failed'));
+                }
+              } catch (parseError) {
+                setFiles(prev => prev.map(f =>
+                  f.id === uploadFile.id
+                    ? { ...f, status: 'error' as const, error: 'Invalid response' }
+                    : f
+                ));
+                reject(parseError);
+              }
+            } else {
+              setFiles(prev => prev.map(f =>
+                f.id === uploadFile.id
+                  ? { ...f, status: 'error' as const, error: `HTTP ${xhr.status}` }
+                  : f
+              ));
+              reject(new Error(`HTTP ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            setFiles(prev => prev.map(f =>
+              f.id === uploadFile.id
+                ? { ...f, status: 'error' as const, error: 'Network error' }
+                : f
+            ));
+            reject(new Error('Network error'));
+          });
+
+          xhr.open('POST', '/api/files/upload');
+          xhr.send(formData);
+        });
+
+      } catch (error) {
+        console.error(`Upload error for ${uploadFile.file.name}:`, error);
+        // Error already handled in the promise
       }
+    }
 
-      if (tags.trim()) {
-        formData.append('tags', tags.trim());
-      }
+    setIsUploading(false);
 
-      // Update all files to uploading status
-      setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
+    // Hide loading screen after a short delay to show completion
+    setTimeout(() => {
+      setShowLoadingScreen(false);
+    }, 1000);
 
-      const response = await fetch('/api/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Mark all as success
-        setFiles(prev => prev.map(f => ({ ...f, status: 'success' as const, progress: 100 })));
-        
-        // Close modal after a short delay
-        setTimeout(() => {
-          onUploadComplete();
-          onClose();
-          setFiles([]);
-          setTags('');
-        }, 1500);
-      } else {
-        // Handle partial success or complete failure
-        setFiles(prev => prev.map(f => ({ 
-          ...f, 
-          status: 'error' as const, 
-          error: result.message || 'Upload failed' 
-        })));
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      setFiles(prev => prev.map(f => ({ 
-        ...f, 
-        status: 'error' as const, 
-        error: 'Network error' 
-      })));
-    } finally {
-      setIsUploading(false);
+    // Check if all files were uploaded successfully
+    const allSuccess = files.every(f => f.status === 'success');
+    if (allSuccess) {
+      // Close modal after a short delay
+      setTimeout(() => {
+        onUploadComplete();
+        onClose();
+        setFiles([]);
+        setTags('');
+      }, 2500);
     }
   };
 
@@ -158,59 +286,92 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
 
   if (!isOpen) return null;
 
+  // Show loading screen during upload
+  if (showLoadingScreen) {
+    return <UploadLoadingScreen message="Uploading your files to the cloud..." />;
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
         
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full max-w-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-gray-700/50"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: 'spring', stiffness: 80 }}
+          className="relative w-full max-w-3xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 dark:border-gray-700/50 overflow-hidden"
         >
+          {/* Glassmorphism background overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-gray-100/20 dark:from-gray-800/20 dark:via-transparent dark:to-gray-900/20" />
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Upload Files
-            </h2>
+          <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/20 dark:border-gray-700/50 backdrop-blur-sm">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Upload Files
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Share your files with beautiful progress tracking
+              </p>
+            </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all duration-200 backdrop-blur-sm"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="relative z-10 p-6 space-y-6">
             {/* Drop Zone */}
-            <div
+            <motion.div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-all backdrop-blur-sm ${
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 backdrop-blur-md overflow-hidden ${
                 isDragOver
-                  ? 'border-primary-400 bg-primary-50/50 dark:bg-primary-900/30 scale-105'
-                  : 'border-gray-300/50 dark:border-gray-600/50 hover:border-primary-400 dark:hover:border-primary-500 bg-white/30 dark:bg-gray-800/30'
+                  ? 'border-primary-400/60 bg-gradient-to-br from-primary-50/60 to-primary-100/40 dark:from-primary-900/40 dark:to-primary-800/30 scale-105 shadow-lg'
+                  : 'border-gray-300/40 dark:border-gray-600/40 hover:border-primary-400/50 dark:hover:border-primary-500/50 bg-gradient-to-br from-white/40 to-gray-50/30 dark:from-gray-800/40 dark:to-gray-900/30 hover:shadow-md'
               }`}
             >
-              <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <div className="mt-4">
-                <p className="text-lg font-medium text-gray-900 dark:text-white">
-                  Drop files here or click to browse
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Maximum file size: 100MB per file
-                </p>
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-400/10 via-transparent to-secondary-400/10 opacity-0 hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="relative z-10">
+                <motion.div
+                  animate={isDragOver ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 80 }}
+                >
+                  <ArrowUpTrayIcon className="mx-auto h-16 w-16 text-primary-500 dark:text-primary-400" />
+                </motion.div>
+
+                <div className="mt-6">
+                  <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {isDragOver ? 'Drop files here!' : 'Upload your files'}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Drag and drop files here, or click to browse
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
+                    Maximum file size: 100MB per file
+                  </p>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                    Choose Files
+                  </Button>
+                </div>
               </div>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Choose Files
-              </Button>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -218,7 +379,7 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                 onChange={handleFileSelect}
                 className="hidden"
               />
-            </div>
+            </motion.div>
 
             {/* Tags Input */}
             <div>
@@ -234,6 +395,81 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
               />
             </div>
 
+            {/* Bucket Selection - only show if user has access to both */}
+            {userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Storage Destination
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBucket('platform')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      selectedBucket === 'platform'
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <CloudArrowUpIcon className={`h-6 w-6 ${
+                        selectedBucket === 'platform'
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-sm font-medium ${
+                        selectedBucket === 'platform'
+                          ? 'text-primary-900 dark:text-primary-100'
+                          : 'text-gray-900 dark:text-white'
+                      }`}>
+                        Platform Storage
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        DRIVN managed • 1GB limit per file
+                      </p>
+                      {selectedBucket === 'platform' && files.some(f => f.file.size > 1024 * 1024 * 1024) && (
+                        <p className="text-xs text-red-500 mt-1">
+                          ⚠️ Some files exceed 1GB limit
+                        </p>
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBucket('user')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      selectedBucket === 'user'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <CloudArrowUpIcon className={`h-6 w-6 ${
+                        selectedBucket === 'user'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-sm font-medium ${
+                        selectedBucket === 'user'
+                          ? 'text-blue-900 dark:text-blue-100'
+                          : 'text-gray-900 dark:text-white'
+                      }`}>
+                        Personal S3
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Your bucket • No file size limit
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* File List */}
             {files.length > 0 && (
               <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -241,65 +477,138 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                   Files to upload ({files.length})
                 </h3>
                 {files.map((uploadFile) => (
-                  <div
+                  <motion.div
                     key={uploadFile.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg border border-white/20 dark:border-gray-700/30"
                   >
-                    <div className="flex items-center flex-1 min-w-0">
-                      <DocumentIcon className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {uploadFile.file.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatFileSize(uploadFile.file.size)}
-                        </p>
-                        {uploadFile.status === 'error' && uploadFile.error && (
-                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                            {uploadFile.error}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <DocumentIcon className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {uploadFile.file.name}
                           </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatFileSize(uploadFile.file.size)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center ml-3">
+                        {uploadFile.status === 'uploading' && (
+                          <CircularProgress
+                            progress={uploadFile.progress}
+                            size={24}
+                            strokeWidth={2}
+                            glassmorphism
+                          />
+                        )}
+                        {uploadFile.status === 'success' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 80 }}
+                          >
+                            <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                          </motion.div>
+                        )}
+                        {uploadFile.status === 'error' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 80 }}
+                          >
+                            <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
+                          </motion.div>
+                        )}
+                        {uploadFile.status === 'pending' && (
+                          <button
+                            onClick={() => removeFile(uploadFile.id)}
+                            className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
                         )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center ml-3">
-                      {uploadFile.status === 'uploading' && (
-                        <LoadingSpinner size="sm" />
-                      )}
-                      {uploadFile.status === 'success' && (
-                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                      )}
-                      {uploadFile.status === 'error' && (
-                        <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
-                      )}
-                      {uploadFile.status === 'pending' && (
-                        <button
-                          onClick={() => removeFile(uploadFile.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+
+                    {/* Progress bar for uploading files */}
+                    {uploadFile.status === 'uploading' && (
+                      <div className="space-y-1">
+                        <ProgressBar
+                          progress={uploadFile.progress}
+                          size="sm"
+                          glassmorphism
+                          animated
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                          <span>Uploading...</span>
+                          <span>{uploadFile.progress}%</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error message */}
+                    {uploadFile.status === 'error' && uploadFile.error && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800"
+                      >
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          {uploadFile.error}
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* Success message */}
+                    {uploadFile.status === 'success' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800"
+                      >
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Upload complete!
+                        </p>
+                      </motion.div>
+                    )}
+                  </motion.div>
                 ))}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
-            <Button variant="outline" onClick={onClose} disabled={isUploading}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={uploadFiles}
-              disabled={!canUpload}
-              loading={isUploading}
-            >
-              {allSuccess ? 'Upload Complete!' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
-            </Button>
+          <div className="relative z-10 flex items-center justify-between p-6 border-t border-white/20 dark:border-gray-700/50 backdrop-blur-sm">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {files.length > 0 && (
+                <span>
+                  {files.filter(f => f.status === 'success').length} of {files.length} files uploaded
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isUploading}
+                className="backdrop-blur-sm bg-white/20 dark:bg-gray-800/20 border-white/30 dark:border-gray-700/30"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={uploadFiles}
+                disabled={!canUpload}
+                loading={isUploading}
+                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                {allSuccess ? '✨ Upload Complete!' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
+              </Button>
+            </div>
           </div>
         </motion.div>
       </div>
