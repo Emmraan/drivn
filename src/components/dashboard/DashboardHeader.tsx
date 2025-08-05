@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
 import Button from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import { isUserAdmin, getUserRole } from '@/utils/clientAuth';
 import {
   Bars3Icon,
   UserCircleIcon,
@@ -35,6 +36,10 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Use client-side utilities to check admin status
+  const isAdmin = isUserAdmin(user);
+  const userRole = getUserRole(user);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -120,7 +125,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                     {user.name}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {user.role || 'User'}
+                    {userRole}
                   </div>
                 </div>
 
@@ -163,7 +168,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {user.email}
                           </p>
-                          {user.isAdmin && (
+                          {isAdmin && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 mt-1">
                               <ShieldCheckIcon className="h-3 w-3 mr-1" />
                               Admin
@@ -186,7 +191,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                       </motion.button>
 
                       {/* Admin Dashboard - only show for admin users */}
-                      {user.isAdmin && (
+                      {isAdmin && (
                         <motion.button
                           onClick={handleAdminDashboard}
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"

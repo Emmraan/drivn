@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { isAdminEmail } from '@/auth/middleware/adminMiddleware';
 
 interface User {
   _id?: string;
@@ -34,21 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'loading') return;
 
     if (session?.user) {
-      const isAdmin = isAdminEmail(session.user.email!);
-      setUser({
-        _id: session.user.id,
-        email: session.user.email!,
-        name: session.user.name!,
-        image: session.user.image || undefined,
-        emailVerified: new Date(),
-        role: isAdmin ? 'Admin' : 'User',
-        isAdmin,
-      });
-    } else {
+      // For session-based auth, we'll fetch the full user data including admin status via API
       checkAuthStatus();
+    } else {
+      setUser(null);
+      setLoading(false);
     }
-
-    setLoading(false);
   }, [session, status]);
 
   const checkAuthStatus = async () => {
@@ -57,9 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check error:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
