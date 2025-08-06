@@ -1,11 +1,12 @@
-import CryptoJS from 'crypto-js';
+import CryptoJS from "crypto-js";
 
 /**
  * Encryption utilities for securing sensitive data like S3 credentials
  * Uses AES-256 encryption with user-specific keys derived from user ID and app secret
  */
 
-const APP_SECRET = process.env.ENCRYPTION_SECRET || 'fallback-secret-key-change-in-production';
+const APP_SECRET =
+  process.env.ENCRYPTION_SECRET || "fallback-secret-key-change-in-production";
 
 /**
  * Generate a user-specific encryption key
@@ -13,7 +14,7 @@ const APP_SECRET = process.env.ENCRYPTION_SECRET || 'fallback-secret-key-change-
  * @returns Derived encryption key
  */
 function generateUserKey(userId: string): string {
-  return CryptoJS.PBKDF2(userId + APP_SECRET, 'drivn-s3-salt', {
+  return CryptoJS.PBKDF2(userId + APP_SECRET, "drivn-s3-salt", {
     keySize: 256 / 32,
     iterations: 10000,
   }).toString();
@@ -25,15 +26,15 @@ function generateUserKey(userId: string): string {
  * @param userId - User ID for key derivation
  * @returns Encrypted string
  */
-export function encryptData(data: any, userId: string): string {
+export function encryptData<T>(data: T, userId: string): string {
   try {
     const key = generateUserKey(userId);
     const jsonString = JSON.stringify(data);
     const encrypted = CryptoJS.AES.encrypt(jsonString, key).toString();
     return encrypted;
   } catch (error) {
-    console.error('Encryption error:', error);
-    throw new Error('Failed to encrypt data');
+    console.error("Encryption error:", error);
+    throw new Error("Failed to encrypt data");
   }
 }
 
@@ -43,20 +44,23 @@ export function encryptData(data: any, userId: string): string {
  * @param userId - User ID for key derivation
  * @returns Decrypted and parsed data
  */
-export function decryptData<T = any>(encryptedData: string, userId: string): T {
+export function decryptData<T = unknown>(
+  encryptedData: string,
+  userId: string
+): T {
   try {
     const key = generateUserKey(userId);
     const decryptedBytes = CryptoJS.AES.decrypt(encryptedData, key);
     const decryptedString = decryptedBytes.toString(CryptoJS.enc.Utf8);
-    
+
     if (!decryptedString) {
-      throw new Error('Failed to decrypt data - invalid key or corrupted data');
+      throw new Error("Failed to decrypt data - invalid key or corrupted data");
     }
-    
-    return JSON.parse(decryptedString);
+
+    return JSON.parse(decryptedString) as T;
   } catch (error) {
-    console.error('Decryption error:', error);
-    throw new Error('Failed to decrypt data');
+    console.error("Decryption error:", error);
+    throw new Error("Failed to decrypt data");
   }
 }
 
@@ -64,10 +68,10 @@ export function decryptData<T = any>(encryptedData: string, userId: string): T {
  * S3 Configuration interface
  */
 export interface S3Config {
+  bucketName: string;
   accessKeyId: string;
   secretAccessKey: string;
   region: string;
-  bucket: string;
   endpoint?: string;
   forcePathStyle?: boolean;
 }
@@ -88,7 +92,10 @@ export function encryptS3Config(s3Config: S3Config, userId: string): string {
  * @param userId - User ID for decryption
  * @returns Decrypted S3 configuration
  */
-export function decryptS3Config(encryptedConfig: string, userId: string): S3Config {
+export function decryptS3Config(
+  encryptedConfig: string,
+  userId: string
+): S3Config {
   return decryptData<S3Config>(encryptedConfig, userId);
 }
 
@@ -97,45 +104,59 @@ export function decryptS3Config(encryptedConfig: string, userId: string): S3Conf
  * @param config - S3 configuration to validate
  * @returns Validation result
  */
-export function validateS3Config(config: any): { valid: boolean; errors: string[] } {
+export function validateS3Config(config: S3Config): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
-  
-  if (!config || typeof config !== 'object') {
-    errors.push('Configuration must be an object');
+
+  if (!config || typeof config !== "object") {
+    errors.push("Configuration must be an object");
     return { valid: false, errors };
   }
-  
-  // Required fields
-  const requiredFields = ['accessKeyId', 'secretAccessKey', 'region', 'bucket'];
+
+  const requiredFields = [
+    "accessKeyId",
+    "secretAccessKey",
+    "region",
+    "bucketName",
+    "endpoint",
+    "forcePathStyle",
+  ];
   for (const field of requiredFields) {
-    if (!config[field] || typeof config[field] !== 'string' || config[field].trim() === '') {
+    const value = config[field as keyof S3Config];
+    if (!value || typeof value !== "string" || value.trim() === "") {
       errors.push(`${field} is required and must be a non-empty string`);
     }
   }
-  
+
   // Optional endpoint validation
-  if (config.endpoint && typeof config.endpoint !== 'string') {
-    errors.push('endpoint must be a string if provided');
+  if (config.endpoint && typeof config.endpoint !== "string") {
+    errors.push("endpoint must be a string if provided");
   }
-  
+
   // Validate region format (basic check)
   if (config.region && !/^[a-z0-9-]+$/.test(config.region)) {
-    errors.push('region must contain only lowercase letters, numbers, and hyphens');
+    errors.push(
+      "region must contain only lowercase letters, numbers, and hyphens"
+    );
   }
-  
+
   // Validate bucket name (basic S3 bucket naming rules)
-  if (config.bucket) {
-    if (config.bucket.length < 3 || config.bucket.length > 63) {
-      errors.push('bucket name must be between 3 and 63 characters');
+  if (config.bucketName) {
+    if (config.bucketName.length < 3 || config.bucketName.length > 63) {
+      errors.push("bucket name must be between 3 and 63 characters");
     }
-    if (!/^[a-z0-9.-]+$/.test(config.bucket)) {
-      errors.push('bucket name can only contain lowercase letters, numbers, dots, and hyphens');
+    if (!/^[a-z0-9.-]+$/.test(config.bucketName)) {
+      errors.push(
+        "bucket name can only contain lowercase letters, numbers, dots, and hyphens"
+      );
     }
-    if (config.bucket.startsWith('.') || config.bucket.endsWith('.')) {
-      errors.push('bucket name cannot start or end with a dot');
+    if (config.bucketName.startsWith(".") || config.bucketName.endsWith(".")) {
+      errors.push("bucket name cannot start or end with a dot");
     }
   }
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -144,13 +165,17 @@ export function validateS3Config(config: any): { valid: boolean; errors: string[
  * @param config - S3 configuration
  * @returns Sanitized config safe for logging
  */
-export function sanitizeS3ConfigForLogging(config: S3Config): Partial<S3Config> {
+export function sanitizeS3ConfigForLogging(
+  config: S3Config
+): Partial<S3Config> {
   return {
     region: config.region,
-    bucket: config.bucket,
+    bucketName: config.bucketName,
     endpoint: config.endpoint,
     forcePathStyle: config.forcePathStyle,
-    accessKeyId: config.accessKeyId ? `${config.accessKeyId.substring(0, 4)}***` : undefined,
-    secretAccessKey: config.secretAccessKey ? '***' : undefined,
+    accessKeyId: config.accessKeyId
+      ? `${config.accessKeyId.substring(0, 4)}***`
+      : undefined,
+    secretAccessKey: config.secretAccessKey ? "***" : undefined,
   };
 }

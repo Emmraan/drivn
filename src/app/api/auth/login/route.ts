@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: result.success,
         message: result.message,
-        requiresVerification: (result as any).requiresVerification || false,
+        requiresVerification: (result as { requiresVerification?: boolean }).requiresVerification || false,
       }, { status: 401 });
     }
   } catch (error) {

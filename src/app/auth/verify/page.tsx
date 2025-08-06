@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
@@ -10,9 +10,10 @@ import { CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24
 interface VerificationState {
   status: 'loading' | 'success' | 'error' | 'expired';
   message: string;
+  error?: string;
 }
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [verificationState, setVerificationState] = useState<VerificationState>({
@@ -74,7 +75,8 @@ export default function VerifyEmailPage() {
     } catch (error) {
       setVerificationState({
         status: 'error',
-        message: 'An error occurred while verifying your email. Please try again.'
+        message: 'An error occurred while verifying your email. Please try again.',
+        error: error as string
       });
     }
   };
@@ -111,7 +113,8 @@ export default function VerifyEmailPage() {
     } catch (error) {
       setVerificationState({
         status: 'error',
-        message: 'An error occurred while resending verification email.'
+        message: 'An error occurred while resending verification email.',
+        error: error as string
       });
     }
   };
@@ -236,5 +239,27 @@ export default function VerifyEmailPage() {
         </motion.div>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <div className="text-center p-8">
+            <ArrowPathIcon className="h-12 w-12 text-primary-600 mx-auto mb-4 animate-spin" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Loading...
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please wait while we load the verification page.
+            </p>
+          </div>
+        </Card>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

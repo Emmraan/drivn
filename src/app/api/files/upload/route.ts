@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
         userBucketMaxFileSize: userBucketLimit,
         maxFiles: 10, // Max files per upload
         canUseDrivnS3: user.canUseDrivnS3 || false,
-        hasOwnS3Config: !!(user.s3Config?.bucket && user.s3Config?.accessKeyId),
+        hasOwnS3Config: !!(user.s3Config?.bucketName && user.s3Config?.accessKeyId),
         allowedTypes: [
           // Images
           'image/jpeg',

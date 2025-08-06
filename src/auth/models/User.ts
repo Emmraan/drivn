@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
   _id: string;
@@ -7,7 +7,7 @@ export interface IUser extends Document {
   name: string;
   image?: string;
   emailVerified?: Date;
-  provider: 'credentials' | 'google';
+  provider: "credentials" | "google";
   googleId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -18,7 +18,7 @@ export interface IUser extends Document {
     accessKeyId?: string;
     secretAccessKey?: string;
     region?: string;
-    bucket?: string;
+    bucketName?: string;
     endpoint?: string;
   };
 }
@@ -33,8 +33,8 @@ const UserSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: function(this: IUser) {
-      return this.provider === 'credentials';
+    required: function (this: IUser) {
+      return this.provider === "credentials";
     },
   },
   name: {
@@ -50,8 +50,8 @@ const UserSchema = new Schema<IUser>({
   },
   provider: {
     type: String,
-    enum: ['credentials', 'google'],
-    default: 'credentials',
+    enum: ["credentials", "google"],
+    default: "credentials",
   },
   googleId: {
     type: String,
@@ -74,7 +74,7 @@ const UserSchema = new Schema<IUser>({
     accessKeyId: String,
     secretAccessKey: String,
     region: String,
-    bucket: String,
+    bucketName: String,
     endpoint: String,
   },
 }, {
@@ -83,4 +83,5 @@ const UserSchema = new Schema<IUser>({
 
 UserSchema.index({ provider: 1 });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+export default mongoose.models.User ||
+  mongoose.model<IUser>("User", UserSchema);

@@ -71,7 +71,7 @@ export async function createS3Client(
     
     console.log('S3 client created successfully for user:', userId, {
       region: s3Config.region,
-      bucket: s3Config.bucket,
+      bucketName: s3Config.bucketName,
       endpoint: s3Config.endpoint || 'AWS S3',
     });
     
@@ -150,7 +150,7 @@ export async function getS3BucketName(
   request?: NextRequest
 ): Promise<string | null> {
   const config = await getS3Config(userId, request);
-  return config?.bucket || null;
+  return config?.bucketName || null;
 }
 
 /**
@@ -276,4 +276,69 @@ export async function getS3Client(
  */
 export function invalidateS3Client(userId: string): void {
   s3ClientManager.removeClient(userId);
+}
+
+/**
+ * Get S3 client with forced bucket type
+ * @param userId - User ID
+ * @param forceDrivn - Force use of DRIVN S3 if true, user S3 if false
+ * @returns S3Client or null
+ */
+export async function getS3ClientForced(
+  userId: string,
+  forceDrivn: boolean
+): Promise<S3Client | null> {
+  try {
+    await connectDB();
+    const user = await User.findById(userId);
+
+    if (forceDrivn) {
+      // Force use of DRIVN S3
+      if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
+        return drivnS3Service.getClient();
+      }
+      return null;
+    } else {
+      // Force use of user's personal S3
+      const s3Config = await S3ConfigService.getS3Config(userId);
+      if (!s3Config) {
+        return null;
+      }
+      return createS3ClientWithConfig(s3Config);
+    }
+  } catch (error) {
+    console.error('Error creating forced S3 client:', error);
+    return null;
+  }
+}
+
+/**
+ * Get S3 bucket name with forced bucket type
+ * @param userId - User ID
+ * @param forceDrivn - Force use of DRIVN S3 if true, user S3 if false
+ * @returns Bucket name or null
+ */
+export async function getS3BucketNameForced(
+  userId: string,
+  forceDrivn: boolean
+): Promise<string | null> {
+  try {
+    await connectDB();
+    const user = await User.findById(userId);
+
+    if (forceDrivn) {
+      // Force use of DRIVN S3
+      if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
+        return drivnS3Service.getConfig()?.bucketName || null;
+      }
+      return null;
+    } else {
+      // Force use of user's personal S3
+      const s3Config = await S3ConfigService.getS3Config(userId);
+      return s3Config?.bucketName || null;
+    }
+  } catch (error) {
+    console.error('Error getting forced S3 bucket name:', error);
+    return null;
+  }
 }

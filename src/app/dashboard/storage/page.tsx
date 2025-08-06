@@ -58,18 +58,6 @@ export default function StoragePage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getUsagePercentage = () => {
-    if (!stats || stats.storageQuota === 0) return 0;
-    return Math.round((stats.storageUsed / stats.storageQuota) * 100);
-  };
-
-  const getUsageColor = () => {
-    const percentage = getUsagePercentage();
-    if (percentage >= 90) return 'bg-red-500';
-    if (percentage >= 75) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
   const getBucketTypeInfo = () => {
     if (!stats) return { icon: ServerIcon, text: 'Unknown', color: 'text-gray-500' };
     
@@ -276,7 +264,7 @@ export default function StoragePage() {
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You're using your own S3 bucket with no storage limits imposed by DRIVN.
+                  You&apos;re using your own S3 bucket with no storage limits imposed by DRIVN.
                 </p>
               </div>
             </div>

@@ -35,9 +35,9 @@ export default function AdminDashboardPage() {
       if (data.success) {
         const users = data.data.users;
         const totalUsers = users.length;
-        const drivnUsers = users.filter((user: any) => user.canUseDrivnS3).length;
-        const totalFiles = users.reduce((sum: number, user: any) => sum + user.stats.totalFiles, 0);
-        const totalStorage = users.reduce((sum: number, user: any) => sum + user.stats.totalSize, 0);
+        const drivnUsers = users.filter((user: { canUseDrivnS3: boolean }) => user.canUseDrivnS3).length;
+        const totalFiles = users.reduce((sum: number, user: { stats: { totalFiles: number } }) => sum + user.stats.totalFiles, 0);
+        const totalStorage = users.reduce((sum: number, user: { stats: { totalSize: number } }) => sum + user.stats.totalSize, 0);
 
         setStats({
           totalUsers,
@@ -145,9 +145,9 @@ export default function AdminDashboardPage() {
                   className={`text-sm font-medium ${
                     stat.changeType === 'positive'
                       ? 'text-green-600 dark:text-green-400'
-                      : stat.changeType === 'negative'
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-gray-600 dark:text-gray-400'
+                      : stat.changeType === 'neutral'
+                      ? 'text-gray-600 dark:text-gray-400'
+                      : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {stat.change}

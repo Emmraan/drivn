@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { accessKeyId, secretAccessKey, region, bucket, endpoint, forcePathStyle } = body;
+    const { accessKeyId, secretAccessKey, region, bucketName, endpoint, forcePathStyle } = body;
 
     // Validate required fields
-    if (!accessKeyId || !secretAccessKey || !region || !bucket) {
+    if (!accessKeyId || !secretAccessKey || !region || !bucketName) {
       return NextResponse.json(
         { 
           success: false, 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       accessKeyId: accessKeyId.trim(),
       secretAccessKey: secretAccessKey.trim(),
       region: region.trim(),
-      bucket: bucket.trim(),
+      bucketName: bucketName.trim(),
       endpoint: endpoint?.trim() || undefined,
       forcePathStyle: forcePathStyle || false,
     };
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Test connection without saving
     const testResult = await S3ConfigService.testS3Connection(s3Config);
-    
+
     if (testResult.success) {
       return NextResponse.json(testResult, { status: 200 });
     } else {

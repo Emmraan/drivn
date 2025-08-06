@@ -116,7 +116,7 @@ export default function ComparisonSection() {
                       <td className="py-4 px-6 font-medium text-gray-900 dark:text-white">
                         {feature}
                       </td>
-                      {providers.map((provider, providerIndex) => (
+                      {providers.map((provider) => (
                         <td key={provider.name} className="py-4 px-6 text-center">
                           {provider.features[featureIndex] ? (
                             <CheckIcon

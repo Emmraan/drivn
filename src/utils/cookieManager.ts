@@ -7,7 +7,7 @@ import { encryptData, decryptData } from './encryption';
  */
 
 const COOKIE_NAME = 'drivn_s3_config';
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
 /**
  * Cookie options for secure storage
@@ -26,10 +26,20 @@ const getCookieOptions = () => ({
  * @param userId - User ID for encryption
  * @param s3Config - S3 configuration to encrypt and store
  */
+
+interface S3Config {
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  bucketName: string;
+  endpoint?: string;
+  forcePathStyle?: boolean;
+}
+
 export function setS3ConfigCookie(
   response: NextResponse,
   userId: string,
-  s3Config: any
+  s3Config: S3Config
 ): void {
   try {
     const encryptedConfig = encryptData(s3Config, userId);
@@ -50,7 +60,7 @@ export function setS3ConfigCookie(
  * @param userId - User ID for decryption
  * @returns Decrypted S3 configuration or null if not found
  */
-export function getS3ConfigFromCookie<T = any>(
+export function getS3ConfigFromCookie<T = S3Config>(
   request: NextRequest,
   userId: string
 ): T | null {

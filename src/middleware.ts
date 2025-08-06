@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
     try {
       const verified = await jwtVerify(token, JWT_SECRET);
       isTokenValid = !!verified;
-      userEmail = (verified.payload as any).email || '';
+      userEmail = (verified.payload as { email?: string }).email || '';
     } catch (err) {
       console.warn('JWT verification failed:', err);
     }

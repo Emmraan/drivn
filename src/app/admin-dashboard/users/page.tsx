@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     loadUsers();
-  }, [page, searchQuery]);
+  },);
 
   const loadUsers = async () => {
     try {

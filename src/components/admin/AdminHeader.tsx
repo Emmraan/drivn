@@ -2,13 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
-import Button from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import { isUserAdmin, getUserRole } from '@/utils/clientAuth';
+import { isUserAdmin } from '@/utils/clientAuth';
 import {
   Bars3Icon,
   UserCircleIcon,
@@ -16,7 +14,6 @@ import {
   ChevronDownIcon,
   ShieldCheckIcon,
   CogIcon,
-  UserIcon,
   HomeIcon,
 } from '@heroicons/react/24/outline';
 
@@ -37,9 +34,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Use client-side utilities to check admin status
-  const isAdmin = isUserAdmin(user);
-  const userRole = getUserRole(user);
+  isUserAdmin(user);
 
   // Close dropdown when clicking outside
   useEffect(() => {

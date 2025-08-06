@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import LoginForm from '@/auth/components/LoginForm';
@@ -8,7 +8,7 @@ import { useAuth } from '@/auth/context/AuthContext';
 import { LoginFormSkeleton } from '@/components/ui/SkeletonLoader';
 import { AuthPageTransition } from '@/components/ui/PageTransition';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -91,7 +91,7 @@ export default function LoginPage() {
           className="text-center mt-4"
         >
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               onClick={() => router.push('/signup')}
               className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
@@ -103,5 +103,13 @@ export default function LoginPage() {
       </div>
     </div>
     </AuthPageTransition>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormSkeleton />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

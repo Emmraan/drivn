@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { validateName, validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
 import debounce from '@/utils/debounce';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,28 +33,28 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
   const [success, setSuccess] = useState('');
   const { signup } = useAuth();
 
-  const debouncedValidateName = useCallback(
+  const debouncedValidateName = useMemo(() =>
     debounce((value: string) => {
       setNameError(validateName(value));
     }, 500),
-    []
+    [setNameError]
   );
 
-  const debouncedValidateEmail = useCallback(
+  const debouncedValidateEmail = useMemo(() =>
     debounce((value: string) => {
       setEmailError(validateEmail(value));
     }, 500),
-    []
+    [setEmailError]
   );
 
-  const debouncedValidatePassword = useCallback(
+  const debouncedValidatePassword = useMemo(() =>
     debounce((value: string) => {
       setPasswordError(validatePassword(value));
     }, 500),
-    []
+    [setPasswordError]
   );
 
-  const debouncedValidateConfirmPassword = useCallback(
+  const debouncedValidateConfirmPassword = useMemo(() =>
     debounce((value: string) => {
       setConfirmPasswordError(validateConfirmPassword(password, value));
     }, 500),
@@ -120,6 +120,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
       }
     } catch (error) {
       setError('An unexpected error occurred');
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -130,6 +131,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
       setError('Failed to sign in with Google');
+      console.error(error);
     }
   };
 

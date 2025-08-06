@@ -2,7 +2,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
 
-export const authOptions: any = {
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -10,7 +10,7 @@ export const authOptions: any = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }: { user: any; account: any }) {
+    async signIn({ user, account }: { user: { email: string; name: string; image?: string }; account: { provider: string; providerAccountId: string } | null }) {
       if (account?.provider === 'google') {
         try {
           await connectDB();
@@ -49,7 +49,7 @@ export const authOptions: any = {
 
       return true;
     },
-    async jwt({ token, user, account }: { token: any; user: any; account: any }) {
+    async jwt({ token, user, account }: { token: { userId?: string; [key: string]: unknown }; user?: { email: string }; account?: { provider: string } | null }) {
       if (account?.provider === 'google' && user) {
         await connectDB();
         const dbUser = await User.findOne({ email: user.email });
@@ -59,7 +59,7 @@ export const authOptions: any = {
       }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: { user?: { id?: string; [key: string]: unknown } }; token: { userId?: string } }) {
       if (token.userId && session.user) {
         session.user.id = token.userId as string;
       }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
@@ -9,7 +9,7 @@ import Folder from '@/models/Folder';
  * GET /api/admin/storage/stats
  * Get storage statistics for admin dashboard
  */
-export const GET = requireAdmin(async (request: NextRequest) => {
+export const GET = requireAdmin(async () => {
   try {
     await connectDB();
 
@@ -93,9 +93,9 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       totalFiles: fileStats[0]?.totalFiles || 0,
       totalFolders,
       totalStorageUsed: fileStats[0]?.totalStorageUsed || 0,
-      platformStorageUsed: storageByBucket.find(b => b._id === 'platform')?.totalSize || 0,
-      userStorageUsed: storageByBucket.find(b => b._id === 'user')?.totalSize || 0,
-      storageByUser: storageByUser.map(user => ({
+      platformStorageUsed: storageByBucket.find((b) => b._id === 'platform')?.totalSize || 0,
+      userStorageUsed: storageByBucket.find((b) => b._id === 'user')?.totalSize || 0,
+      storageByUser: storageByUser.map((user) => ({
         userId: user.userId.toString(),
         userName: user.userName,
         userEmail: user.userEmail,

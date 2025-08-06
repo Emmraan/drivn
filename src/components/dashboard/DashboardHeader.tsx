@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
-import Button from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { isUserAdmin, getUserRole } from '@/utils/clientAuth';
 import {
@@ -15,7 +14,6 @@ import {
   ChevronDownIcon,
   ShieldCheckIcon,
   CogIcon,
-  UserIcon,
 } from '@heroicons/react/24/outline';
 
 interface DashboardHeaderProps {

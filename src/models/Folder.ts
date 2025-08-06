@@ -1,19 +1,21 @@
-import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IFolder extends Document {
   _id: string;
   name: string;
-  userId: Types.ObjectId; // Owner of the folder
-  parentId?: Types.ObjectId; // Parent folder (null for root level)
-  path: string; // Full path for easy navigation
+  userId: Types.ObjectId;
+  parentId?: Types.ObjectId;
+  path: string;
   isPublic: boolean;
-  color?: string; // Optional folder color for UI
+  color?: string;
   description?: string;
-  fileCount: number; // Cached count of files in this folder
-  folderCount: number; // Cached count of subfolders
-  totalSize: number; // Cached total size of all files in this folder
+  fileCount: number;
+  folderCount: number;
+  totalSize: number;
   createdAt: Date;
   updatedAt: Date;
+  updatePath(): Promise<void>;
+  getDescendants(): Promise<IFolder[]>;
 }
 
 const FolderSchema = new Schema<IFolder>({
@@ -72,10 +74,10 @@ const FolderSchema = new Schema<IFolder>({
 });
 
 // Indexes for performance
-FolderSchema.index({ userId: 1, parentId: 1 }); // List folders in parent
-FolderSchema.index({ userId: 1, path: 1 }); // Path-based queries
-FolderSchema.index({ userId: 1, name: 1 }); // Search by name
-FolderSchema.index({ createdAt: -1 }); // Recent folders
+FolderSchema.index({ userId: 1, parentId: 1 });
+FolderSchema.index({ userId: 1, path: 1 });
+FolderSchema.index({ userId: 1, name: 1 });
+FolderSchema.index({ createdAt: -1 });
 
 // Compound unique index to prevent duplicate folder names in same parent
 FolderSchema.index({ userId: 1, parentId: 1, name: 1 }, { unique: true });
@@ -124,7 +126,7 @@ FolderSchema.methods.getDescendants = async function() {
 FolderSchema.statics.rebuildPaths = async function(userId?: string) {
   const query = userId ? { userId } : {};
   const folders = await this.find(query).sort({ path: 1 });
-  
+
   for (const folder of folders) {
     await folder.updatePath();
     await folder.save();

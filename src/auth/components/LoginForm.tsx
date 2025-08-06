@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect,useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useAuth } from '@/auth/context/AuthContext';
@@ -30,18 +30,18 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
   const [resendMessage, setResendMessage] = useState('');
   const { login } = useAuth();
 
-  const debouncedValidateEmail = useCallback(
+  const debouncedValidateEmail = useMemo(() =>
     debounce((value: string) => {
       setEmailError(validateEmail(value));
     }, 500),
-    []
+    [setEmailError]
   );
 
-  const debouncedValidatePassword = useCallback(
+  const debouncedValidatePassword = useMemo(() =>
     debounce((value: string) => {
       setPasswordError(validatePassword(value));
     }, 500),
-    []
+    [setPasswordError]
   );
 
   useEffect(() => {
@@ -55,7 +55,6 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Perform immediate validation on submit
     const emailErr = validateEmail(email);
     const passwordErr = validatePassword(password);
 
@@ -74,20 +73,19 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
     try {
       const result = await login(email, password);
       if (result.success) {
-        // Keep loading state active and call success immediately
         onSuccess?.();
-        return; // Don't set loading to false to prevent form flash
+        return;
       } else {
         setError(result.message);
-        // Show resend verification option if user needs email verification
         if ('requiresVerification' in result && result.requiresVerification) {
           setShowResendVerification(true);
         }
         setLoading(false);
       }
     } catch (error) {
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred.');
       setLoading(false);
+      console.error(error);
     }
   };
 
@@ -95,13 +93,14 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
     try {
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
-      setError('Failed to sign in with Google');
+      setError('Failed to sign in with Google.');
+      console.error(error);
     }
   };
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError('Please enter your email address first');
+      setError('Please enter your email address first.');
       return;
     }
 
@@ -128,6 +127,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       }
     } catch (error) {
       setError('Failed to resend verification email. Please try again.');
+      console.error(error);
     } finally {
       setResendLoading(false);
     }
@@ -193,7 +193,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 transition={{ delay: 0.4 }}
               >
                 <Input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   label="Password"
                   placeholder="Enter your password"
                   value={password}
@@ -271,7 +271,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className='w-full flex justify-center'
+                className="w-full flex justify-center"
               >
                 <Button
                   type="submit"
@@ -305,7 +305,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className='w-full flex justify-center'
+                className="w-full flex justify-center"
               >
                 <Button
                   type="button"
@@ -346,7 +346,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 transition={{ delay: 0.8 }}
               >
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{' '}
                   <button
                     onClick={onToggleMode}
                     className="font-medium text-primary-600 hover:text-primary-500 transition-colors"

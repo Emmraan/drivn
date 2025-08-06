@@ -131,7 +131,7 @@ export default function NewFolderPage() {
             Folder Created Successfully!
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Your new folder "{name}" has been created. Redirecting to files page...
+            Your new folder &quot;{name}&quot; has been created. Redirecting to files page...
           </p>
         </motion.div>
       </div>

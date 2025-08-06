@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import { periodicSyncService } from '@/services/periodicSyncService';
 
@@ -6,7 +6,7 @@ import { periodicSyncService } from '@/services/periodicSyncService';
  * POST /api/admin/sync
  * Admin endpoint to manage sync across all users
  */
-export const POST = requireAdmin(async (request: NextRequest) => {
+export const POST = requireAdmin(async (request) => {
   try {
     const body = await request.json();
     const { action } = body;
@@ -71,7 +71,7 @@ export const POST = requireAdmin(async (request: NextRequest) => {
  * GET /api/admin/sync
  * Get sync status for all users
  */
-export const GET = requireAdmin(async (request: NextRequest) => {
+export const GET = requireAdmin(async () => {
   try {
     const status = periodicSyncService.getSyncStatus();
 

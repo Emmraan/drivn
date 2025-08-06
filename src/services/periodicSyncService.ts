@@ -1,6 +1,6 @@
-import { SyncService } from './syncService';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
+import { SyncService } from "./syncService";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
 
 /**
  * Periodic Sync Service
@@ -9,7 +9,7 @@ import User from '@/auth/models/User';
 export class PeriodicSyncService {
   private static instance: PeriodicSyncService;
   private syncIntervals: Map<string, NodeJS.Timeout> = new Map();
-  private readonly DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private readonly DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000;
 
   private constructor() {}
 
@@ -23,15 +23,17 @@ export class PeriodicSyncService {
   /**
    * Start periodic sync for a user
    */
-  public startUserSync(userId: string, intervalMs: number = this.DEFAULT_SYNC_INTERVAL): void {
-    // Clear existing interval if any
+  public startUserSync(
+    userId: string,
+    intervalMs: number = this.DEFAULT_SYNC_INTERVAL
+  ): void {
     this.stopUserSync(userId);
 
     const interval = setInterval(async () => {
       try {
         console.log(`Running periodic sync for user: ${userId}`);
         const result = await SyncService.performFullSync(userId);
-        
+
         if (!result.success) {
           console.error(`Periodic sync failed for user ${userId}:`, result.message);
         } else {
@@ -64,14 +66,13 @@ export class PeriodicSyncService {
   public async startAllUsersSyncs(): Promise<void> {
     try {
       await connectDB();
-      
-      // Get all users who have S3 configuration
+
       const users = await User.find({
         $or: [
-          { 's3Config.bucket': { $exists: true, $ne: null } },
-          { canUseDrivnS3: true }
-        ]
-      }).select('_id');
+          { "s3Config.bucketName": { $exists: true, $ne: null } },
+          { canUseDrivnS3: true },
+        ],
+      }).select("_id");
 
       console.log(`Starting periodic sync for ${users.length} users`);
 
@@ -79,7 +80,7 @@ export class PeriodicSyncService {
         this.startUserSync(user._id.toString());
       }
     } catch (error) {
-      console.error('Error starting periodic syncs for all users:', error);
+      console.error("Error starting periodic syncs for all users:", error);
     }
   }
 
@@ -99,7 +100,7 @@ export class PeriodicSyncService {
    */
   public getSyncStatus(): { userId: string; isActive: boolean }[] {
     const status: { userId: string; isActive: boolean }[] = [];
-    
+
     for (const userId of this.syncIntervals.keys()) {
       status.push({ userId, isActive: true });
     }
@@ -110,16 +111,15 @@ export class PeriodicSyncService {
   /**
    * Perform immediate sync for all users
    */
-  public async syncAllUsersNow(): Promise<{ success: boolean; results: any[] }> {
+  public async syncAllUsersNow(): Promise<{ success: boolean; results: unknown[] }> {
     try {
       await connectDB();
-      
       const users = await User.find({
         $or: [
-          { 's3Config.bucket': { $exists: true, $ne: null } },
-          { canUseDrivnS3: true }
-        ]
-      }).select('_id');
+          { "s3Config.bucketName": { $exists: true, $ne: null } },
+          { canUseDrivnS3: true },
+        ],
+      }).select("_id");
 
       const results = await Promise.allSettled(
         users.map(user => SyncService.performFullSync(user._id.toString()))
@@ -146,5 +146,4 @@ export class PeriodicSyncService {
   }
 }
 
-// Export singleton instance
 export const periodicSyncService = PeriodicSyncService.getInstance();

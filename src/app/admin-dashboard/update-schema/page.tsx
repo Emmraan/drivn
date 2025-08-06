@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import { motion } from 'framer-motion';
 import {
   CogIcon,
@@ -9,7 +9,6 @@ import {
   PencilIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -19,7 +18,7 @@ interface SchemaField {
   name: string;
   type: 'String' | 'Number' | 'Boolean' | 'Date' | 'ObjectId' | 'Array' | 'Mixed';
   required: boolean;
-  default?: any;
+  default?: string | number | boolean | Date | null;
   unique?: boolean;
   index?: boolean;
   description?: string;
@@ -54,7 +53,6 @@ export default function UpdateSchemaPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAddField, setShowAddField] = useState(false);
-  const [editingField, setEditingField] = useState<SchemaField | null>(null);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'warning';
     message: string;
@@ -70,7 +68,7 @@ export default function UpdateSchemaPage() {
 
   useEffect(() => {
     loadModelSchema();
-  }, [selectedModel]);
+  },);
 
   useEffect(() => {
     if (notification) {
@@ -84,7 +82,7 @@ export default function UpdateSchemaPage() {
     try {
       const response = await fetch(`/api/admin/schema/${selectedModel}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setCurrentSchema(data.schema);
       } else {
@@ -113,7 +111,7 @@ export default function UpdateSchemaPage() {
       return;
     }
 
-    if (currentSchema?.fields.some(f => f.name === newField.name)) {
+    if (currentSchema?.fields.some((f) => f.name === newField.name)) {
       setNotification({
         type: 'error',
         message: 'Field name already exists',
@@ -134,7 +132,7 @@ export default function UpdateSchemaPage() {
       description: '',
     });
     setShowAddField(false);
-    
+
     setNotification({
       type: 'success',
       message: 'Field added successfully. Remember to save changes.',
@@ -148,7 +146,7 @@ export default function UpdateSchemaPage() {
 
     const updatedSchema = {
       ...currentSchema!,
-      fields: currentSchema!.fields.filter(f => f.name !== fieldName),
+      fields: currentSchema!.fields.filter((f) => f.name !== fieldName),
     };
 
     setCurrentSchema(updatedSchema);
@@ -172,7 +170,7 @@ export default function UpdateSchemaPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setNotification({
           type: 'success',
@@ -299,7 +297,7 @@ export default function UpdateSchemaPage() {
           <div className="text-sm text-yellow-700 dark:text-yellow-300">
             <p className="font-medium mb-1">⚠️ Caution: Schema Modifications</p>
             <p>
-              Modifying database schemas can affect existing data and application functionality. 
+              Modifying database schemas can affect existing data and application functionality.
               Always backup your database before making changes and test thoroughly in a development environment.
             </p>
           </div>
@@ -409,7 +407,6 @@ export default function UpdateSchemaPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditingField(field)}
                           leftIcon={<PencilIcon className="h-4 w-4" />}
                         >
                           Edit

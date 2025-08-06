@@ -28,11 +28,11 @@ export class DrivnS3Service {
     const accessKeyId = process.env.DRIVN_S3_ACCESS_KEY_ID;
     const secretAccessKey = process.env.DRIVN_S3_SECRET_ACCESS_KEY;
     const region = process.env.DRIVN_S3_REGION;
-    const bucket = process.env.DRIVN_S3_BUCKET;
+    const bucketName = process.env.DRIVN_S3_BUCKET_NAME;
     const endpoint = process.env.DRIVN_S3_ENDPOINT;
     const forcePathStyle = process.env.DRIVN_S3_FORCE_PATH_STYLE === 'true';
 
-    if (!accessKeyId || !secretAccessKey || !region || !bucket) {
+    if (!accessKeyId || !secretAccessKey || !region || !bucketName) {
       console.warn('DRIVN S3 configuration incomplete. Admin-managed storage will not be available.');
       return;
     }
@@ -41,7 +41,7 @@ export class DrivnS3Service {
       accessKeyId,
       secretAccessKey,
       region,
-      bucket,
+      bucketName,
       endpoint,
       forcePathStyle,
     };
@@ -94,7 +94,7 @@ export class DrivnS3Service {
    * @returns string or null if not configured
    */
   public getBucketName(): string | null {
-    return this.config?.bucket || null;
+    return this.config?.bucketName || null;
   }
 
   /**
@@ -108,7 +108,7 @@ export class DrivnS3Service {
 
     return {
       region: this.config.region,
-      bucket: this.config.bucket,
+      bucketName: this.config.bucketName,
       endpoint: this.config.endpoint,
       forcePathStyle: this.config.forcePathStyle,
     };

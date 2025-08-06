@@ -13,7 +13,6 @@ import {
   TrashIcon,
   EyeIcon,
   ArrowDownTrayIcon,
-  DocumentDuplicateIcon,
   EllipsisVerticalIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
@@ -73,7 +72,7 @@ export default function FilesPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Use sync hook for real-time synchronization
-  const { syncStatus, isLoading: isSyncing, performSync, startPeriodicSync, stopPeriodicSync } = useSync();
+  const { syncStatus, isLoading: isSyncing, performSync, startPeriodicSync} = useSync();
 
   const loadFolderContents = useCallback(async (folderId: string) => {
     try {

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import {
   XMarkIcon,
   ArrowDownTrayIcon,
@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/SkeletonLoader';
+import Image from 'next/image';
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -22,42 +23,42 @@ interface FilePreviewModalProps {
   } | null;
 }
 
-export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewModalProps) {
+export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewModalProps) {  
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && file) {
-      loadPreview();
+const loadPreview = useCallback(async () => {
+  if (!file) return;
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    const response = await fetch(`/api/files/${file._id}/preview`);
+    const data = await response.json();
+
+    if (data.success) {
+      setPreviewUrl(data.url);
     } else {
-      setPreviewUrl(null);
-      setError(null);
+      setError(data.message || 'Failed to load preview');
     }
-  }, [isOpen, file]);
+  } catch (error) {
+    console.error('Error loading preview:', error);
+    setError('Failed to load preview');
+  } finally {
+    setLoading(false);
+  }
+}, [file]);
 
-  const loadPreview = async () => {
-    if (!file) return;
-
-    setLoading(true);
+useEffect(() => {
+  if (isOpen && file) {
+    loadPreview();
+  } else {
+    setPreviewUrl(null);
     setError(null);
-
-    try {
-      const response = await fetch(`/api/files/${file._id}/preview`);
-      const data = await response.json();
-
-      if (data.success) {
-        setPreviewUrl(data.url);
-      } else {
-        setError(data.message || 'Failed to load preview');
-      }
-    } catch (error) {
-      console.error('Error loading preview:', error);
-      setError('Failed to load preview');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }
+}, [isOpen, file, loadPreview]);
 
   const handleDownload = async () => {
     if (!file) return;
@@ -88,10 +89,10 @@ export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewM
   };
 
   const isPreviewable = (mimeType: string) => {
-    return mimeType.startsWith('image/') || 
-           mimeType === 'application/pdf' ||
-           mimeType.startsWith('text/') ||
-           mimeType === 'application/json';
+    return mimeType.startsWith('image/') ||
+      mimeType === 'application/pdf' ||
+      mimeType.startsWith('text/') ||
+      mimeType === 'application/json';
   };
 
   if (!isOpen || !file) return null;
@@ -100,7 +101,7 @@ export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewM
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="fixed inset-0 bg-black bg-opacity-75 transition-opacity" onClick={onClose} />
-        
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -190,7 +191,7 @@ export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewM
             ) : previewUrl ? (
               <div className="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 {file.mimeType.startsWith('image/') ? (
-                  <img
+                  <Image
                     src={previewUrl}
                     alt={file.name}
                     className="w-full h-auto max-h-96 object-contain"

@@ -9,12 +9,12 @@ import User from '@/auth/models/User';
  */
 export const PATCH = requireAdmin(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
 
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await request.json();
     const { canUseDrivnS3 } = body;
 

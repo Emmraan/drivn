@@ -180,9 +180,9 @@ export default function ContextMenu({ items, children, className, enableLeftClic
 export function useContextMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [targetItem, setTargetItem] = useState<any>(null);
+  const [targetItem, setTargetItem] = useState<{ _id: string; name: string; [key: string]: unknown } | null>(null);
 
-  const openContextMenu = (e: React.MouseEvent, item?: any, itemType?: 'file' | 'folder') => {
+  const openContextMenu = (e: React.MouseEvent, item?: { _id: string; name: string; [key: string]: unknown } | null, itemType?: 'file' | 'folder') => {
     // For left-click, only allow files
     if (e.type === 'click' && itemType !== 'file') {
       return;
@@ -195,7 +195,7 @@ export function useContextMenu() {
       x: e.clientX,
       y: e.clientY,
     });
-    setTargetItem(item);
+    setTargetItem(item || null);
     setIsOpen(true);
   };
 

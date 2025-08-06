@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -60,14 +60,14 @@ export default function AdminAnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(`/api/admin/analytics?range=${timeRange}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setAnalytics(data.analytics);
       } else {
@@ -79,11 +79,11 @@ export default function AdminAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
 
   useEffect(() => {
     loadAnalytics();
-  }, [timeRange]);
+  }, [timeRange, loadAnalytics]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -206,9 +206,8 @@ export default function AdminAnalyticsPage() {
                   ) : (
                     <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    (analytics?.userGrowth?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-medium ${(analytics?.userGrowth?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {Math.abs(analytics?.userGrowth?.changePercent || 0).toFixed(1)}%
                   </span>
                 </div>
@@ -238,9 +237,8 @@ export default function AdminAnalyticsPage() {
                   ) : (
                     <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    (analytics?.fileUploads?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-medium ${(analytics?.fileUploads?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {Math.abs(analytics?.fileUploads?.changePercent || 0).toFixed(1)}%
                   </span>
                 </div>
@@ -270,9 +268,8 @@ export default function AdminAnalyticsPage() {
                   ) : (
                     <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    (analytics?.storageUsage?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-medium ${(analytics?.storageUsage?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {Math.abs(analytics?.storageUsage?.changePercent || 0).toFixed(1)}%
                   </span>
                 </div>
@@ -302,9 +299,8 @@ export default function AdminAnalyticsPage() {
                   ) : (
                     <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    (analytics?.activeUsers?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-medium ${(analytics?.activeUsers?.changePercent || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {Math.abs(analytics?.activeUsers?.changePercent || 0).toFixed(1)}%
                   </span>
                 </div>
@@ -349,7 +345,7 @@ export default function AdminAnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {analytics?.topUsers?.map((user, index) => (
+                {analytics?.topUsers?.map((user) => (
                   <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -372,12 +368,12 @@ export default function AdminAnalyticsPage() {
                     </td>
                   </tr>
                 )) || (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                      No user data available
-                    </td>
-                  </tr>
-                )}
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                        No user data available
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </table>
           </div>

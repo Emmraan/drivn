@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     loadAnalytics();
-  }, [timeRange]);
+  },);
 
   const loadAnalytics = async () => {
     try {

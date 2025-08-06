@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import TextArea from '@/components/ui/TextArea';
 import { CardSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   CogIcon,
   CloudIcon,
   ShieldCheckIcon,
-  ServerIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ArrowPathIcon,
@@ -103,7 +103,7 @@ export default function AdminSettingsPage() {
     loadSettings();
   }, []);
 
-  const updatePlatformSetting = (key: keyof AdminSettings['platformSettings'], value: any) => {
+  const updatePlatformSetting = (key: keyof AdminSettings['platformSettings'], value: string | number | boolean | string[]) => {
     if (!settings) return;
     setSettings({
       ...settings,
@@ -114,7 +114,7 @@ export default function AdminSettingsPage() {
     });
   };
 
-  const updateStorageSetting = (key: keyof AdminSettings['storageSettings'], value: any) => {
+  const updateStorageSetting = (key: keyof AdminSettings['storageSettings'], value: number | boolean) => {
     if (!settings) return;
     setSettings({
       ...settings,
@@ -125,7 +125,7 @@ export default function AdminSettingsPage() {
     });
   };
 
-  const updateSecuritySetting = (key: keyof AdminSettings['securitySettings'], value: any) => {
+  const updateSecuritySetting = (key: keyof AdminSettings['securitySettings'], value: number | boolean) => {
     if (!settings) return;
     setSettings({
       ...settings,
@@ -134,14 +134,6 @@ export default function AdminSettingsPage() {
         [key]: value,
       },
     });
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   if (loading) {
@@ -271,12 +263,11 @@ export default function AdminSettingsPage() {
                 placeholder="Enter site name"
               />
               
-              <Input
+              <TextArea
                 label="Site Description"
                 value={settings?.platformSettings?.siteDescription || ''}
                 onChange={(e) => updatePlatformSetting('siteDescription', e.target.value)}
                 placeholder="Enter site description"
-                multiline
                 rows={3}
               />
               

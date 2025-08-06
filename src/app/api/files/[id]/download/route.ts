@@ -8,7 +8,7 @@ import { FileService } from '@/services/fileService';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const result = await FileService.getFileDownloadUrl(user._id, id);
 
     if (result.success) {

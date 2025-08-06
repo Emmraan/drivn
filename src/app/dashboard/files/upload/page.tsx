@@ -10,7 +10,6 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   ArrowLeftIcon,
-  FolderIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -106,7 +105,7 @@ export default function UploadPage() {
       setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 0 })));
 
       // Use XMLHttpRequest for progress tracking
-      const result = await new Promise<any>((resolve, reject) => {
+      const result = await new Promise<{ success: boolean; message: string; files?: unknown[] }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
         xhr.upload.addEventListener('progress', (event) => {

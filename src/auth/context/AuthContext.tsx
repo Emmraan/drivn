@@ -16,10 +16,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string; error?: string }>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string; error?: string }>;
   logout: () => Promise<void>;
-  verifyEmail: (token: string) => Promise<{ success: boolean; message: string }>;
+  verifyEmail: (token: string) => Promise<{ success: boolean; message: string; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkJWTAuth = async () => {
     try {
-      // Check if there's a JWT token in cookies
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         const data = await response.json();
@@ -51,15 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (status === 'loading') return;
 
     if (session?.user) {
-      // For session-based auth, we'll fetch the full user data including admin status via API
       checkAuthStatus();
     } else {
-      // Check for JWT token-based auth if no session
       checkJWTAuth();
     }
   }, [session, status]);
-
-
 
   const checkAuthStatus = async () => {
     try {
@@ -94,7 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return data;
     } catch (error) {
-      return { success: false, message: 'Network error occurred' };
+      return {
+        success: false,
+        message: 'Network error occurred.',
+        error: error as string
+      };
     }
   };
 
@@ -109,7 +108,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       return data;
     } catch (error) {
-      return { success: false, message: 'Network error occurred' };
+      return {
+        success: false,
+        message: 'Network error occurred.',
+        error: error as string
+      };
     }
   };
 
@@ -134,7 +137,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       return data;
     } catch (error) {
-      return { success: false, message: 'Network error occurred' };
+      return {
+        success: false,
+        message: 'Network error occurred.',
+        error: error as string
+      };
     }
   };
 

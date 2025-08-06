@@ -151,6 +151,7 @@ export class AuthService {
       await connectDB();
       return await User.findById(decoded.userId).select('-password');
     } catch (error) {
+      console.error('Get user from token error:', error);
       return null;
     }
   }

@@ -1,10 +1,10 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import connectDB from '@/utils/database';
 import File, { IFile } from '@/models/File';
 import Folder, { IFolder } from '@/models/Folder';
 import User from '@/auth/models/User';
-import { getS3Client, getS3BucketName, isUsingDrivnS3 } from '@/utils/s3ClientFactory';
+import { getS3Client, getS3BucketName, getS3ClientForced, getS3BucketNameForced, isUsingDrivnS3 } from '@/utils/s3ClientFactory';
 import { Types } from 'mongoose';
 
 export interface FileUploadData {
@@ -15,7 +15,7 @@ export interface FileUploadData {
   buffer: Buffer;
   folderId?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
   bucketType?: 'platform' | 'user';
 }
 
@@ -39,13 +39,13 @@ export class FileService {
 
       if (fileData.bucketType === 'platform') {
         // Force use of platform bucket
-        s3Client = await getS3Client(userId, true); // Force DRIVN S3
-        bucketName = await getS3BucketName(userId, true);
+        s3Client = await getS3ClientForced(userId, true); // Force DRIVN S3
+        bucketName = await getS3BucketNameForced(userId, true);
         isUsingDrivn = true;
       } else if (fileData.bucketType === 'user') {
         // Force use of user's own bucket
-        s3Client = await getS3Client(userId, false); // Force user's S3
-        bucketName = await getS3BucketName(userId, false);
+        s3Client = await getS3ClientForced(userId, false); // Force user's S3
+        bucketName = await getS3BucketNameForced(userId, false);
         isUsingDrivn = false;
       } else {
         // Default behavior - use existing logic
@@ -252,7 +252,7 @@ export class FileService {
       await connectDB();
 
       let currentFolder: IFolder | null = null;
-      let breadcrumbs: Array<{ id: string; name: string; path: string }> = [
+      const breadcrumbs: Array<{ id: string; name: string; path: string }> = [
         { id: 'root', name: 'My Files', path: '/' }
       ];
 
@@ -378,7 +378,7 @@ export class FileService {
       }
 
       // Check if user has S3 config
-      const hasOwnS3Config = !!(user?.s3Config?.bucket && user?.s3Config?.accessKeyId);
+      const hasOwnS3Config = !!(user?.s3Config?.bucketName && user?.s3Config?.accessKeyId);
 
       return {
         totalFiles: stats.totalFiles,
@@ -692,7 +692,7 @@ export class FileService {
 
       // Get all descendant folders
       const descendants = await folder.getDescendants();
-      const allFolderIds = [folder._id, ...descendants.map(d => d._id)];
+      const allFolderIds = [folder._id, ...descendants.map((d: IFolder) => d._id)];
 
       // Get all files in this folder and its descendants
       const filesToDelete = await File.find({

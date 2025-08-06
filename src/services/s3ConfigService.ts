@@ -1,7 +1,18 @@
-import { S3Client, HeadBucketCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import connectDB from '@/utils/database';
-import User, { IUser } from '@/auth/models/User';
-import { S3Config, encryptS3Config, decryptS3Config, validateS3Config, sanitizeS3ConfigForLogging } from '@/utils/encryption';
+import {
+  S3Client,
+  HeadBucketCommand,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import {
+  S3Config,
+  encryptS3Config,
+  decryptS3Config,
+  validateS3Config,
+  sanitizeS3ConfigForLogging,
+} from "@/utils/encryption";
 
 /**
  * Service for managing user S3 configurations
@@ -13,14 +24,18 @@ export class S3ConfigService {
    * @param config - S3 configuration to test
    * @returns Test result with success status and message
    */
-  static async testS3Connection(config: S3Config): Promise<{ success: boolean; message: string }> {
+  static async testS3Connection(
+    config: S3Config
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Validate configuration first
       const validation = validateS3Config(config);
       if (!validation.valid) {
         return {
           success: false,
-          message: `Configuration validation failed: ${validation.errors.join(', ')}`
+          message: `Configuration validation failed: ${validation.errors.join(
+            ", "
+          )}`,
         };
       }
 
@@ -37,84 +52,121 @@ export class S3ConfigService {
 
       // Test 1: Check if bucket exists and is accessible
       try {
-        await s3Client.send(new HeadBucketCommand({ Bucket: config.bucket }));
-      } catch (error: any) {
-        if (error.name === 'NotFound') {
+        await s3Client.send(new HeadBucketCommand({ Bucket: config.bucketName }));
+      } catch (error) {
+        if (error instanceof Error && error.name === "NotFound") {
           return {
             success: false,
-            message: `Bucket '${config.bucket}' does not exist or is not accessible`
+            message: `Bucket '${config.bucketName}' does not exist or is not accessible`,
           };
         }
-        if (error.name === 'Forbidden') {
+
+        if (error instanceof Error && error.name === "Forbidden") {
           return {
             success: false,
-            message: `Access denied to bucket '${config.bucket}'. Check your credentials and permissions.`
+            message: `Access denied to bucket '${config.bucketName}'. Check your credentials and permissions.`,
           };
         }
-        throw error; // Re-throw other errors
+
+        throw error;
       }
 
       // Test 2: Try to upload a test file
       const testKey = `drivn-test-${Date.now()}.txt`;
-      const testContent = 'DRIVN connection test - safe to delete';
-      
+      const testContent = "DRIVN connection test - safe to delete";
+
       try {
-        await s3Client.send(new PutObjectCommand({
-          Bucket: config.bucket,
-          Key: testKey,
-          Body: testContent,
-          ContentType: 'text/plain',
-        }));
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: config.bucketName,
+            Key: testKey,
+            Body: testContent,
+            ContentType: "text/plain",
+          })
+        );
 
         // Test 3: Clean up test file
-        await s3Client.send(new DeleteObjectCommand({
-          Bucket: config.bucket,
-          Key: testKey,
-        }));
+        await s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: config.bucketName,
+            Key: testKey,
+          })
+        );
 
-        console.log('S3 connection test successful:', sanitizeS3ConfigForLogging(config));
-        
+        console.log(
+          "S3 connection test successful:",
+          sanitizeS3ConfigForLogging(config)
+        );
+
         return {
           success: true,
-          message: 'S3 connection test successful! Your credentials are valid and you have read/write access to the bucket.'
+          message:
+            "S3 connection test successful! Your credentials are valid and you have read/write access to the bucket.",
         };
-      } catch (error: any) {
-        if (error.name === 'AccessDenied') {
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "name" in error &&
+          (error as { name: string }).name === "AccessDenied"
+        ) {
           return {
             success: false,
-            message: 'Bucket is accessible but you do not have write permissions. Please check your IAM policy.'
+            message:
+              "Bucket is accessible but you do not have write permissions. Please check your IAM policy.",
           };
         }
+
         throw error;
       }
-    } catch (error: any) {
-      console.error('S3 connection test failed:', error.message, sanitizeS3ConfigForLogging(config));
-      
-      // Handle common AWS SDK errors
-      if (error.name === 'CredentialsError' || error.name === 'InvalidAccessKeyId') {
+    } catch (error) {
+      const hasMessage =
+        typeof error === "object" && error !== null && "message" in error;
+      const hasName =
+        typeof error === "object" && error !== null && "name" in error;
+      const hasCode =
+        typeof error === "object" && error !== null && "code" in error;
+
+      const errorMessage = hasMessage
+        ? (error as { message: string }).message
+        : "Unknown error";
+      const errorName = hasName ? (error as { name: string }).name : "";
+      const errorCode = hasCode ? (error as { code: string }).code : "";
+
+      console.error(
+        "S3 connection test failed:",
+        errorMessage,
+        sanitizeS3ConfigForLogging(config)
+      );
+
+      if (
+        errorName === "CredentialsError" ||
+        errorName === "InvalidAccessKeyId"
+      ) {
         return {
           success: false,
-          message: 'Invalid access key ID or secret access key'
+          message: "Invalid access key ID or secret access key",
         };
       }
-      
-      if (error.name === 'SignatureDoesNotMatch') {
+
+      if (errorName === "SignatureDoesNotMatch") {
         return {
           success: false,
-          message: 'Invalid secret access key'
+          message: "Invalid secret access key",
         };
       }
-      
-      if (error.name === 'NetworkingError' || error.code === 'ENOTFOUND') {
+
+      if (errorName === "NetworkingError" || errorCode === "ENOTFOUND") {
         return {
           success: false,
-          message: 'Network error: Could not connect to S3 endpoint. Check your endpoint URL and internet connection.'
+          message:
+            "Network error: Could not connect to S3 endpoint. Check your endpoint URL and internet connection.",
         };
       }
-      
+
       return {
         success: false,
-        message: `Connection test failed: ${error.message || 'Unknown error occurred'}`
+        message: `Connection test failed: ${errorMessage}`,
       };
     }
   }
@@ -125,7 +177,10 @@ export class S3ConfigService {
    * @param config - S3 configuration to save
    * @returns Save result
    */
-  static async saveS3Config(userId: string, config: S3Config): Promise<{ success: boolean; message: string }> {
+  static async saveS3Config(
+    userId: string,
+    config: S3Config
+  ): Promise<{ success: boolean; message: string }> {
     try {
       await connectDB();
 
@@ -134,7 +189,9 @@ export class S3ConfigService {
       if (!validation.valid) {
         return {
           success: false,
-          message: `Configuration validation failed: ${validation.errors.join(', ')}`
+          message: `Configuration validation failed: ${validation.errors.join(
+            ", "
+          )}`,
         };
       }
 
@@ -152,31 +209,42 @@ export class S3ConfigService {
       if (!user) {
         return {
           success: false,
-          message: 'User not found'
+          message: "User not found",
         };
       }
 
       user.s3Config = {
         accessKeyId: encryptedConfig, // Store entire encrypted config in accessKeyId field
-        secretAccessKey: '', // Clear other fields for security
-        region: '',
-        bucket: '',
-        endpoint: '',
+        secretAccessKey: "", // Clear other fields for security
+        region: "",
+        bucketName: "",
+        endpoint: "",
       };
 
       await user.save();
 
-      console.log('S3 configuration saved for user:', userId, sanitizeS3ConfigForLogging(config));
+      console.log(
+        "S3 configuration saved for user:",
+        userId,
+        sanitizeS3ConfigForLogging(config)
+      );
 
       return {
         success: true,
-        message: 'S3 configuration saved successfully'
+        message: "S3 configuration saved successfully",
       };
-    } catch (error: any) {
-      console.error('Error saving S3 configuration:', error);
+    } catch (error) {
+      let errorMessage = "Unknown error";
+
+      if (typeof error === "object" && error !== null && "message" in error) {
+        errorMessage = String((error as { message: unknown }).message);
+      }
+
+      console.error("Error saving S3 configuration:", errorMessage);
+
       return {
         success: false,
-        message: 'Failed to save S3 configuration'
+        message: "Failed to save S3 configuration",
       };
     }
   }
@@ -196,10 +264,13 @@ export class S3ConfigService {
       }
 
       // Decrypt the configuration
-      const decryptedConfig = decryptS3Config(user.s3Config.accessKeyId, userId);
+      const decryptedConfig = decryptS3Config(
+        user.s3Config.accessKeyId,
+        userId
+      );
       return decryptedConfig;
-    } catch (error: any) {
-      console.error('Error retrieving S3 configuration:', error);
+    } catch (error) {
+      console.error("Error retrieving S3 configuration:", error);
       return null;
     }
   }
@@ -209,7 +280,9 @@ export class S3ConfigService {
    * @param userId - User ID
    * @returns Delete result
    */
-  static async deleteS3Config(userId: string): Promise<{ success: boolean; message: string }> {
+  static async deleteS3Config(
+    userId: string
+  ): Promise<{ success: boolean; message: string }> {
     try {
       await connectDB();
 
@@ -217,7 +290,7 @@ export class S3ConfigService {
       if (!user) {
         return {
           success: false,
-          message: 'User not found'
+          message: "User not found",
         };
       }
 
@@ -225,17 +298,24 @@ export class S3ConfigService {
       user.s3Config = undefined;
       await user.save();
 
-      console.log('S3 configuration deleted for user:', userId);
+      console.log("S3 configuration deleted for user:", userId);
 
       return {
         success: true,
-        message: 'S3 configuration deleted successfully'
+        message: "S3 configuration deleted successfully",
       };
-    } catch (error: any) {
-      console.error('Error deleting S3 configuration:', error);
+    } catch (error) {
+      // Optional: Extract message safely
+      const errorMessage =
+        typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message: unknown }).message)
+          : "Unknown error";
+
+      console.error("Error deleting S3 configuration:", errorMessage);
+
       return {
         success: false,
-        message: 'Failed to delete S3 configuration'
+        message: "Failed to delete S3 configuration",
       };
     }
   }
@@ -249,9 +329,9 @@ export class S3ConfigService {
     try {
       await connectDB();
       const user = await User.findById(userId);
-      return !!(user?.s3Config?.accessKeyId);
+      return !!user?.s3Config?.accessKeyId;
     } catch (error) {
-      console.error('Error checking S3 configuration:', error);
+      console.error("Error checking S3 configuration:", error);
       return false;
     }
   }

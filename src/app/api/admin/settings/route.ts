@@ -5,7 +5,7 @@ import { requireAdmin } from '@/auth/middleware/adminMiddleware';
  * GET /api/admin/settings
  * Get admin settings
  */
-export const GET = requireAdmin(async (request: NextRequest) => {
+export const GET = requireAdmin(async () => {
   try {
     // For now, return default settings
     // In a real implementation, these would be stored in a database

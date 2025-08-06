@@ -1,16 +1,44 @@
 import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import connectDB from '@/utils/database';
 import File from '@/models/File';
-import Folder from '@/models/Folder';
+import Folder, { IFolder } from '@/models/Folder';
 import { createS3Client, getS3BucketName, isUsingDrivnS3 } from '@/utils/s3ClientFactory';
 import { Types } from 'mongoose';
+
+interface SyncStats {
+  removedFiles?: number;
+  verifiedFiles?: number;
+  errors?: number;
+  [key: string]: unknown;
+}
+
+interface SyncResult {
+  success: boolean;
+  message: string;
+  stats?: SyncStats;
+}
+
+interface FullSyncReport {
+  databaseSync: SyncResult;
+  s3Import: SyncResult;
+  folderSync: SyncResult;
+  folderImport: SyncResult;
+  orphanedFiles: SyncResult;
+  timestamp: string;
+}
+
+interface ConsistencyCheckReport {
+  databaseSync: SyncResult;
+  orphanedS3Files: SyncResult;
+  timestamp: string;
+}
 
 export class SyncService {
   /**
    * Sync database with S3 bucket for a specific user
    * This will remove database entries for files that no longer exist in S3
    */
-  static async syncUserFiles(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
+  static async syncUserFiles(userId: string): Promise<{ success: boolean; message: string; stats?: { verifiedFiles: number; removedFiles: number; errors: number; errorDetails: string[] } }> {
     try {
       await connectDB();
 
@@ -43,14 +71,15 @@ export class SyncService {
 
           await s3Client.send(headCommand);
           verifiedFiles++;
-        } catch (error: any) {
-          if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        } catch (error: unknown) {
+          const s3Error = error as { name?: string; $metadata?: { httpStatusCode?: number }; message?: string };
+          if (s3Error.name === 'NotFound' || s3Error.$metadata?.httpStatusCode === 404) {
             // File doesn't exist in S3, remove from database
             await File.findByIdAndDelete(dbFile._id);
             removedFiles++;
             console.log(`Removed orphaned file from DB: ${dbFile.name} (${dbFile.s3Key})`);
           } else {
-            errors.push(`Error checking file ${dbFile.name}: ${error.message}`);
+            errors.push(`Error checking file ${dbFile.name}: ${s3Error.message || 'Unknown error'}`);
           }
         }
       }
@@ -99,7 +128,7 @@ export class SyncService {
       });
 
       const s3Objects = await s3Client.send(listCommand);
-      const s3Keys = s3Objects.Contents?.map(obj => obj.Key).filter(Boolean) || [];
+      const s3Keys = s3Objects.Contents?.map(obj => obj.Key).filter((key): key is string => Boolean(key)) || [];
 
       // Get all file keys from database
       const dbFiles = await File.find({ userId }).select('s3Key');
@@ -126,7 +155,7 @@ export class SyncService {
    * Import files from S3 that exist but are not in database
    * This handles files uploaded directly to S3
    */
-  static async importOrphanedS3Files(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
+  static async importOrphanedS3Files(userId: string): Promise<{ success: boolean; message: string; stats?: { importedFiles: number; createdFolders: number; errors: number; errorDetails: string[] } }> {
     try {
       await connectDB();
 
@@ -205,11 +234,11 @@ export class SyncService {
             size: s3Object.Size || 0,
             mimeType: mimeType,
             s3Key: s3Object.Key,
-            s3Bucket: bucketName,
+            s3BucketName: bucketName,
             bucketType: isUsingDrivn ? 'drivn' : 'user',
             userId: new Types.ObjectId(userId),
             folderId: folderId ? new Types.ObjectId(folderId) : null,
-            path: this.buildFilePath(keyParts.slice(1)), // Remove userId from path
+            path: this.buildFilePath(keyParts.slice(1)),
             isPublic: false,
             downloadCount: 0,
           });
@@ -224,8 +253,8 @@ export class SyncService {
             });
           }
 
-        } catch (error: any) {
-          errors.push(`Error importing ${s3Object.Key}: ${error.message}`);
+        } catch (error) {
+          errors.push(`Error importing ${s3Object.Key}: ${error}`);
         }
       }
 
@@ -260,7 +289,7 @@ export class SyncService {
         currentPath += `/${folderName}`;
 
         // Check if folder already exists
-        let folder = await Folder.findOne({
+        let folder: IFolder | null = await Folder.findOne({
           userId: new Types.ObjectId(userId),
           parentId: currentParentId ? new Types.ObjectId(currentParentId) : null,
           name: folderName,
@@ -268,7 +297,7 @@ export class SyncService {
 
         if (!folder) {
           // Create the folder
-          folder = new Folder({
+          const newFolder: IFolder = new Folder({
             name: folderName,
             userId: new Types.ObjectId(userId),
             parentId: currentParentId ? new Types.ObjectId(currentParentId) : null,
@@ -279,7 +308,8 @@ export class SyncService {
             totalSize: 0,
           });
 
-          await folder.save();
+          await newFolder.save();
+          folder = newFolder;
 
           // Update parent folder count
           if (currentParentId) {
@@ -289,7 +319,9 @@ export class SyncService {
           }
         }
 
-        currentParentId = folder._id.toString();
+        if (folder) {
+          currentParentId = folder._id.toString();
+        }
       }
 
       return currentParentId;
@@ -336,7 +368,7 @@ export class SyncService {
       }
 
       // Get folder metadata from S3
-      let folderMetadata: any = {};
+      let folderMetadata: Record<string, string> = {};
       try {
         const headCommand = new HeadObjectCommand({
           Bucket: bucketName,
@@ -392,7 +424,7 @@ export class SyncService {
   /**
    * Create folder markers in S3 for database folders that don't exist in S3
    */
-  static async syncFoldersToS3(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
+  static async syncFoldersToS3(userId: string): Promise<{ success: boolean; message: string; stats?: { createdMarkers: number; errors: number; errorDetails: string[] } }> {
     try {
       await connectDB();
 
@@ -425,8 +457,9 @@ export class SyncService {
             }));
             // Folder marker exists, skip
             continue;
-          } catch (error: any) {
-            if (error.name !== 'NotFound' && error.$metadata?.httpStatusCode !== 404) {
+          } catch (error: unknown) {
+            const s3Error = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+            if (s3Error.name !== 'NotFound' && s3Error.$metadata?.httpStatusCode !== 404) {
               throw error; // Re-throw non-404 errors
             }
             // Folder marker doesn't exist, create it
@@ -446,8 +479,8 @@ export class SyncService {
           }));
 
           createdMarkers++;
-        } catch (error: any) {
-          errors.push(`Error creating folder marker for ${folder.path}: ${error.message}`);
+        } catch (error) {
+          errors.push(`Error creating folder marker for ${folder.path}: ${error}`);
         }
       }
 
@@ -472,7 +505,7 @@ export class SyncService {
   /**
    * Sync folders from S3 to database (import folder markers)
    */
-  static async syncFoldersFromS3(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
+  static async syncFoldersFromS3(userId: string): Promise<{ success: boolean; message: string; stats?: { importedFolders: number; errors: number; errorDetails: string[] } }> {
     try {
       await connectDB();
 
@@ -507,8 +540,9 @@ export class SyncService {
         try {
           await this.importFolderMarker(userId, s3Object.Key, s3Client, bucketName);
           importedFolders++;
-        } catch (error: any) {
-          errors.push(`Error importing folder ${s3Object.Key}: ${error.message}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Error importing folder ${s3Object.Key}: ${errorMessage}`);
         }
       }
 
@@ -533,7 +567,7 @@ export class SyncService {
   /**
    * Perform comprehensive bidirectional sync
    */
-  static async performFullSync(userId: string): Promise<{ success: boolean; message: string; report: any }> {
+  static async performFullSync(userId: string): Promise<{ success: boolean; message: string; report: FullSyncReport | null }> {
     try {
       const [
         dbSyncResult,
@@ -581,7 +615,7 @@ export class SyncService {
   /**
    * Perform a full consistency check
    */
-  static async performConsistencyCheck(userId: string): Promise<{ success: boolean; report: any; message: string }> {
+  static async performConsistencyCheck(userId: string): Promise<{ success: boolean; report: ConsistencyCheckReport | null; message: string }> {
     try {
       const [syncResult, orphanedResult] = await Promise.all([
         this.syncUserFiles(userId),
@@ -589,7 +623,7 @@ export class SyncService {
       ]);
 
       const report = {
-        dbSync: syncResult,
+        databaseSync: syncResult,
         orphanedS3Files: orphanedResult,
         timestamp: new Date().toISOString(),
       };

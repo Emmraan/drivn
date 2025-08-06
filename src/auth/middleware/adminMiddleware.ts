@@ -53,10 +53,12 @@ export function isAdminEmail(email: string): boolean {
  * @param handler - Route handler function
  * @returns Wrapped handler that requires admin auth
  */
-export function requireAdmin(handler: (request: NextRequest, ...args: unknown[]) => Promise<Response>) {
-  return async (request: NextRequest, ...args: unknown[]) => {
+export function requireAdmin<T extends unknown[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T) => {
     const admin = await getAuthenticatedAdmin(request);
-    
+
     if (!admin) {
       return Response.json(
         { success: false, message: 'Admin access required' },
@@ -66,7 +68,7 @@ export function requireAdmin(handler: (request: NextRequest, ...args: unknown[])
 
     // Add admin to request object
     (request as NextRequest & { admin: typeof admin }).admin = admin;
-    
+
     return handler(request, ...args);
   };
 }

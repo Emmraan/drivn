@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion} from 'framer-motion';
 import {
   ArrowUpTrayIcon,
   XMarkIcon,
@@ -281,7 +281,6 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
   };
 
   const canUpload = files.length > 0 && !isUploading;
-  const hasErrors = files.some(f => f.status === 'error');
   const allSuccess = files.length > 0 && files.every(f => f.status === 'success');
 
   if (!isOpen) return null;

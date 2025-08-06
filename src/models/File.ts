@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IFile extends Document {
   _id: string;
@@ -6,20 +6,20 @@ export interface IFile extends Document {
   originalName: string;
   size: number;
   mimeType: string;
-  s3Key: string; // S3 object key
-  s3Bucket: string; // Which bucket (user's or DRIVN's)
-  bucketType: 'user' | 'drivn'; // Track bucket origin
-  userId: Types.ObjectId; // Owner of the file
-  folderId?: Types.ObjectId; // Parent folder (null for root level)
-  path: string; // Full path for easy navigation
+  s3Key: string;
+  s3Bucket: string;
+  bucketType: 'user' | 'drivn';
+  userId: Types.ObjectId;
+  folderId?: Types.ObjectId;
+  path: string;
   isPublic: boolean;
   downloadCount: number;
   lastAccessedAt?: Date;
   metadata?: {
-    width?: number; // For images
-    height?: number; // For images
-    duration?: number; // For videos/audio
-    [key: string]: any; // Additional metadata
+    width?: number;
+    height?: number;
+    duration?: number;
+    [key: string]: string | number | boolean | undefined;
   };
   tags?: string[];
   createdAt: Date;
@@ -99,12 +99,12 @@ const FileSchema = new Schema<IFile>({
 });
 
 // Indexes for performance
-FileSchema.index({ userId: 1, folderId: 1 }); // List files in folder
-FileSchema.index({ userId: 1, path: 1 }); // Path-based queries
-FileSchema.index({ userId: 1, name: 1 }); // Search by name
-FileSchema.index({ userId: 1, mimeType: 1 }); // Filter by type
-FileSchema.index({ s3Key: 1 }, { unique: true }); // Ensure unique S3 keys
-FileSchema.index({ createdAt: -1 }); // Recent files
+FileSchema.index({ userId: 1, folderId: 1 });
+FileSchema.index({ userId: 1, path: 1 });
+FileSchema.index({ userId: 1, name: 1 });
+FileSchema.index({ userId: 1, mimeType: 1 });
+// Note: s3Key index is already created by unique: true in field definition
+FileSchema.index({ createdAt: -1 });
 
 // Virtual for file URL (will be implemented in service layer)
 FileSchema.virtual('url').get(function() {

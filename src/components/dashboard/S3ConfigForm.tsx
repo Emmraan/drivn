@@ -54,7 +54,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
 
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState('Custom');
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; error?: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -97,6 +97,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
       setTestResult({
         success: false,
         message: 'Failed to test connection. Please try again.',
+        error: error as string
       });
     } finally {
       setTesting(false);

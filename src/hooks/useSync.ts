@@ -8,8 +8,18 @@ interface SyncStatus {
 interface SyncResult {
   success: boolean;
   message: string;
-  stats?: any;
-  report?: any;
+  stats?: {
+    removedFiles?: number;
+    verifiedFiles?: number;
+    errors?: string[];
+    [key: string]: unknown;
+  };
+  report?: {
+    totalFiles?: number;
+    processedFiles?: number;
+    errors?: string[];
+    [key: string]: unknown;
+  };
 }
 
 export function useSync() {
@@ -118,12 +128,12 @@ export function useSync() {
 
 // Admin hook for managing sync across all users
 export function useAdminSync() {
-  const [allUsersStatus, setAllUsersStatus] = useState<{ activeUsers: number; users: any[] }>({ 
-    activeUsers: 0, 
-    users: [] 
+  const [allUsersStatus, setAllUsersStatus] = useState<{ activeUsers: number; users: { userId: string; isActive: boolean; [key: string]: unknown }[] }>({
+    activeUsers: 0,
+    users: []
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSyncResult, setLastSyncResult] = useState<any>(null);
+  const [lastSyncResult, setLastSyncResult] = useState<{ success: boolean; message: string; data?: unknown } | null>(null);
 
   // Check sync status for all users
   const checkAllUsersStatus = useCallback(async () => {

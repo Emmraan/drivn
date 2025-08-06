@@ -8,8 +8,6 @@ import { StatCardSkeleton, CardSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   CloudIcon,
   ServerIcon,
-  ChartBarIcon,
-  UsersIcon,
   DocumentIcon,
   FolderIcon,
   ExclamationTriangleIcon,
@@ -274,7 +272,7 @@ export default function AdminStoragePage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {stats?.storageByUser?.map((user, index) => (
+                {stats?.storageByUser?.map((user) => (
                   <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
