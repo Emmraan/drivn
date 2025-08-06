@@ -29,6 +29,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
 
+  const checkJWTAuth = async () => {
+    try {
+      // Check if there's a JWT token in cookies
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('JWT auth check error:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -36,10 +54,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // For session-based auth, we'll fetch the full user data including admin status via API
       checkAuthStatus();
     } else {
-      setUser(null);
-      setLoading(false);
+      // Check for JWT token-based auth if no session
+      checkJWTAuth();
     }
   }, [session, status]);
+
+
 
   const checkAuthStatus = async () => {
     try {

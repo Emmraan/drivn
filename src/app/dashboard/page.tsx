@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -54,6 +55,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,11 +94,19 @@ export default function DashboardPage() {
   const handleUploadComplete = () => {
     loadDashboardData(); // Refresh dashboard data
     setShowUploadModal(false);
+    // Redirect to files page after successful upload
+    setTimeout(() => {
+      router.push('/dashboard/files');
+    }, 1000); // Small delay to show success state
   };
 
   const handleFolderCreated = () => {
     loadDashboardData(); // Refresh dashboard data
     setShowCreateFolderModal(false);
+    // Redirect to files page after successful folder creation
+    setTimeout(() => {
+      router.push('/dashboard/files');
+    }, 1000); // Small delay to show success state
   };
 
   const quickActions = getQuickActions(setShowUploadModal, setShowCreateFolderModal);

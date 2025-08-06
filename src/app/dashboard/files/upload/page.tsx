@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import { CircularProgress } from '@/components/ui/ProgressBar';
+import ProgressBar, { CircularProgress } from '@/components/ui/ProgressBar';
 
 interface UploadFile {
   file: File;
@@ -103,14 +103,40 @@ export default function UploadPage() {
       }
 
       // Update all files to uploading status
-      setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
+      setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 0 })));
 
-      const response = await fetch('/api/files/upload', {
-        method: 'POST',
-        body: formData,
+      // Use XMLHttpRequest for progress tracking
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            // Update all files with the same progress since we're uploading as a batch
+            setFiles(prev => prev.map(f => ({ ...f, progress })));
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              resolve(result);
+            } catch (parseError) {
+              reject(parseError);
+            }
+          } else {
+            reject(new Error(`HTTP ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error'));
+        });
+
+        xhr.open('POST', '/api/files/upload');
+        xhr.send(formData);
       });
-
-      const result = await response.json();
 
       if (result.success) {
         // Mark all as success
@@ -193,7 +219,7 @@ export default function UploadPage() {
               Drop files here or click to browse
             </p>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Maximum file size: 100MB per file
+              Select files to upload to your storage
             </p>
             <Button
               variant="primary"
@@ -266,13 +292,29 @@ export default function UploadPage() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Status:</span>
               <span className={`font-medium ${
-                allSuccess ? 'text-green-600' : 
-                isUploading ? 'text-blue-600' : 
+                allSuccess ? 'text-green-600' :
+                isUploading ? 'text-blue-600' :
                 'text-gray-900 dark:text-white'
               }`}>
                 {allSuccess ? 'Complete' : isUploading ? 'Uploading...' : 'Ready'}
               </span>
             </div>
+            {isUploading && files.length > 0 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-600 dark:text-gray-400">Overall Progress:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {files[0]?.progress || 0}%
+                  </span>
+                </div>
+                <ProgressBar
+                  progress={files[0]?.progress || 0}
+                  size="sm"
+                  animated
+                  glassmorphism
+                />
+              </div>
+            )}
           </div>
         </Card>
       </div>

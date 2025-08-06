@@ -333,7 +333,13 @@ export default function FilesPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => performSync('full')}
+            onClick={async () => {
+              const result = await performSync('full');
+              if (result.success) {
+                // Reload folder contents after successful sync
+                loadFolderContents(currentFolderId);
+              }
+            }}
             leftIcon={<ArrowPathIcon className="h-4 w-4" />}
             disabled={isSyncing}
             className="text-gray-600 dark:text-gray-400"

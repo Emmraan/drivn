@@ -37,12 +37,15 @@ export async function POST(request: NextRequest) {
       case 'folders':
         result = await SyncService.syncFoldersToS3(user._id);
         break;
+      case 'folder-import':
+        result = await SyncService.syncFoldersFromS3(user._id);
+        break;
       case 'full':
         result = await SyncService.performFullSync(user._id);
         break;
       default:
         return NextResponse.json(
-          { success: false, message: 'Invalid action. Valid actions: sync, check, orphaned, import, folders, full' },
+          { success: false, message: 'Invalid action. Valid actions: sync, check, orphaned, import, folders, folder-import, full' },
           { status: 400 }
         );
     }

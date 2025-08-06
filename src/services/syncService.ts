@@ -165,8 +165,10 @@ export class SyncService {
         }
 
         try {
-          // Skip folder markers (keys ending with /)
+          // Handle folder markers (keys ending with /)
           if (s3Object.Key.endsWith('/')) {
+            await this.importFolderMarker(userId, s3Object.Key, s3Client, bucketName);
+            createdFolders++;
             continue;
           }
 
@@ -305,6 +307,89 @@ export class SyncService {
   }
 
   /**
+   * Import a folder marker from S3 as a folder in the database
+   */
+  private static async importFolderMarker(
+    userId: string,
+    s3Key: string,
+    s3Client: S3Client,
+    bucketName: string
+  ): Promise<void> {
+    try {
+      // Parse the S3 key to extract folder information
+      const keyParts = s3Key.split('/').filter(part => part); // Remove empty parts
+
+      // Skip if this is just the user root folder
+      if (keyParts.length <= 1) {
+        return;
+      }
+
+      // Remove userId from the path
+      const folderPathParts = keyParts.slice(1);
+      const folderName = folderPathParts[folderPathParts.length - 1];
+      const folderPath = '/' + folderPathParts.join('/');
+
+      // Check if folder already exists in database
+      const existingFolder = await Folder.findOne({ userId, path: folderPath });
+      if (existingFolder) {
+        return; // Folder already exists
+      }
+
+      // Get folder metadata from S3
+      let folderMetadata: any = {};
+      try {
+        const headCommand = new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: s3Key,
+        });
+        const headResult = await s3Client.send(headCommand);
+        folderMetadata = headResult.Metadata || {};
+      } catch (error) {
+        console.warn(`Failed to get metadata for folder ${s3Key}:`, error);
+      }
+
+      // Determine parent folder
+      let parentId: string | null = null;
+      if (folderPathParts.length > 1) {
+        const parentPath = '/' + folderPathParts.slice(0, -1).join('/');
+        const parentFolder = await Folder.findOne({ userId, path: parentPath });
+        if (parentFolder) {
+          parentId = parentFolder._id.toString();
+        }
+      }
+
+      // Create folder in database
+      const folder = new Folder({
+        name: folderMetadata['folder-name'] || folderName,
+        path: folderPath,
+        userId: new Types.ObjectId(userId),
+        parentId: parentId ? new Types.ObjectId(parentId) : null,
+        color: '#3B82F6', // Default blue color
+        description: '',
+        fileCount: 0,
+        folderCount: 0,
+        totalSize: 0,
+        isPublic: false,
+        createdAt: folderMetadata['created-at'] ? new Date(folderMetadata['created-at']) : new Date(),
+      });
+
+      await folder.save();
+
+      // Update parent folder count if applicable
+      if (parentId) {
+        await Folder.findByIdAndUpdate(parentId, {
+          $inc: { folderCount: 1 },
+        });
+      }
+
+      console.log(`Imported folder from S3: ${folderPath}`);
+    } catch (error) {
+      console.error(`Error importing folder marker ${s3Key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Create folder markers in S3 for database folders that don't exist in S3
    */
   static async syncFoldersToS3(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
@@ -385,6 +470,67 @@ export class SyncService {
   }
 
   /**
+   * Sync folders from S3 to database (import folder markers)
+   */
+  static async syncFoldersFromS3(userId: string): Promise<{ success: boolean; message: string; stats?: any }> {
+    try {
+      await connectDB();
+
+      const s3Client = await createS3Client(userId);
+      const bucketName = await getS3BucketName(userId);
+
+      if (!s3Client || !bucketName) {
+        return {
+          success: false,
+          message: 'S3 configuration not found for user',
+        };
+      }
+
+      // List all objects in the user's S3 prefix
+      const listCommand = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: `${userId}/`,
+      });
+
+      const response = await s3Client.send(listCommand);
+      const s3Objects = response.Contents || [];
+
+      let importedFolders = 0;
+      const errors: string[] = [];
+
+      // Process only folder markers (keys ending with /)
+      for (const s3Object of s3Objects) {
+        if (!s3Object.Key || !s3Object.Key.endsWith('/')) {
+          continue;
+        }
+
+        try {
+          await this.importFolderMarker(userId, s3Object.Key, s3Client, bucketName);
+          importedFolders++;
+        } catch (error: any) {
+          errors.push(`Error importing folder ${s3Object.Key}: ${error.message}`);
+        }
+      }
+
+      return {
+        success: true,
+        message: `Folder import completed. Added ${importedFolders} folders.`,
+        stats: {
+          importedFolders,
+          errors: errors.length,
+          errorDetails: errors,
+        },
+      };
+    } catch (error) {
+      console.error('Folder import error:', error);
+      return {
+        success: false,
+        message: 'Failed to import folders from S3',
+      };
+    }
+  }
+
+  /**
    * Perform comprehensive bidirectional sync
    */
   static async performFullSync(userId: string): Promise<{ success: boolean; message: string; report: any }> {
@@ -393,11 +539,13 @@ export class SyncService {
         dbSyncResult,
         importResult,
         folderSyncResult,
+        folderImportResult,
         orphanedResult
       ] = await Promise.all([
         this.syncUserFiles(userId),
         this.importOrphanedS3Files(userId),
         this.syncFoldersToS3(userId),
+        this.syncFoldersFromS3(userId),
         this.findOrphanedS3Files(userId),
       ]);
 
@@ -405,13 +553,15 @@ export class SyncService {
         databaseSync: dbSyncResult,
         s3Import: importResult,
         folderSync: folderSyncResult,
+        folderImport: folderImportResult,
         orphanedFiles: orphanedResult,
         timestamp: new Date().toISOString(),
       };
 
       const totalErrors = (dbSyncResult.stats?.errors || 0) +
                          (importResult.stats?.errors || 0) +
-                         (folderSyncResult.stats?.errors || 0);
+                         (folderSyncResult.stats?.errors || 0) +
+                         (folderImportResult.stats?.errors || 0);
 
       return {
         success: totalErrors === 0,

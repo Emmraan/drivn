@@ -19,7 +19,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name } = body;
 
@@ -69,7 +69,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const result = await FileService.deleteFile(user._id, id);
 
     if (result.success) {

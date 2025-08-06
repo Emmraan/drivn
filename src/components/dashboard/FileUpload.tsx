@@ -356,9 +356,21 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Drag and drop files here, or click to browse
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
-                    Maximum file size: 100MB per file
-                  </p>
+                  {selectedBucket === 'platform' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
+                      Maximum file size: 1GB per file
+                    </p>
+                  )}
+                  {selectedBucket === 'user' && userBucketAccess.hasOwnS3Config && (
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
+                      No file size limit
+                    </p>
+                  )}
+                  {!userBucketAccess.canUseDrivnS3 && !userBucketAccess.hasOwnS3Config && (
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
+                      Maximum file size: 100MB per file
+                    </p>
+                  )}
 
                   <Button
                     variant="primary"

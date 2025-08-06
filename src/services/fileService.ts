@@ -716,6 +716,22 @@ export class FileService {
         }
       }
 
+      // Delete folder markers from S3
+      const foldersToDelete = [folder, ...descendants];
+      for (const folderToDelete of foldersToDelete) {
+        try {
+          const folderKey = `${userId}${folderToDelete.path}/`;
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: folderKey,
+          });
+          await s3Client.send(deleteCommand);
+          console.log(`Deleted folder marker from S3: ${folderKey}`);
+        } catch (error) {
+          console.warn(`Failed to delete S3 folder marker ${folderToDelete.path}:`, error);
+        }
+      }
+
       // Delete all files from database
       await File.deleteMany({
         userId,

@@ -13,6 +13,7 @@ import {
   CalendarIcon,
 } from '@heroicons/react/24/outline';
 import Card from '@/components/ui/Card';
+import Dropdown from '@/components/ui/Dropdown';
 import { StatCardSkeleton, CardSkeleton } from '@/components/ui/SkeletonLoader';
 
 interface AnalyticsData {
@@ -159,15 +160,17 @@ export default function AnalyticsPage() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <select
+          <Dropdown
+            options={[
+              { value: '7d', label: 'Last 7 days' },
+              { value: '30d', label: 'Last 30 days' },
+              { value: '90d', label: 'Last 90 days' },
+            ]}
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-          </select>
+            onChange={(value) => setTimeRange(value as '7d' | '30d' | '90d')}
+            placeholder="Select time range"
+            className="w-40"
+          />
         </div>
       </div>
 
