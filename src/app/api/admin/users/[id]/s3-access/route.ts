@@ -14,7 +14,7 @@ export const PATCH = requireAdmin(async (
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { canUseDrivnS3 } = body;
 

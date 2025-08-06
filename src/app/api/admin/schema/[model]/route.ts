@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
-import { connectDB } from '@/lib/mongodb';
+import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
 import File from '@/models/File';
 import Folder from '@/models/Folder';
-import Admin from '@/auth/models/Admin';
 
 // Model mapping
 const MODEL_MAP = {
   User,
   File,
   Folder,
-  Admin,
 };
 
 /**
@@ -25,7 +23,7 @@ export const GET = requireAdmin(async (
   try {
     await connectDB();
 
-    const { model } = params;
+    const { model } = await params;
     const ModelClass = MODEL_MAP[model as keyof typeof MODEL_MAP];
 
     if (!ModelClass) {
@@ -84,7 +82,7 @@ export const PUT = requireAdmin(async (
   try {
     await connectDB();
 
-    const { model } = params;
+    const { model } = await params;
     const body = await request.json();
     const { fields, timestamps } = body;
 
