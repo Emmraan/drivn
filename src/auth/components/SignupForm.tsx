@@ -100,7 +100,24 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
     setError('');
     setSuccess('');
 
-    if (!validateForm()) {
+    const nameErr = validateName(name);
+    const emailErr = validateEmail(email);
+    const passwordErr = validatePassword(password);
+    const confirmPasswordErr = validateConfirmPassword(password, confirmPassword);
+
+    setNameError(nameErr);
+    setEmailError(emailErr);
+    setPasswordError(passwordErr);
+    setConfirmPasswordError(confirmPasswordErr);
+
+    if (nameErr || emailErr || passwordErr || confirmPasswordErr) {
+      setError('Please fix the validation errors');
+      setLoading(false);
+      return;
+    }
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError('All fields are required');
       setLoading(false);
       return;
     }
@@ -109,14 +126,13 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
       const result = await signup(email, password, name);
       if (result.success) {
         setSuccess(result.message);
-        // Clear form
         setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
         onSuccess?.();
       } else {
-        setError(result.message);
+        setError(result.message || 'Sign up failed. Please try again.');
       }
     } catch (error) {
       setError('An unexpected error occurred');

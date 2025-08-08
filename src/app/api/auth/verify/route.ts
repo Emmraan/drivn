@@ -15,8 +15,18 @@ export async function POST(request: NextRequest) {
 
     const result = await AuthService.verifyEmail(token);
 
-    if (result.success) {
-      return NextResponse.json(result, { status: 200 });
+    if (result.success && result.token) {
+      const response = NextResponse.json(result, { status: 200 });
+
+      response.cookies.set('auth-token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60
+      });
+
+      return response;
     } else {
       return NextResponse.json(result, { status: 400 });
     }

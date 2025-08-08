@@ -119,7 +119,7 @@ export class AuthService {
     }
   }
 
-  static async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+  static async verifyEmail(token: string): Promise<{ success: boolean; message: string; user?: Partial<IUser>; token?: string }> {
     try {
       await connectDB();
 
@@ -129,16 +129,38 @@ export class AuthService {
         return { success: false, message: 'Invalid or expired verification token' };
       }
 
-      // Update user email verification
-      await User.findOneAndUpdate(
+      // Update user email verification and get user data
+      const user = await User.findOneAndUpdate(
         { email: verificationToken.email },
-        { emailVerified: new Date() }
+        { emailVerified: new Date() },
+        { new: true }
       );
+
+      if (!user) {
+        return { success: false, message: 'User not found' };
+      }
 
       // Delete verification token
       await VerificationToken.deleteOne({ token });
 
-      return { success: true, message: 'Email verified successfully' };
+      // Generate JWT token for auto-login
+      const authToken = jwt.sign(
+        { userId: user._id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return { 
+        success: true, 
+        message: 'Email verified successfully',
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          emailVerified: user.emailVerified,
+        },
+        token: authToken
+      };
     } catch (error) {
       console.error('Email verification error:', error);
       return { success: false, message: 'An error occurred during email verification' };

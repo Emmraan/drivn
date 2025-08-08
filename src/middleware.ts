@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   const authRoutes = ['/login', '/signup'];
   const protectedRoutes = ['/dashboard'];
   const adminRoutes = ['/admin-dashboard'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.includes(pathname);
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));

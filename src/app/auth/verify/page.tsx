@@ -20,8 +20,6 @@ function VerifyEmailContent() {
     status: 'loading',
     message: 'Verifying your email...'
   });
-  const [countdown, setCountdown] = useState(5);
-
   useEffect(() => {
     const token = searchParams.get('token');
     
@@ -35,17 +33,6 @@ function VerifyEmailContent() {
 
     verifyEmail(token);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (verificationState.status === 'success' && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (verificationState.status === 'success' && countdown === 0) {
-      router.push('/dashboard');
-    }
-  }, [verificationState.status, countdown, router]);
 
   const verifyEmail = async (token: string) => {
     try {
@@ -64,8 +51,11 @@ function VerifyEmailContent() {
           status: 'success',
           message: 'Email verified successfully! Welcome to DRIVN.'
         });
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        window.location.href = '/dashboard';
       } else {
-        // Check if token is expired
         const isExpired = result.message.toLowerCase().includes('expired');
         setVerificationState({
           status: isExpired ? 'expired' : 'error',
@@ -187,7 +177,7 @@ function VerifyEmailContent() {
             {verificationState.message}
           </motion.p>
 
-          {/* Success countdown */}
+          {/* Success message */}
           {verificationState.status === 'success' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -196,7 +186,7 @@ function VerifyEmailContent() {
               className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4"
             >
               <p className="text-green-800 dark:text-green-200 text-sm">
-                Redirecting to dashboard in {countdown} seconds...
+                Redirecting to dashboard...
               </p>
             </motion.div>
           )}
@@ -210,7 +200,7 @@ function VerifyEmailContent() {
           >
             {verificationState.status === 'success' && (
               <Button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => window.location.href = '/dashboard'}
                 className="w-full"
               >
                 Go to Dashboard
