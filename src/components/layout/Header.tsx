@@ -11,7 +11,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 const navigation = [
   { name: 'Features', href: '#features' },
   { name: 'Docs', href: '/docs' },
-  { name: 'Github', href: '/github' },
+  { name: 'Github', href: 'https://github.com/Emmraan/drivn' },
 ];
 
 export default function Header() {

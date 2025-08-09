@@ -8,6 +8,8 @@
 
 DRIVN is a robust, full-featured Next.js application designed for secure and efficient file storage, management, and administrative control. It offers a centralized solution for organizations to handle documents with granular access permissions, leveraging modern web technologies and cloud storage.
 
+<img src="https://res.cloudinary.com/dxqqsk0xm/image/upload/v1754724064/12823d9f-fa14-4599-88d8-093f38191159.png">
+
 ## 🚀 Features
 
 -   **Advanced Authentication**: Secure user authentication powered by NextAuth.js, supporting email/password and Google OAuth.
