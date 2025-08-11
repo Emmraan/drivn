@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   CloudIcon,
@@ -20,15 +21,16 @@ interface StorageStats {
   storageUsed: number;
   storageQuota: number;
   bucketType: 'user' | 'drivn' | 'mixed';
-  platformStorageUsed?: number; // Storage used in platform bucket
-  userStorageUsed?: number; // Storage used in user's own bucket
-  canUseDrivnS3?: boolean; // Whether user has platform bucket access
-  hasOwnS3Config?: boolean; // Whether user has their own S3 config
+  platformStorageUsed?: number;
+  userStorageUsed?: number;
+  canUseDrivnS3?: boolean;
+  hasOwnS3Config?: boolean;
 }
 
 export default function StoragePage() {
   const [stats, setStats] = useState<StorageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     loadStorageStats();
@@ -60,25 +62,25 @@ export default function StoragePage() {
 
   const getBucketTypeInfo = () => {
     if (!stats) return { icon: ServerIcon, text: 'Unknown', color: 'text-gray-500' };
-    
+
     switch (stats.bucketType) {
       case 'drivn':
-        return { 
-          icon: CheckCircleIcon, 
-          text: 'DRIVN Managed Storage', 
-          color: 'text-green-600' 
+        return {
+          icon: CheckCircleIcon,
+          text: 'DRIVN Managed Storage',
+          color: 'text-green-600',
         };
       case 'user':
-        return { 
-          icon: ServerIcon, 
-          text: 'Personal S3 Storage', 
-          color: 'text-blue-600' 
+        return {
+          icon: ServerIcon,
+          text: 'Personal S3 Storage',
+          color: 'text-blue-600',
         };
       case 'mixed':
-        return { 
-          icon: ExclamationTriangleIcon, 
-          text: 'Mixed Storage Sources', 
-          color: 'text-yellow-600' 
+        return {
+          icon: ExclamationTriangleIcon,
+          text: 'Mixed Storage Sources',
+          color: 'text-yellow-600',
         };
       default:
         return { icon: XCircleIcon, text: 'No Storage Configured', color: 'text-red-600' };
@@ -222,13 +224,12 @@ export default function StoragePage() {
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                 <motion.div
-                  className={`h-3 rounded-full ${
-                    (stats.platformStorageUsed / stats.storageQuota) >= 0.9
+                  className={`h-3 rounded-full ${(stats.platformStorageUsed / stats.storageQuota) >= 0.9
                       ? 'bg-red-500'
                       : (stats.platformStorageUsed / stats.storageQuota) >= 0.7
-                      ? 'bg-yellow-500'
-                      : 'bg-primary-500'
-                  }`}
+                        ? 'bg-yellow-500'
+                        : 'bg-primary-500'
+                    }`}
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min((stats.platformStorageUsed / stats.storageQuota) * 100, 100)}%` }}
                   transition={{ duration: 1, ease: 'easeOut' }}
@@ -305,7 +306,7 @@ export default function StoragePage() {
               </p>
               <Button
                 variant="primary"
-                onClick={() => window.location.href = '/dashboard/settings'}
+                onClick={() => router.push('/dashboard/settings')}
               >
                 Configure Storage
               </Button>
@@ -323,26 +324,32 @@ export default function StoragePage() {
           <Button
             variant="outline"
             className="justify-start"
-            onClick={() => window.location.href = '/dashboard/settings'}
+            onClick={() => router.push('/dashboard/settings')}
           >
-            <ServerIcon className="h-5 w-5 mr-2" />
-            Configure S3 Settings
+            <span className="flex justify-center items-center">
+              <ServerIcon className="h-5 w-5 mr-2" />
+              Configure S3 Settings
+            </span>
           </Button>
           <Button
             variant="outline"
             className="justify-start"
-            onClick={() => window.location.href = '/dashboard/files'}
+            onClick={() => router.push('/dashboard/files')}
           >
-            <CloudIcon className="h-5 w-5 mr-2" />
-            Manage Files
+            <span className="flex justify-center items-center">
+              <CloudIcon className="h-5 w-5 mr-2" />
+              Manage Files
+            </span>
           </Button>
           <Button
             variant="outline"
             className="justify-start"
             onClick={loadStorageStats}
           >
-            <ChartBarIcon className="h-5 w-5 mr-2" />
-            Refresh Stats
+            <span className="flex justify-center items-center">
+              <ChartBarIcon className="h-5 w-5 mr-2" />
+              Refresh Stats
+            </span>
           </Button>
         </div>
       </Card>

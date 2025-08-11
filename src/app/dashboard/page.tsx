@@ -92,21 +92,19 @@ export default function DashboardPage() {
   }, []);
 
   const handleUploadComplete = () => {
-    loadDashboardData(); // Refresh dashboard data
+    loadDashboardData();
     setShowUploadModal(false);
-    // Redirect to files page after successful upload
     setTimeout(() => {
       router.push('/dashboard/files');
-    }, 1000); // Small delay to show success state
+    }, 1000);
   };
 
   const handleFolderCreated = () => {
-    loadDashboardData(); // Refresh dashboard data
+    loadDashboardData();
     setShowCreateFolderModal(false);
-    // Redirect to files page after successful folder creation
     setTimeout(() => {
       router.push('/dashboard/files');
-    }, 1000); // Small delay to show success state
+    }, 1000);
   };
 
   const quickActions = getQuickActions(setShowUploadModal, setShowCreateFolderModal);
@@ -268,7 +266,7 @@ export default function DashboardPage() {
               Get Started with DRIVN
             </h3>
             <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Configure your S3-compatible storage credentials to start uploading and managing your files. 
+              Configure your S3-compatible storage credentials to start uploading and managing your files.
               DRIVN works with any S3-compatible provider including AWS S3, Backblaze B2, Wasabi, and more.
             </p>
             <div className="mt-6">

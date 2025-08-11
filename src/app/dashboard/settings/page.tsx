@@ -97,7 +97,7 @@ export default function SettingsPage() {
           type: 'success',
           message: 'S3 configuration saved successfully!',
         });
-        await loadS3Config(); // Reload config status
+        await loadS3Config();
       } else {
         setNotification({
           type: 'error',

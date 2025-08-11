@@ -142,7 +142,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 z-50"
                   >
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
