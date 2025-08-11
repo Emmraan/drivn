@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { motion} from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ArrowUpTrayIcon,
   XMarkIcon,
@@ -131,7 +131,7 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles.length > 0) {
       addFiles(droppedFiles);
@@ -293,14 +293,14 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
-        
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md transition-opacity" onClick={onClose} />
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', stiffness: 80 }}
-          className="relative w-full max-w-3xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 dark:border-gray-700/50 overflow-hidden"
+          className="relative w-full max-w-3xl  backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 dark:border-gray-700/50 overflow-hidden"
         >
           {/* Glassmorphism background overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-gray-100/20 dark:from-gray-800/20 dark:via-transparent dark:to-gray-900/20" />
@@ -331,11 +331,10 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
               onDrop={handleDrop}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 backdrop-blur-md overflow-hidden ${
-                isDragOver
+              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 backdrop-blur-md overflow-hidden ${isDragOver
                   ? 'border-primary-400/60 bg-gradient-to-br from-primary-50/60 to-primary-100/40 dark:from-primary-900/40 dark:to-primary-800/30 scale-105 shadow-lg'
                   : 'border-gray-300/40 dark:border-gray-600/40 hover:border-primary-400/50 dark:hover:border-primary-500/50 bg-gradient-to-br from-white/40 to-gray-50/30 dark:from-gray-800/40 dark:to-gray-900/30 hover:shadow-md'
-              }`}
+                }`}
             >
               {/* Animated background gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-primary-400/10 via-transparent to-secondary-400/10 opacity-0 hover:opacity-100 transition-opacity duration-500" />
@@ -377,8 +376,10 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                     onClick={() => fileInputRef.current?.click()}
                     className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
                   >
-                    <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
-                    Choose Files
+                    <span className="flex justify-center items-center">
+                      <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                      Choose Files
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -416,25 +417,22 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                   <button
                     type="button"
                     onClick={() => setSelectedBucket('platform')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      selectedBucket === 'platform'
+                    className={`p-4 rounded-lg border-2 transition-all ${selectedBucket === 'platform'
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-6 w-6 ${
-                        selectedBucket === 'platform'
+                      <CloudArrowUpIcon className={`h-6 w-6 ${selectedBucket === 'platform'
                           ? 'text-primary-600 dark:text-primary-400'
                           : 'text-gray-400'
-                      }`} />
+                        }`} />
                     </div>
                     <div className="text-center">
-                      <p className={`text-sm font-medium ${
-                        selectedBucket === 'platform'
+                      <p className={`text-sm font-medium ${selectedBucket === 'platform'
                           ? 'text-primary-900 dark:text-primary-100'
                           : 'text-gray-900 dark:text-white'
-                      }`}>
+                        }`}>
                         Platform Storage
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -451,25 +449,22 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                   <button
                     type="button"
                     onClick={() => setSelectedBucket('user')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      selectedBucket === 'user'
+                    className={`p-4 rounded-lg border-2 transition-all ${selectedBucket === 'user'
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-6 w-6 ${
-                        selectedBucket === 'user'
+                      <CloudArrowUpIcon className={`h-6 w-6 ${selectedBucket === 'user'
                           ? 'text-blue-600 dark:text-blue-400'
                           : 'text-gray-400'
-                      }`} />
+                        }`} />
                     </div>
                     <div className="text-center">
-                      <p className={`text-sm font-medium ${
-                        selectedBucket === 'user'
+                      <p className={`text-sm font-medium ${selectedBucket === 'user'
                           ? 'text-blue-900 dark:text-blue-100'
                           : 'text-gray-900 dark:text-white'
-                      }`}>
+                        }`}>
                         Personal S3
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

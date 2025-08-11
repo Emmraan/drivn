@@ -100,13 +100,13 @@ useEffect(() => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-75 transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-md transition-opacity" onClick={onClose} />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-xl shadow-xl backdrop-blur-md bg-opacity-95 dark:bg-opacity-95"
+          className="relative w-full max-w-4xl rounded-xl shadow-xl backdrop-blur-md bg-opacity-95 dark:bg-opacity-95"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
