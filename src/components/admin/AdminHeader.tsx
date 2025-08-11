@@ -126,9 +126,8 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
 
                 {/* Dropdown arrow */}
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
-                    isProfileOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </motion.button>
 
@@ -140,7 +139,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50"
                   >
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -172,7 +171,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
                     </div>
 
                     {/* Menu Items */}
-                    <div className="py-1">
+                    <div className="py-1 bg-white dark:bg-gray-900">
                       {/* Settings */}
                       <motion.button
                         onClick={handleSettings}

@@ -136,7 +136,7 @@ export default function ContextMenu({ items, children, className, enableLeftClic
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 80 }}
-              className="fixed z-50 min-w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+              className="fixed backdrop-blur-md z-50 min-w-48 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
               style={{
                 left: position.x,
                 top: position.y,
