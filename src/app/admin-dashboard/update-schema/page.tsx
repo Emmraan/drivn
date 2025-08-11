@@ -68,7 +68,7 @@ export default function UpdateSchemaPage() {
 
   useEffect(() => {
     loadModelSchema();
-  },);
+  }, [selectedModel]);
 
   useEffect(() => {
     if (notification) {
@@ -78,7 +78,11 @@ export default function UpdateSchemaPage() {
   }, [notification]);
 
   const loadModelSchema = async () => {
-    setLoading(true);
+    // Only show loading state on first load
+    if (!currentSchema) {
+      setLoading(true);
+    }
+    
     try {
       const response = await fetch(`/api/admin/schema/${selectedModel}`);
       const data = await response.json();

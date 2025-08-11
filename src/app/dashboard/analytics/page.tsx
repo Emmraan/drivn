@@ -47,13 +47,11 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  useEffect(() => {
-    loadAnalytics();
-  },);
-
   const loadAnalytics = async () => {
-    try {
+    if (!analytics) {
       setLoading(true);
+    }
+    try {
       const response = await fetch(`/api/analytics?timeRange=${timeRange}`);
       const data = await response.json();
 
@@ -68,6 +66,14 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadAnalytics();
+    }, analytics ? 300 : 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [timeRange]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

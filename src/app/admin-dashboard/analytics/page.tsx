@@ -61,10 +61,12 @@ export default function AdminAnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   const loadAnalytics = useCallback(async () => {
-    try {
+    if (!analytics) {
       setLoading(true);
-      setError(null);
+    }
+    setError(null);
 
+    try {
       const response = await fetch(`/api/admin/analytics?range=${timeRange}`);
       const data = await response.json();
 
@@ -79,10 +81,14 @@ export default function AdminAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, analytics]);
 
   useEffect(() => {
-    loadAnalytics();
+    const timeoutId = setTimeout(() => {
+      loadAnalytics();
+    }, analytics ? 300 : 0);
+
+    return () => clearTimeout(timeoutId);
   }, [timeRange, loadAnalytics]);
 
   const formatBytes = (bytes: number) => {

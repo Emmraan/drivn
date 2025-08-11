@@ -39,13 +39,12 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadUsers();
-  },);
-
   const loadUsers = async () => {
     try {
-      setLoading(true);
+      if (!users.length || page !== 1) {
+        setLoading(true);
+      }
+
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
@@ -66,6 +65,22 @@ export default function AdminUsersPage() {
     }
   };
 
+  useEffect(() => {
+    loadUsers();
+  }, [page]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        loadUsers();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   const toggleS3Access = async (userId: string, currentAccess: boolean) => {
     try {
       setUpdatingUsers(prev => new Set(prev).add(userId));
@@ -83,7 +98,6 @@ export default function AdminUsersPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Update user in local state
         setUsers(prev =>
           prev.map(user =>
             user._id === userId
@@ -202,11 +216,10 @@ export default function AdminUsersPage() {
                             {user.email}
                           </div>
                           <div className="flex items-center mt-1">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              user.emailVerified
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${user.emailVerified
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                 : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                            }`}>
+                              }`}>
                               {user.emailVerified ? 'Verified' : 'Unverified'}
                             </span>
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
@@ -239,11 +252,10 @@ export default function AdminUsersPage() {
                         ) : (
                           <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
                         )}
-                        <span className={`text-sm ${
-                          user.canUseDrivnS3
+                        <span className={`text-sm ${user.canUseDrivnS3
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-red-600 dark:text-red-400'
-                        }`}>
+                          }`}>
                           {user.canUseDrivnS3 ? 'Enabled' : 'Disabled'}
                         </span>
                       </div>
