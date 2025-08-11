@@ -16,7 +16,7 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (!loading && user && user.emailVerified) {
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
       return;
     }
 
@@ -29,11 +29,10 @@ function LoginPageContent() {
     if (error === 'OAuthAccountNotLinked') {
       setVerificationMessage('An account with this email already exists. Please sign in with your email and password instead.');
     }
-  }, [user, loading, router, searchParams]);
+  }, [user, loading, searchParams]);
 
   const handleLoginSuccess = () => {
-    // Use replace instead of push for immediate redirect without history
-    router.replace('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   if (loading) {
