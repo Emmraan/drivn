@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   MagnifyingGlassIcon,
@@ -39,7 +39,7 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set());
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       if (!users.length || page !== 1) {
         setLoading(true);
@@ -63,11 +63,11 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [users.length, page, searchQuery]);
 
   useEffect(() => {
     loadUsers();
-  }, [page]);
+  }, [page, loadUsers]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, page, loadUsers]);
 
   const toggleS3Access = async (userId: string, currentAccess: boolean) => {
     try {

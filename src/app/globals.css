@@ -135,6 +135,64 @@ html {
   animation: slideUp 0.5s ease-out;
 }
 
+/* Dropdown z-index fix for production */
+.dropdown-menu-top {
+  z-index: 9999 !important;
+  position: absolute !important;
+  /* Ensure the dropdown creates its own stacking context */
+  isolation: isolate;
+  /* Force hardware acceleration for consistent rendering */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Additional stacking context fixes */
+.dropdown-container {
+  position: relative;
+  z-index: auto;
+}
+
+/* Ensure header elements don't interfere with dropdowns */
+.dashboard-header {
+  position: relative;
+  z-index: 10;
+}
+
+/* Force proper stacking for glass elements */
+.glass {
+  /* Ensure glass elements don't create problematic stacking contexts */
+  position: relative;
+}
+
+/* Production-specific fixes for z-index issues */
+@media (min-width: 1px) {
+  /* Force high z-index for all dropdown menus */
+  .dropdown-menu-top,
+  [class*="z-[9999]"],
+  [style*="z-index: 9999"] {
+    z-index: 9999 !important;
+    position: fixed !important;
+  }
+
+  /* Ensure backdrop-blur works correctly in production */
+  .backdrop-blur-md,
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+
+  /* Fix for Vercel production builds */
+  .glass.dropdown-menu-top {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .dark .glass.dropdown-menu-top {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
 /* Keyframes */
 @keyframes fadeIn {
   0% { opacity: 0; }

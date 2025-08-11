@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   CogIcon,
@@ -58,7 +58,6 @@ export default function UpdateSchemaPage() {
     message: string;
   } | null>(null);
 
-  // New field form state
   const [newField, setNewField] = useState<SchemaField>({
     name: '',
     type: 'String',
@@ -66,23 +65,11 @@ export default function UpdateSchemaPage() {
     description: '',
   });
 
-  useEffect(() => {
-    loadModelSchema();
-  }, [selectedModel]);
-
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
-  const loadModelSchema = async () => {
-    // Only show loading state on first load
+  const loadModelSchema = useCallback(async () => {
     if (!currentSchema) {
       setLoading(true);
     }
-    
+
     try {
       const response = await fetch(`/api/admin/schema/${selectedModel}`);
       const data = await response.json();
@@ -104,7 +91,20 @@ export default function UpdateSchemaPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentSchema, selectedModel]);
+
+  useEffect(() => {
+    if (selectedModel) {
+      loadModelSchema();
+    }
+  }, [selectedModel, loadModelSchema]);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const handleAddField = () => {
     if (!newField.name.trim()) {
@@ -255,13 +255,12 @@ export default function UpdateSchemaPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${
-            notification.type === 'success'
+          className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${notification.type === 'success'
               ? 'border-green-200 dark:border-green-800'
               : notification.type === 'warning'
-              ? 'border-yellow-200 dark:border-yellow-800'
-              : 'border-red-200 dark:border-red-800'
-          }`}
+                ? 'border-yellow-200 dark:border-yellow-800'
+                : 'border-red-200 dark:border-red-800'
+            }`}
         >
           {notification.type === 'success' ? (
             <CheckCircleIcon className="h-5 w-5 text-green-500 flex-shrink-0" />
@@ -270,24 +269,22 @@ export default function UpdateSchemaPage() {
           ) : (
             <ExclamationTriangleIcon className="h-5 w-5 text-red-500 flex-shrink-0" />
           )}
-          <p className={`text-sm font-medium ${
-            notification.type === 'success'
+          <p className={`text-sm font-medium ${notification.type === 'success'
               ? 'text-green-800 dark:text-green-200'
               : notification.type === 'warning'
-              ? 'text-yellow-800 dark:text-yellow-200'
-              : 'text-red-800 dark:text-red-200'
-          }`}>
+                ? 'text-yellow-800 dark:text-yellow-200'
+                : 'text-red-800 dark:text-red-200'
+            }`}>
             {notification.message}
           </p>
           <button
             onClick={() => setNotification(null)}
-            className={`ml-auto text-sm underline ${
-              notification.type === 'success'
+            className={`ml-auto text-sm underline ${notification.type === 'success'
                 ? 'text-green-700 dark:text-green-300'
                 : notification.type === 'warning'
-                ? 'text-yellow-700 dark:text-yellow-300'
-                : 'text-red-700 dark:text-red-300'
-            }`}
+                  ? 'text-yellow-700 dark:text-yellow-300'
+                  : 'text-red-700 dark:text-red-300'
+              }`}
           >
             Dismiss
           </button>

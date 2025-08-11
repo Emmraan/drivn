@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/auth/context/AuthContext';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import DropdownPortal from '@/components/ui/DropdownPortal';
 import { isUserAdmin } from '@/utils/clientAuth';
 import {
   Bars3Icon,
@@ -36,22 +37,14 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
 
   isUserAdmin(user);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setIsProfileOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  // Close dropdown handler
+  const handleCloseDropdown = () => {
+    setIsProfileOpen(false);
+  };
 
   const handleLogout = async () => {
     try {
+      setIsProfileOpen(false);
       await logout();
       router.push('/');
     } catch (error) {
@@ -60,17 +53,25 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
   };
 
   const handleBackToDashboard = () => {
-    router.push('/dashboard');
+    // Close dropdown first, then navigate
     setIsProfileOpen(false);
+    // Small delay to ensure dropdown closes before navigation
+    setTimeout(() => {
+      router.push('/dashboard');
+    }, 100);
   };
 
   const handleSettings = () => {
-    router.push('/admin-dashboard/settings');
+    // Close dropdown first, then navigate
     setIsProfileOpen(false);
+    // Small delay to ensure dropdown closes before navigation
+    setTimeout(() => {
+      router.push('/admin-dashboard/settings');
+    }, 100);
   };
 
   return (
-    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
+    <header className="dashboard-header bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Mobile menu button */}
@@ -95,7 +96,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
             <ThemeToggle />
 
             {/* Profile Dropdown */}
-            <div ref={profileRef} className="relative z-[60]">
+            <div ref={profileRef} className="dropdown-container">
               <motion.button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -132,15 +133,21 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
               </motion.button>
 
               {/* Dropdown Menu */}
-              <AnimatePresence>
-                {isProfileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 z-[60]"
-                  >
+              <DropdownPortal
+                isOpen={isProfileOpen}
+                triggerRef={profileRef}
+                onClickOutside={handleCloseDropdown}
+                className="overflow-hidden w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+              >
+                <AnimatePresence>
+                  {isProfileOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-full"
+                    >
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center space-x-3">
@@ -205,9 +212,10 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
                         <span>Sign Out</span>
                       </motion.button>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </DropdownPortal>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   ChartBarIcon,
@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     if (!analytics) {
       setLoading(true);
     }
@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [analytics, timeRange]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
     }, analytics ? 300 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [timeRange]);
+  }, [timeRange, analytics, loadAnalytics]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

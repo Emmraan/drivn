@@ -86,10 +86,10 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadAnalytics();
-    }, analytics ? 300 : 0);
+    }, analytics ? 1000 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [timeRange, loadAnalytics]);
+  }, [timeRange, loadAnalytics, analytics]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

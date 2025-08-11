@@ -23,7 +23,8 @@ export function withAuth(handler: (request: NextRequest) => Promise<Response>) {
 
           return redirectResponse;
         }
-      } catch (e) {
+      } catch (error) {
+        console.error('Redirect middleware error:', error);
         return response;
       }
     }
