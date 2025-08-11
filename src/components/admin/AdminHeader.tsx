@@ -95,7 +95,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
             <ThemeToggle />
 
             {/* Profile Dropdown */}
-            <div ref={profileRef} className="relative">
+            <div ref={profileRef} className="relative z-[60]">
               <motion.button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -139,7 +139,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 z-50"
+                    className="absolute overflow-hidden right-0 mt-2 w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 z-[60]"
                   >
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
