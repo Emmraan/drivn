@@ -17,7 +17,7 @@ interface S3ConfigStatus {
   hasConfig: boolean;
   config?: {
     region: string;
-    bucket: string;
+    bucketName: string;
     endpoint?: string;
     forcePathStyle?: boolean;
   };
@@ -236,7 +236,7 @@ export default function SettingsPage() {
                   </h3>
                   <div className="mt-2 text-sm text-green-700 dark:text-green-300 space-y-1">
                     <p><strong>Region:</strong> {configStatus.config?.region}</p>
-                    <p><strong>Bucket:</strong> {configStatus.config?.bucket}</p>
+                    <p><strong>Bucket:</strong> {configStatus.config?.bucketName}</p>
                     {configStatus.config?.endpoint && (
                       <p><strong>Endpoint:</strong> {configStatus.config.endpoint}</p>
                     )}

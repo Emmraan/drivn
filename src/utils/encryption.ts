@@ -115,24 +115,32 @@ export function validateS3Config(config: S3Config): {
     return { valid: false, errors };
   }
 
-  const requiredFields = [
+  // Validate required string fields
+  const requiredStringFields = [
     "accessKeyId",
     "secretAccessKey",
     "region",
     "bucketName",
-    "endpoint",
-    "forcePathStyle",
   ];
-  for (const field of requiredFields) {
+  for (const field of requiredStringFields) {
     const value = config[field as keyof S3Config];
     if (!value || typeof value !== "string" || value.trim() === "") {
       errors.push(`${field} is required and must be a non-empty string`);
     }
   }
 
-  // Optional endpoint validation
-  if (config.endpoint && typeof config.endpoint !== "string") {
-    errors.push("endpoint must be a string if provided");
+  // Validate optional endpoint field
+  if (config.endpoint !== undefined) {
+    if (typeof config.endpoint !== "string") {
+      errors.push("endpoint must be a string if provided");
+    }
+  }
+
+  // Validate optional forcePathStyle field
+  if (config.forcePathStyle !== undefined) {
+    if (typeof config.forcePathStyle !== "boolean") {
+      errors.push("forcePathStyle must be a boolean if provided");
+    }
   }
 
   // Validate region format (basic check)

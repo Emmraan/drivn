@@ -28,7 +28,7 @@ export interface S3ConfigData {
   accessKeyId: string;
   secretAccessKey: string;
   region: string;
-  bucket: string;
+  bucketName: string;
   endpoint?: string;
   forcePathStyle?: boolean;
 }
@@ -47,7 +47,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
     accessKeyId: initialConfig?.accessKeyId || '',
     secretAccessKey: initialConfig?.secretAccessKey || '',
     region: initialConfig?.region || '',
-    bucket: initialConfig?.bucket || '',
+    bucketName: initialConfig?.bucketName || '',
     endpoint: initialConfig?.endpoint || '',
     forcePathStyle: initialConfig?.forcePathStyle || false,
   });
@@ -140,7 +140,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
     }
   };
 
-  const isFormValid = config.accessKeyId && config.secretAccessKey && config.region && config.bucket;
+  const isFormValid = config.accessKeyId && config.secretAccessKey && config.region && config.bucketName;
 
   return (
     <Card className="p-6">
@@ -236,8 +236,8 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
           </label>
           <input
             type="text"
-            value={config.bucket}
-            onChange={(e) => handleInputChange('bucket', e.target.value)}
+            value={config.bucketName}
+            onChange={(e) => handleInputChange('bucketName', e.target.value)}
             placeholder="Enter your bucket name"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           />
@@ -330,7 +330,7 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
                   ) : (
                     <span className="flex items-center gap-1">
                       <DocumentDuplicateIcon className="h-4 w-4" />
-                      Copy!
+                      Copy
                     </span>
                   )}
                 </button>
