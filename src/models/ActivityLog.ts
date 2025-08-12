@@ -83,7 +83,6 @@ const ActivityLogSchema = new Schema<IActivityLog>({
   timestamp: {
     type: Date,
     default: Date.now,
-    index: true,
   },
   ipAddress: {
     type: String,

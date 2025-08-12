@@ -10,7 +10,7 @@ export interface IFileMetadata extends Document {
   mimeType: string;
   lastModified: Date;
   tags?: string[];
-  searchableContent?: string; // For text files, extracted content for search
+  searchableContent?: string;
   isIndexed: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -56,7 +56,6 @@ const FileMetadataSchema = new Schema<IFileMetadata>({
   s3Key: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
   },
   fileName: {

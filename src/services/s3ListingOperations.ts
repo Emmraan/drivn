@@ -80,7 +80,7 @@ export class S3ListingOperations {
       if (useCache) {
         const cached = s3Cache.get(cacheKey);
         if (cached) {
-          return cached;
+          return cached as ListResult;
         }
       }
 
@@ -137,7 +137,7 @@ export class S3ListingOperations {
               // Try to determine MIME type from file extension
               const extension = fileName.split('.').pop()?.toLowerCase();
               if (extension) {
-                fileItem.mimeType = this.getMimeTypeFromExtension(extension);
+                fileItem.mimeType = S3ListingOperations.getMimeTypeFromExtension(extension);
               }
 
               files.push(fileItem);
@@ -148,7 +148,7 @@ export class S3ListingOperations {
       }
 
       // Generate breadcrumbs
-      const breadcrumbs = this.generateBreadcrumbs(normalizedPath);
+      const breadcrumbs = S3ListingOperations.generateBreadcrumbs(normalizedPath);
 
       const result: ListResult = {
         success: true,
@@ -219,7 +219,7 @@ export class S3ListingOperations {
       const cacheKey = `search:${userId}:${query}:${mimeTypeFilter || ''}:${maxResults}`;
       const cached = s3Cache.get(cacheKey);
       if (cached) {
-        return cached;
+        return cached as SearchResult;
       }
 
       console.log('🔍 Searching S3 objects for query:', query);
@@ -243,7 +243,7 @@ export class S3ListingOperations {
             // Check if filename matches query
             if (fileName.toLowerCase().includes(queryLower)) {
               const extension = fileName.split('.').pop()?.toLowerCase();
-              const mimeType = extension ? this.getMimeTypeFromExtension(extension) : undefined;
+              const mimeType = extension ? S3ListingOperations.getMimeTypeFromExtension(extension) : undefined;
               
               // Apply MIME type filter if specified
               if (mimeTypeFilter && mimeType && !mimeType.includes(mimeTypeFilter)) {
