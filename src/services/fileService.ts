@@ -3,9 +3,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import connectDB from '@/utils/database';
 import File, { IFile } from '@/models/File';
 import Folder, { IFolder } from '@/models/Folder';
-import User from '@/auth/models/User';
 import { getS3Client, getS3BucketName } from '@/utils/s3ClientFactory';
 import { Types } from 'mongoose';
+import { S3ConfigService } from './s3ConfigService';
 
 export interface FileUploadData {
   name: string;
@@ -313,7 +313,7 @@ export class FileService {
     try {
       await connectDB();
 
-      const [fileStats, folderCount, user] = await Promise.all([
+      const [fileStats, folderCount, hasOwnS3Config] = await Promise.all([
         File.aggregate([
           { $match: { userId: new Types.ObjectId(userId) } },
           {
@@ -325,13 +325,10 @@ export class FileService {
           },
         ]),
         Folder.countDocuments({ userId }),
-        User.findById(userId),
+        S3ConfigService.hasS3Config(userId),
       ]);
 
       const stats = fileStats[0] || { totalFiles: 0, totalSize: 0 };
-
-      // Check if user has S3 config
-      const hasOwnS3Config = !!(user?.s3Config?.bucketName && user?.s3Config?.accessKeyId);
 
       return {
         totalFiles: stats.totalFiles,
