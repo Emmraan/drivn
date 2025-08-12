@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
 export interface ContextMenuItem {
-  id: string;
+  id?: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
   onClick: () => void;
   disabled?: boolean;
-  destructive?: boolean;
+  variant?: 'default' | 'danger';
   separator?: boolean;
 }
 
@@ -25,8 +25,14 @@ interface ContextMenuProps {
 export default function ContextMenu({ items, children, className, enableLeftClick = false, itemType }: ContextMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isMounted, setIsMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+
+  // Fix hydration mismatch by only rendering portal content after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -124,11 +130,11 @@ export default function ContextMenu({ items, children, className, enableLeftClic
       </div>
 
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && isMounted && (
           <>
             {/* Backdrop */}
             <div className="fixed inset-0 z-40" />
-            
+
             {/* Menu */}
             <motion.div
               ref={menuRef}
@@ -136,38 +142,43 @@ export default function ContextMenu({ items, children, className, enableLeftClic
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 80 }}
-              className="fixed backdrop-blur-md z-50 min-w-48 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+              className="fixed z-50 min-w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
               style={{
                 left: position.x,
                 top: position.y,
               }}
             >
-              {items.map((item, index) => (
-                <React.Fragment key={item.id}>
-                  {item.separator && index > 0 && (
-                    <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-                  )}
-                  <button
-                    onClick={() => handleClick(item)}
-                    disabled={item.disabled}
-                    className={cn(
-                      'w-full flex items-center px-3 py-2 text-sm text-left transition-colors',
-                      item.disabled
-                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                        : item.destructive
-                        ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              {items.map((item, index) => {
+                const itemKey = item.id || `${item.label}-${index}`;
+                const IconComponent = item.icon;
+
+                return (
+                  <React.Fragment key={itemKey}>
+                    {item.separator && index > 0 && (
+                      <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
                     )}
-                  >
-                    {item.icon && (
-                      <span className="mr-3 flex-shrink-0">
-                        {item.icon}
-                      </span>
-                    )}
-                    {item.label}
-                  </button>
-                </React.Fragment>
-              ))}
+                    <button
+                      onClick={() => handleClick(item)}
+                      disabled={item.disabled}
+                      className={cn(
+                        'w-full flex items-center px-3 py-2 text-sm text-left transition-colors',
+                        item.disabled
+                          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                          : item.variant === 'danger'
+                          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      )}
+                    >
+                      {IconComponent && (
+                        <span className="mr-3 flex-shrink-0">
+                          <IconComponent className="h-4 w-4" />
+                        </span>
+                      )}
+                      {item.label}
+                    </button>
+                  </React.Fragment>
+                );
+              })}
             </motion.div>
           </>
         )}

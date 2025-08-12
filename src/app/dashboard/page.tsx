@@ -7,8 +7,8 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/auth/context/AuthContext';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
-import FileUpload from '@/components/dashboard/FileUpload';
-import CreateFolder from '@/components/dashboard/CreateFolder';
+import S3FileUpload from '@/components/dashboard/S3FileUpload';
+import S3CreateFolder from '@/components/dashboard/S3CreateFolder';
 import {
   CloudIcon,
   FolderIcon,
@@ -95,7 +95,7 @@ export default function DashboardPage() {
     loadDashboardData();
     setShowUploadModal(false);
     setTimeout(() => {
-      router.push('/dashboard/files');
+      router.push('/dashboard/files-s3');
     }, 1000);
   };
 
@@ -103,7 +103,7 @@ export default function DashboardPage() {
     loadDashboardData();
     setShowCreateFolderModal(false);
     setTimeout(() => {
-      router.push('/dashboard/files');
+      router.push('/dashboard/files-s3');
     }, 1000);
   };
 
@@ -281,16 +281,18 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Modals */}
-      <FileUpload
+      <S3FileUpload
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUploadComplete={handleUploadComplete}
+        currentPath="/"
       />
 
-      <CreateFolder
+      <S3CreateFolder
         isOpen={showCreateFolderModal}
         onClose={() => setShowCreateFolderModal(false)}
         onFolderCreated={handleFolderCreated}
+        parentPath="/"
       />
     </div>
   );

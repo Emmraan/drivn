@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
-import File from '@/models/File';
+import FileMetadata from '@/models/FileMetadata';
 import { Types } from 'mongoose';
 
 /**
@@ -41,13 +41,13 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     // Get file statistics for each user
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
-        const fileStats = await File.aggregate([
+        const fileStats = await FileMetadata.aggregate([
           { $match: { userId: new Types.ObjectId(user._id) } },
           {
             $group: {
               _id: null,
               totalFiles: { $sum: 1 },
-              totalSize: { $sum: '$size' },
+              totalSize: { $sum: '$fileSize' },
               bucketTypes: { $addToSet: '$bucketType' },
             },
           },

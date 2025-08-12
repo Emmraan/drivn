@@ -21,9 +21,9 @@ interface DashboardSidebarProps {
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: HomeIcon },
-  { name: 'Files', href: '/dashboard/files', icon: FolderIcon },
+  { name: 'Files', href: '/dashboard/files-s3', icon: FolderIcon },
   { name: 'Storage', href: '/dashboard/storage', icon: CloudIcon },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: ChartBarIcon },
+  { name: 'Analytics', href: '/dashboard/analytics-s3', icon: ChartBarIcon },
   { name: 'Settings', href: '/dashboard/settings', icon: CogIcon },
 ];
 

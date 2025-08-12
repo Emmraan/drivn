@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
-import File from '@/models/File';
+import ActivityLog from '@/models/ActivityLog';
+import FileMetadata from '@/models/FileMetadata';
 
 /**
  * GET /api/admin/analytics
@@ -30,16 +31,18 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     });
     const totalUsers = await User.countDocuments();
 
-    // Get file uploads
-    const currentUploads = await File.countDocuments({
-      createdAt: { $gte: startDate },
+    // Get file uploads from activity logs
+    const currentUploads = await ActivityLog.countDocuments({
+      action: 'upload',
+      timestamp: { $gte: startDate },
     });
-    const previousUploads = await File.countDocuments({
-      createdAt: { $gte: previousStartDate, $lt: startDate },
+    const previousUploads = await ActivityLog.countDocuments({
+      action: 'upload',
+      timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
-    // Get storage usage
-    const currentStorageStats = await File.aggregate([
+    // Get storage usage from file metadata
+    const currentStorageStats = await FileMetadata.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate },
@@ -48,12 +51,12 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$size' },
+          totalSize: { $sum: '$fileSize' },
         },
       },
     ]);
 
-    const previousStorageStats = await File.aggregate([
+    const previousStorageStats = await FileMetadata.aggregate([
       {
         $match: {
           createdAt: { $gte: previousStartDate, $lt: startDate },
@@ -62,41 +65,44 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$size' },
+          totalSize: { $sum: '$fileSize' },
         },
       },
     ]);
 
-    const totalStorageStats = await File.aggregate([
+    const totalStorageStats = await FileMetadata.aggregate([
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$size' },
+          totalSize: { $sum: '$fileSize' },
         },
       },
     ]);
 
     // Get active users (users who uploaded files in the period)
-    const currentActiveUsers = await File.distinct('userId', {
-      createdAt: { $gte: startDate },
+    const currentActiveUsers = await ActivityLog.distinct('userId', {
+      action: 'upload',
+      timestamp: { $gte: startDate },
     });
-    const previousActiveUsers = await File.distinct('userId', {
-      createdAt: { $gte: previousStartDate, $lt: startDate },
+    const previousActiveUsers = await ActivityLog.distinct('userId', {
+      action: 'upload',
+      timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
     // Get top users by activity
-    const topUsers = await File.aggregate([
+    const topUsers = await ActivityLog.aggregate([
       {
         $match: {
-          createdAt: { $gte: startDate },
+          action: 'upload',
+          timestamp: { $gte: startDate },
         },
       },
       {
         $group: {
           _id: '$userId',
           fileCount: { $sum: 1 },
-          storageUsed: { $sum: '$size' },
-          lastActive: { $max: '$createdAt' },
+          storageUsed: { $sum: '$fileSize' },
+          lastActive: { $max: '$timestamp' },
         },
       },
       {

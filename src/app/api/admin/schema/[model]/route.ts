@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
-import File from '@/models/File';
-import Folder from '@/models/Folder';
+import ActivityLog from '@/models/ActivityLog';
+import FileMetadata from '@/models/FileMetadata';
 
 // Model mapping
 const MODEL_MAP = {
   User,
-  File,
-  Folder,
+  ActivityLog,
+  FileMetadata,
 };
 
 /**

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/auth/middleware/adminMiddleware';
 import connectDB from '@/utils/database';
 import User from '@/auth/models/User';
-import File from '@/models/File';
-import Folder from '@/models/Folder';
+import FileMetadata from '@/models/FileMetadata';
 
 /**
  * GET /api/admin/storage/stats
@@ -17,27 +16,27 @@ export const GET = requireAdmin(async () => {
     const totalUsers = await User.countDocuments();
 
     // Get total files and storage
-    const fileStats = await File.aggregate([
+    const fileStats = await FileMetadata.aggregate([
       {
         $group: {
           _id: null,
           totalFiles: { $sum: 1 },
-          totalStorageUsed: { $sum: '$size' },
+          totalStorageUsed: { $sum: '$fileSize' },
         },
       },
     ]);
 
-    // Get total folders
-    const totalFolders = await Folder.countDocuments();
+    // Folders are now virtual in S3, not tracked separately
+    const totalFolders = 0;
 
 
 
     // Get storage by user
-    const storageByUser = await File.aggregate([
+    const storageByUser = await FileMetadata.aggregate([
       {
         $group: {
           _id: '$userId',
-          storageUsed: { $sum: '$size' },
+          storageUsed: { $sum: '$fileSize' },
           fileCount: { $sum: 1 },
         },
       },

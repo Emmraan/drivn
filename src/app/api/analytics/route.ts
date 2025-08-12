@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
 import connectDB from '@/utils/database';
-import File from '@/models/File';
-import Folder from '@/models/Folder';
+import ActivityLog, { IActivityLogModel } from '@/models/ActivityLog';
+import FileMetadata, { IFileMetadataModel } from '@/models/FileMetadata';
 import { Types } from 'mongoose';
 
 /**
@@ -25,75 +25,72 @@ export async function GET(request: NextRequest) {
     const timeRange = searchParams.get('timeRange') || '30d';
 
     // Calculate date range
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (timeRange) {
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '90d':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case '30d':
-      default:
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-    }
+    // Time range is handled by ActivityLog.getUserStats method
 
-    // Get basic stats
-    const [totalFiles, totalFolders, totalDownloads] = await Promise.all([
-      File.countDocuments({ userId: new Types.ObjectId(user._id) }),
-      Folder.countDocuments({ userId: new Types.ObjectId(user._id) }),
-      File.aggregate([
-        { $match: { userId: new Types.ObjectId(user._id) } },
-        { $group: { _id: null, totalDownloads: { $sum: '$downloadCount' } } }
-      ]).then(result => result[0]?.totalDownloads || 0),
+    // Get basic stats from hybrid models
+    const [fileMetadataStats, activityStats] = await Promise.all([
+      (FileMetadata as unknown as IFileMetadataModel).getStorageStats(user._id),
+      (ActivityLog as unknown as IActivityLogModel).getUserStats(user._id, timeRange as '7d' | '30d' | '90d'),
     ]);
 
-    // Get storage used
-    const storageStats = await File.aggregate([
-      { $match: { userId: new Types.ObjectId(user._id) } },
-      { $group: { _id: null, totalSize: { $sum: '$size' } } }
-    ]);
-    const storageUsed = storageStats[0]?.totalSize || 0;
+    const totalFiles = fileMetadataStats.totalFiles;
+    const totalFolders = 0; // Folders are now virtual in S3, not tracked separately
+    const totalDownloads = activityStats.download?.count || 0;
+    const storageUsed = fileMetadataStats.totalSize;
 
-    // Get recent activity (last 10 activities)
-    const recentFiles = await File.find({ 
-      userId: new Types.ObjectId(user._id),
-      createdAt: { $gte: startDate }
-    })
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .select('name createdAt size mimeType');
-
-    const recentActivity = recentFiles.map(file => ({
-      type: 'upload' as const,
-      fileName: file.name,
-      timestamp: file.createdAt.toISOString(),
-      size: file.size,
-      mimeType: file.mimeType,
+    // Get recent activity from activity logs
+    const recentActivityLogs = await (ActivityLog as unknown as IActivityLogModel).getRecentActivity(user._id, 10);
+    const recentActivity = recentActivityLogs.map((log: { action: string; fileName: string; timestamp: Date; fileSize?: number; mimeType?: string }) => ({
+      type: log.action,
+      fileName: log.fileName,
+      timestamp: log.timestamp.toISOString(),
+      size: log.fileSize,
+      mimeType: log.mimeType,
     }));
 
-    // Get monthly stats for the last 6 months
+    // Get monthly stats from activity logs for the last 6 months
+    const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    
-    const monthlyStats = await File.aggregate([
+
+    const monthlyStats = await ActivityLog.aggregate([
       {
         $match: {
           userId: new Types.ObjectId(user._id),
-          createdAt: { $gte: sixMonthsAgo }
+          timestamp: { $gte: sixMonthsAgo }
         }
       },
       {
         $group: {
           _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
+            year: { $year: '$timestamp' },
+            month: { $month: '$timestamp' },
+            action: '$action'
           },
-          uploads: { $sum: 1 },
-          storage: { $sum: '$size' },
-          downloads: { $sum: '$downloadCount' }
+          count: { $sum: 1 },
+          storage: { $sum: '$fileSize' }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: '$_id.year',
+            month: '$_id.month'
+          },
+          uploads: {
+            $sum: {
+              $cond: [{ $eq: ['$_id.action', 'upload'] }, '$count', 0]
+            }
+          },
+          downloads: {
+            $sum: {
+              $cond: [{ $eq: ['$_id.action', 'download'] }, '$count', 0]
+            }
+          },
+          storage: {
+            $sum: {
+              $cond: [{ $eq: ['$_id.action', 'upload'] }, '$storage', 0]
+            }
+          }
         }
       },
       {
@@ -122,41 +119,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get file type distribution
-    const fileTypeStats = await File.aggregate([
-      { $match: { userId: new Types.ObjectId(user._id) } },
-      {
-        $group: {
-          _id: {
-            $cond: [
-              { $regexMatch: { input: '$mimeType', regex: /^image\// } },
-              'Images',
-              {
-                $cond: [
-                  { $regexMatch: { input: '$mimeType', regex: /^video\// } },
-                  'Videos',
-                  {
-                    $cond: [
-                      { $regexMatch: { input: '$mimeType', regex: /^audio\// } },
-                      'Audio',
-                      {
-                        $cond: [
-                          { $regexMatch: { input: '$mimeType', regex: /pdf/ } },
-                          'Documents',
-                          'Other'
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          count: { $sum: 1 },
-          size: { $sum: '$size' }
-        }
-      }
-    ]);
+    // Get file type distribution from metadata
+    const fileTypeStats = await (FileMetadata as unknown as IFileMetadataModel).getFileTypeStats(user._id);
 
     return NextResponse.json({
       success: true,
