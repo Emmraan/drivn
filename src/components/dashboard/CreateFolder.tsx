@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import {
   XMarkIcon,
   FolderIcon,
-  CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { FolderCreationLoadingScreen } from '@/components/ui/LoadingScreens';
@@ -37,39 +36,25 @@ export default function CreateFolder({ isOpen, onClose, parentId, onFolderCreate
   const [isCreating, setIsCreating] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [error, setError] = useState('');
-  const [selectedBucket, setSelectedBucket] = useState<'platform' | 'user'>('platform');
-  const [userBucketAccess, setUserBucketAccess] = useState<{
-    canUseDrivnS3: boolean;
-    hasOwnS3Config: boolean;
-  }>({ canUseDrivnS3: false, hasOwnS3Config: false });
+  const [hasS3Config, setHasS3Config] = useState<boolean>(false);
 
-  // Fetch user's bucket access information
+  // Check if user has S3 configuration
   useEffect(() => {
-    const fetchBucketAccess = async () => {
+    const checkS3Config = async () => {
       try {
         const response = await fetch('/api/storage/stats');
         const data = await response.json();
 
         if (data.success && data.stats) {
-          setUserBucketAccess({
-            canUseDrivnS3: data.stats.canUseDrivnS3 || false,
-            hasOwnS3Config: data.stats.hasOwnS3Config || false,
-          });
-
-          // Set default bucket selection
-          if (data.stats.canUseDrivnS3) {
-            setSelectedBucket('platform');
-          } else if (data.stats.hasOwnS3Config) {
-            setSelectedBucket('user');
-          }
+          setHasS3Config(data.stats.hasOwnS3Config || false);
         }
       } catch (error) {
-        console.error('Error fetching bucket access:', error);
+        console.error('Error checking S3 config:', error);
       }
     };
 
     if (isOpen) {
-      fetchBucketAccess();
+      checkS3Config();
     }
   }, [isOpen]);
 
@@ -96,9 +81,6 @@ export default function CreateFolder({ isOpen, onClose, parentId, onFolderCreate
           parentId: parentId || null,
           color: selectedColor,
           description: description.trim() || undefined,
-          ...(userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config && {
-            bucketType: selectedBucket
-          }),
         }),
       });
 
@@ -233,75 +215,12 @@ export default function CreateFolder({ isOpen, onClose, parentId, onFolderCreate
               />
             </div>
 
-            {/* Bucket Selection - only show if user has access to both */}
-            {userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Storage Location
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBucket('platform')}
-                    disabled={isCreating}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      selectedBucket === 'platform'
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
-                    } ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-5 w-5 ${
-                        selectedBucket === 'platform'
-                          ? 'text-primary-600 dark:text-primary-400'
-                          : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-sm font-medium ${
-                        selectedBucket === 'platform'
-                          ? 'text-primary-900 dark:text-primary-100'
-                          : 'text-gray-900 dark:text-white'
-                      }`}>
-                        Platform Storage
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        DRIVN managed
-                      </p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBucket('user')}
-                    disabled={isCreating}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      selectedBucket === 'user'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                    } ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-5 w-5 ${
-                        selectedBucket === 'user'
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-sm font-medium ${
-                        selectedBucket === 'user'
-                          ? 'text-blue-900 dark:text-blue-100'
-                          : 'text-gray-900 dark:text-white'
-                      }`}>
-                        Personal S3
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Your bucket
-                      </p>
-                    </div>
-                  </button>
-                </div>
+            {/* S3 Configuration Warning */}
+            {!hasS3Config && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  ⚠️ No S3 storage configured. Please configure your S3 settings before creating folders.
+                </p>
               </div>
             )}
 
@@ -325,7 +244,7 @@ export default function CreateFolder({ isOpen, onClose, parentId, onFolderCreate
               <Button
                 type="submit"
                 variant="primary"
-                disabled={!name.trim() || isCreating}
+                disabled={!name.trim() || isCreating || !hasS3Config}
                 loading={isCreating}
               >
                 Create Folder

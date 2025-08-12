@@ -11,9 +11,6 @@ export interface IUser extends Document {
   googleId?: string;
   createdAt: Date;
   updatedAt: Date;
-  storageQuota?: number;
-  storageUsed?: number;
-  canUseDrivnS3?: boolean;
   s3Config?: {
     accessKeyId?: string;
     secretAccessKey?: string;
@@ -57,19 +54,7 @@ const UserSchema = new Schema<IUser>({
     type: String,
     sparse: true,
   },
-  // Future S3 integration fields
-  storageQuota: {
-    type: Number,
-    default: 15 * 1024 * 1024 * 1024,
-  },
-  storageUsed: {
-    type: Number,
-    default: 0,
-  },
-  canUseDrivnS3: {
-    type: Boolean,
-    default: false,
-  },
+  // S3 integration fields
   s3Config: {
     accessKeyId: String,
     secretAccessKey: String,

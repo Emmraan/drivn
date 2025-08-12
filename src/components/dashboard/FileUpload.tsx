@@ -8,7 +8,6 @@ import {
   DocumentIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import ProgressBar, { CircularProgress } from '@/components/ui/ProgressBar';
@@ -35,84 +34,44 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
   const [isUploading, setIsUploading] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [tags, setTags] = useState('');
-  const [selectedBucket, setSelectedBucket] = useState<'platform' | 'user'>('platform');
-  const [userBucketAccess, setUserBucketAccess] = useState<{
-    canUseDrivnS3: boolean;
-    hasOwnS3Config: boolean;
-  }>({ canUseDrivnS3: false, hasOwnS3Config: false });
+  const [hasS3Config, setHasS3Config] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
-  // Fetch user's bucket access information
+  // Check if user has S3 configuration
   useEffect(() => {
-    const fetchBucketAccess = async () => {
+    const checkS3Config = async () => {
       try {
         const response = await fetch('/api/storage/stats');
         const data = await response.json();
 
         if (data.success && data.stats) {
-          setUserBucketAccess({
-            canUseDrivnS3: data.stats.canUseDrivnS3 || false,
-            hasOwnS3Config: data.stats.hasOwnS3Config || false,
-          });
-
-          // Set default bucket selection
-          if (data.stats.canUseDrivnS3) {
-            setSelectedBucket('platform');
-          } else if (data.stats.hasOwnS3Config) {
-            setSelectedBucket('user');
-          }
+          setHasS3Config(data.stats.hasOwnS3Config || false);
         }
       } catch (error) {
-        console.error('Error fetching bucket access:', error);
+        console.error('Error checking S3 config:', error);
       }
     };
 
     if (isOpen) {
-      fetchBucketAccess();
+      checkS3Config();
     }
   }, [isOpen]);
 
-  // Validate file sizes when bucket selection changes
-  useEffect(() => {
-    if (selectedBucket === 'platform') {
-      const maxSize = 1024 * 1024 * 1024; // 1GB
-      setFiles(prev => prev.map(file => {
-        const isTooBig = file.file.size > maxSize;
-        return {
-          ...file,
-          status: isTooBig ? 'error' as const : (file.status === 'error' && file.error?.includes('1GB limit') ? 'pending' as const : file.status),
-          error: isTooBig ? 'File size exceeds 1GB limit for platform storage' : (file.error?.includes('1GB limit') ? undefined : file.error),
-        };
-      }));
-    } else {
-      // Remove size limit errors for user bucket
-      setFiles(prev => prev.map(file => ({
-        ...file,
-        status: file.error?.includes('1GB limit') ? 'pending' as const : file.status,
-        error: file.error?.includes('1GB limit') ? undefined : file.error,
-      })));
-    }
-  }, [selectedBucket]);
+
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
-    const uploadFiles: UploadFile[] = fileArray.map(file => {
-      const maxSize = 1024 * 1024 * 1024; // 1GB in bytes
-      const isTooPlatformBucket = selectedBucket === 'platform' && file.size > maxSize;
-
-      return {
-        file,
-        id: generateId(),
-        progress: 0,
-        status: isTooPlatformBucket ? 'error' as const : 'pending' as const,
-        error: isTooPlatformBucket ? 'File size exceeds 1GB limit for platform storage' : undefined,
-      };
-    });
+    const uploadFiles: UploadFile[] = fileArray.map(file => ({
+      file,
+      id: generateId(),
+      progress: 0,
+      status: 'pending' as const,
+    }));
 
     setFiles(prev => [...prev, ...uploadFiles]);
-  }, [selectedBucket]);
+  }, []);
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
@@ -176,10 +135,7 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
           formData.append('tags', tags.trim());
         }
 
-        // Add bucket selection if user has access to both
-        if (userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config) {
-          formData.append('bucketType', selectedBucket);
-        }
+
 
         // Use XMLHttpRequest for progress tracking
         await new Promise<void>((resolve, reject) => {
@@ -280,7 +236,7 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const canUpload = files.length > 0 && !isUploading;
+  const canUpload = files.length > 0 && !isUploading && hasS3Config;
   const allSuccess = files.length > 0 && files.every(f => f.status === 'success');
 
   if (!isOpen) return null;
@@ -354,19 +310,9 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Drag and drop files here, or click to browse
                   </p>
-                  {selectedBucket === 'platform' && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
-                      Maximum file size: 1GB per file
-                    </p>
-                  )}
-                  {selectedBucket === 'user' && userBucketAccess.hasOwnS3Config && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
-                      No file size limit
-                    </p>
-                  )}
-                  {!userBucketAccess.canUseDrivnS3 && !userBucketAccess.hasOwnS3Config && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mb-6">
-                      Maximum file size: 100MB per file
+                  {!hasS3Config && (
+                    <p className="text-xs text-red-500 dark:text-red-400 mb-6">
+                      ⚠️ No S3 storage configured. Please configure your S3 settings first.
                     </p>
                   )}
 
@@ -407,74 +353,7 @@ export default function FileUpload({ isOpen, onClose, folderId, onUploadComplete
               />
             </div>
 
-            {/* Bucket Selection - only show if user has access to both */}
-            {userBucketAccess.canUseDrivnS3 && userBucketAccess.hasOwnS3Config && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Storage Destination
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBucket('platform')}
-                    className={`p-4 rounded-lg border-2 transition-all ${selectedBucket === 'platform'
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-6 w-6 ${selectedBucket === 'platform'
-                          ? 'text-primary-600 dark:text-primary-400'
-                          : 'text-gray-400'
-                        }`} />
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-sm font-medium ${selectedBucket === 'platform'
-                          ? 'text-primary-900 dark:text-primary-100'
-                          : 'text-gray-900 dark:text-white'
-                        }`}>
-                        Platform Storage
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        DRIVN managed • 1GB limit per file
-                      </p>
-                      {selectedBucket === 'platform' && files.some(f => f.file.size > 1024 * 1024 * 1024) && (
-                        <p className="text-xs text-red-500 mt-1">
-                          ⚠️ Some files exceed 1GB limit
-                        </p>
-                      )}
-                    </div>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBucket('user')}
-                    className={`p-4 rounded-lg border-2 transition-all ${selectedBucket === 'user'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      <CloudArrowUpIcon className={`h-6 w-6 ${selectedBucket === 'user'
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-gray-400'
-                        }`} />
-                    </div>
-                    <div className="text-center">
-                      <p className={`text-sm font-medium ${selectedBucket === 'user'
-                          ? 'text-blue-900 dark:text-blue-100'
-                          : 'text-gray-900 dark:text-white'
-                        }`}>
-                        Personal S3
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Your bucket • No file size limit
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* File List */}
             {files.length > 0 && (

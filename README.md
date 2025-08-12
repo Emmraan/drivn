@@ -13,7 +13,7 @@ DRIVN is a robust, full-featured Next.js application designed for secure and eff
 ## 🚀 Features
 
 -   **Advanced Authentication**: Secure user authentication powered by NextAuth.js, supporting email/password and Google OAuth.
--   **S3-Compatible Storage**: Flexible storage backend with customizable S3 bucket configurations, ensuring data encryption and scalability.
+-   **S3-Compatible Storage**: Flexible storage backend using your own S3-compatible storage credentials, ensuring data encryption and scalability.
 -   **Dual Dashboards**: Dedicated user and administrator dashboards with distinct access levels and comprehensive permission management.
 -   **Comprehensive File Operations**: Seamless upload, download, preview, rename, delete, and intuitive folder management capabilities.
 -   **Real-time Analytics**: In-depth insights into storage usage, file activity, and user behavior through real-time analytics.

@@ -19,9 +19,6 @@ export const GET = requireAdmin(async () => {
         requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
       },
       storageSettings: {
-        defaultStorageQuota: parseInt(process.env.DEFAULT_STORAGE_QUOTA || '5'), // 5GB default
-        maxStorageQuota: parseInt(process.env.MAX_STORAGE_QUOTA || '100'), // 100GB default
-        enablePlatformStorage: process.env.ENABLE_PLATFORM_STORAGE !== 'false',
         enableUserStorage: process.env.ENABLE_USER_STORAGE !== 'false',
       },
       securitySettings: {
@@ -76,12 +73,7 @@ export const PUT = requireAdmin(async (request: NextRequest) => {
       );
     }
 
-    if (storageSettings?.defaultStorageQuota < 0 || storageSettings?.maxStorageQuota < 0) {
-      return NextResponse.json(
-        { success: false, message: 'Storage quotas must be positive numbers' },
-        { status: 400 }
-      );
-    }
+
 
     if (securitySettings?.passwordMinLength < 6) {
       return NextResponse.json(

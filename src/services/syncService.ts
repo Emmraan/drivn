@@ -2,7 +2,7 @@ import { S3Client, ListObjectsV2Command, HeadObjectCommand, PutObjectCommand } f
 import connectDB from '@/utils/database';
 import File from '@/models/File';
 import Folder, { IFolder } from '@/models/Folder';
-import { createS3Client, getS3BucketName, isUsingDrivnS3 } from '@/utils/s3ClientFactory';
+import { createS3Client, getS3BucketName } from '@/utils/s3ClientFactory';
 import { Types } from 'mongoose';
 
 interface SyncStats {
@@ -161,7 +161,6 @@ export class SyncService {
 
       const s3Client = await createS3Client(userId);
       const bucketName = await getS3BucketName(userId);
-      const isUsingDrivn = await isUsingDrivnS3(userId);
 
       if (!s3Client || !bucketName) {
         return {
@@ -235,7 +234,7 @@ export class SyncService {
             mimeType: mimeType,
             s3Key: s3Object.Key,
             s3BucketName: bucketName,
-            bucketType: isUsingDrivn ? 'drivn' : 'user',
+            bucketType: 'user',
             userId: new Types.ObjectId(userId),
             folderId: folderId ? new Types.ObjectId(folderId) : null,
             path: this.buildFilePath(keyParts.slice(1)),

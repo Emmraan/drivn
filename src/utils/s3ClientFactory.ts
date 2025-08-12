@@ -3,9 +3,6 @@ import { NextRequest } from 'next/server';
 import { S3Config } from './encryption';
 import { S3ConfigService } from '@/services/s3ConfigService';
 import { getS3ConfigFromCookie } from './cookieManager';
-import { drivnS3Service } from '@/services/drivnS3Service';
-import connectDB from './database';
-import User from '@/auth/models/User';
 
 /**
  * S3 Client Factory
@@ -13,7 +10,7 @@ import User from '@/auth/models/User';
  */
 
 /**
- * Create S3 client from user's stored configuration or DRIVN's managed S3
+ * Create S3 client from user's stored configuration
  * @param userId - User ID to retrieve configuration for
  * @param request - Optional NextRequest for cookie-based config (fallback)
  * @returns S3Client instance or null if no configuration found
@@ -23,16 +20,7 @@ export async function createS3Client(
   request?: NextRequest
 ): Promise<S3Client | null> {
   try {
-    // Check if user has permission to use DRIVN's managed S3
-    await connectDB();
-    const user = await User.findById(userId);
-
-    if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
-      console.log('Using DRIVN managed S3 for user:', userId);
-      return drivnS3Service.getClient();
-    }
-
-    // Fall back to user's personal S3 configuration
+    // Get user's personal S3 configuration
     let s3Config = await S3ConfigService.getS3Config(userId);
 
     // Fallback to cookie-based config if database config not found
@@ -44,13 +32,13 @@ export async function createS3Client(
       console.log('No S3 configuration found for user:', userId);
       return null;
     }
-    
+
     // Validate required fields
     if (!s3Config.accessKeyId || !s3Config.secretAccessKey || !s3Config.region) {
       console.error('Invalid S3 configuration - missing required fields');
       return null;
     }
-    
+
     // Create S3 client configuration
     const clientConfig: S3ClientConfig = {
       region: s3Config.region,
@@ -59,22 +47,22 @@ export async function createS3Client(
         secretAccessKey: s3Config.secretAccessKey,
       },
     };
-    
+
     // Add endpoint for non-AWS providers
     if (s3Config.endpoint) {
       clientConfig.endpoint = s3Config.endpoint;
       clientConfig.forcePathStyle = s3Config.forcePathStyle || false;
     }
-    
+
     // Create and return S3 client
     const s3Client = new S3Client(clientConfig);
-    
+
     console.log('S3 client created successfully for user:', userId, {
       region: s3Config.region,
       bucketName: s3Config.bucketName,
       endpoint: s3Config.endpoint || 'AWS S3',
     });
-    
+
     return s3Client;
   } catch (error) {
     console.error('Error creating S3 client for user:', userId, error);
@@ -106,7 +94,7 @@ export function createS3ClientWithConfig(config: S3Config): S3Client {
 }
 
 /**
- * Get S3 configuration for a user (DRIVN managed or personal)
+ * Get S3 configuration for a user
  * @param userId - User ID
  * @param request - Optional NextRequest for cookie fallback
  * @returns S3 configuration or null
@@ -116,15 +104,7 @@ export async function getS3Config(
   request?: NextRequest
 ): Promise<S3Config | null> {
   try {
-    // Check if user has permission to use DRIVN's managed S3
-    await connectDB();
-    const user = await User.findById(userId);
-
-    if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
-      return drivnS3Service.getConfig();
-    }
-
-    // Fall back to user's personal S3 configuration
+    // Get user's personal S3 configuration
     let s3Config = await S3ConfigService.getS3Config(userId);
 
     // Fallback to cookie
@@ -140,7 +120,7 @@ export async function getS3Config(
 }
 
 /**
- * Get bucket name for a user (DRIVN managed or personal)
+ * Get bucket name for a user
  * @param userId - User ID
  * @param request - Optional NextRequest for cookie fallback
  * @returns Bucket name or null
@@ -151,22 +131,6 @@ export async function getS3BucketName(
 ): Promise<string | null> {
   const config = await getS3Config(userId, request);
   return config?.bucketName || null;
-}
-
-/**
- * Check if user is using DRIVN managed S3
- * @param userId - User ID
- * @returns boolean indicating if user is using DRIVN S3
- */
-export async function isUsingDrivnS3(userId: string): Promise<boolean> {
-  try {
-    await connectDB();
-    const user = await User.findById(userId);
-    return !!(user?.canUseDrivnS3 && drivnS3Service.isAvailable());
-  } catch (error) {
-    console.error('Error checking DRIVN S3 usage for user:', userId, error);
-    return false;
-  }
 }
 
 /**
@@ -278,67 +242,4 @@ export function invalidateS3Client(userId: string): void {
   s3ClientManager.removeClient(userId);
 }
 
-/**
- * Get S3 client with forced bucket type
- * @param userId - User ID
- * @param forceDrivn - Force use of DRIVN S3 if true, user S3 if false
- * @returns S3Client or null
- */
-export async function getS3ClientForced(
-  userId: string,
-  forceDrivn: boolean
-): Promise<S3Client | null> {
-  try {
-    await connectDB();
-    const user = await User.findById(userId);
 
-    if (forceDrivn) {
-      // Force use of DRIVN S3
-      if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
-        return drivnS3Service.getClient();
-      }
-      return null;
-    } else {
-      // Force use of user's personal S3
-      const s3Config = await S3ConfigService.getS3Config(userId);
-      if (!s3Config) {
-        return null;
-      }
-      return createS3ClientWithConfig(s3Config);
-    }
-  } catch (error) {
-    console.error('Error creating forced S3 client:', error);
-    return null;
-  }
-}
-
-/**
- * Get S3 bucket name with forced bucket type
- * @param userId - User ID
- * @param forceDrivn - Force use of DRIVN S3 if true, user S3 if false
- * @returns Bucket name or null
- */
-export async function getS3BucketNameForced(
-  userId: string,
-  forceDrivn: boolean
-): Promise<string | null> {
-  try {
-    await connectDB();
-    const user = await User.findById(userId);
-
-    if (forceDrivn) {
-      // Force use of DRIVN S3
-      if (user?.canUseDrivnS3 && drivnS3Service.isAvailable()) {
-        return drivnS3Service.getConfig()?.bucketName || null;
-      }
-      return null;
-    } else {
-      // Force use of user's personal S3
-      const s3Config = await S3ConfigService.getS3Config(userId);
-      return s3Config?.bucketName || null;
-    }
-  } catch (error) {
-    console.error('Error getting forced S3 bucket name:', error);
-    return null;
-  }
-}

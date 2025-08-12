@@ -4,7 +4,7 @@ import connectDB from '@/utils/database';
 import File, { IFile } from '@/models/File';
 import Folder, { IFolder } from '@/models/Folder';
 import User from '@/auth/models/User';
-import { getS3Client, getS3BucketName, getS3ClientForced, getS3BucketNameForced, isUsingDrivnS3 } from '@/utils/s3ClientFactory';
+import { getS3Client, getS3BucketName } from '@/utils/s3ClientFactory';
 import { Types } from 'mongoose';
 
 export interface FileUploadData {
@@ -16,7 +16,7 @@ export interface FileUploadData {
   folderId?: string;
   tags?: string[];
   metadata?: Record<string, string | number | boolean>;
-  bucketType?: 'platform' | 'user';
+
 }
 
 export interface FolderCreateData {
@@ -34,25 +34,9 @@ export class FileService {
     try {
       await connectDB();
 
-      // Get S3 client and bucket for user based on bucketType preference
-      let s3Client, bucketName, isUsingDrivn;
-
-      if (fileData.bucketType === 'platform') {
-        // Force use of platform bucket
-        s3Client = await getS3ClientForced(userId, true); // Force DRIVN S3
-        bucketName = await getS3BucketNameForced(userId, true);
-        isUsingDrivn = true;
-      } else if (fileData.bucketType === 'user') {
-        // Force use of user's own bucket
-        s3Client = await getS3ClientForced(userId, false); // Force user's S3
-        bucketName = await getS3BucketNameForced(userId, false);
-        isUsingDrivn = false;
-      } else {
-        // Default behavior - use existing logic
-        s3Client = await getS3Client(userId);
-        bucketName = await getS3BucketName(userId);
-        isUsingDrivn = await isUsingDrivnS3(userId);
-      }
+      // Get user's S3 client and bucket
+      const s3Client = await getS3Client(userId);
+      const bucketName = await getS3BucketName(userId);
 
       if (!s3Client || !bucketName) {
         return {
@@ -103,7 +87,7 @@ export class FileService {
         mimeType: fileData.mimeType,
         s3Key,
         s3Bucket: bucketName,
-        bucketType: isUsingDrivn ? 'drivn' : 'user',
+        bucketType: 'user',
         userId: new Types.ObjectId(userId),
         folderId: folder ? new Types.ObjectId(fileData.folderId!) : null,
         path: filePath,
@@ -112,11 +96,6 @@ export class FileService {
       });
 
       await file.save();
-
-      // Update user storage usage
-      await User.findByIdAndUpdate(userId, {
-        $inc: { storageUsed: fileData.size },
-      });
 
       // Update folder file count and size if in folder
       if (folder) {
@@ -327,18 +306,14 @@ export class FileService {
   static async getStorageStats(userId: string): Promise<{
     totalFiles: number;
     totalFolders: number;
-    storageUsed: number;
-    storageQuota: number;
-    bucketType: 'user' | 'drivn' | 'mixed';
-    platformStorageUsed?: number;
-    userStorageUsed?: number;
-    canUseDrivnS3?: boolean;
+    totalStorageUsed: number;
+    bucketType: 'user';
     hasOwnS3Config?: boolean;
   }> {
     try {
       await connectDB();
 
-      const [fileStats, bucketStats, folderCount, user] = await Promise.all([
+      const [fileStats, folderCount, user] = await Promise.all([
         File.aggregate([
           { $match: { userId: new Types.ObjectId(userId) } },
           {
@@ -346,17 +321,6 @@ export class FileService {
               _id: null,
               totalFiles: { $sum: 1 },
               totalSize: { $sum: '$size' },
-              bucketTypes: { $addToSet: '$bucketType' },
-            },
-          },
-        ]),
-        File.aggregate([
-          { $match: { userId: new Types.ObjectId(userId) } },
-          {
-            $group: {
-              _id: '$bucketType',
-              totalSize: { $sum: '$size' },
-              fileCount: { $sum: 1 },
             },
           },
         ]),
@@ -364,18 +328,7 @@ export class FileService {
         User.findById(userId),
       ]);
 
-      const stats = fileStats[0] || { totalFiles: 0, totalSize: 0, bucketTypes: [] };
-
-      // Calculate storage by bucket type
-      const platformStorage = bucketStats.find(b => b._id === 'drivn');
-      const userStorage = bucketStats.find(b => b._id === 'user');
-
-      let bucketType: 'user' | 'drivn' | 'mixed' = 'user';
-      if (stats.bucketTypes.length > 1) {
-        bucketType = 'mixed';
-      } else if (stats.bucketTypes.includes('drivn')) {
-        bucketType = 'drivn';
-      }
+      const stats = fileStats[0] || { totalFiles: 0, totalSize: 0 };
 
       // Check if user has S3 config
       const hasOwnS3Config = !!(user?.s3Config?.bucketName && user?.s3Config?.accessKeyId);
@@ -383,12 +336,8 @@ export class FileService {
       return {
         totalFiles: stats.totalFiles,
         totalFolders: folderCount,
-        storageUsed: stats.totalSize,
-        storageQuota: user?.storageQuota || 15 * 1024 * 1024 * 1024, // 15GB default
-        bucketType,
-        platformStorageUsed: platformStorage?.totalSize || 0,
-        userStorageUsed: userStorage?.totalSize || 0,
-        canUseDrivnS3: user?.canUseDrivnS3 || false,
+        totalStorageUsed: stats.totalSize,
+        bucketType: 'user' as const,
         hasOwnS3Config,
       };
     } catch (error) {
@@ -396,12 +345,8 @@ export class FileService {
       return {
         totalFiles: 0,
         totalFolders: 0,
-        storageUsed: 0,
-        storageQuota: 15 * 1024 * 1024 * 1024,
+        totalStorageUsed: 0,
         bucketType: 'user',
-        platformStorageUsed: 0,
-        userStorageUsed: 0,
-        canUseDrivnS3: false,
         hasOwnS3Config: false,
       };
     }
@@ -636,11 +581,6 @@ export class FileService {
       // Delete from database
       await File.findByIdAndDelete(fileId);
 
-      // Update user storage usage
-      await User.findByIdAndUpdate(userId, {
-        $inc: { storageUsed: -file.size },
-      });
-
       // Update folder file count and size if in folder
       if (file.folderId) {
         await Folder.findByIdAndUpdate(file.folderId, {
@@ -700,8 +640,6 @@ export class FileService {
         folderId: { $in: allFolderIds },
       });
 
-      let totalSizeDeleted = 0;
-
       // Delete all files from S3 and database
       for (const file of filesToDelete) {
         try {
@@ -710,7 +648,7 @@ export class FileService {
             Key: file.s3Key,
           });
           await s3Client.send(deleteCommand);
-          totalSizeDeleted += file.size;
+
         } catch (error) {
           console.warn(`Failed to delete S3 object ${file.s3Key}:`, error);
         }
@@ -743,13 +681,6 @@ export class FileService {
         await Folder.findByIdAndDelete(descendant._id);
       }
       await Folder.findByIdAndDelete(folderId);
-
-      // Update user storage usage
-      if (totalSizeDeleted > 0) {
-        await User.findByIdAndUpdate(userId, {
-          $inc: { storageUsed: -totalSizeDeleted },
-        });
-      }
 
       // Update parent folder counts if applicable
       if (folder.parentId) {

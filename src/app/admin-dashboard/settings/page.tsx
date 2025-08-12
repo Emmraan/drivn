@@ -9,7 +9,6 @@ import TextArea from '@/components/ui/TextArea';
 import { CardSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   CogIcon,
-  CloudIcon,
   ShieldCheckIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -26,9 +25,6 @@ interface AdminSettings {
     requireEmailVerification: boolean;
   };
   storageSettings: {
-    defaultStorageQuota: number;
-    maxStorageQuota: number;
-    enablePlatformStorage: boolean;
     enableUserStorage: boolean;
   };
   securitySettings: {
@@ -109,17 +105,6 @@ export default function AdminSettingsPage() {
       ...settings,
       platformSettings: {
         ...settings.platformSettings,
-        [key]: value,
-      },
-    });
-  };
-
-  const updateStorageSetting = (key: keyof AdminSettings['storageSettings'], value: number | boolean) => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      storageSettings: {
-        ...settings.storageSettings,
         [key]: value,
       },
     });
@@ -309,64 +294,7 @@ export default function AdminSettingsPage() {
         </motion.div>
 
         {/* Storage Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center mb-6">
-              <CloudIcon className="h-6 w-6 text-green-600 mr-3" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Storage Settings
-              </h3>
-            </div>
-            
-            <div className="space-y-4">
-              <Input
-                label="Default Storage Quota (GB)"
-                type="number"
-                value={settings?.storageSettings?.defaultStorageQuota || 0}
-                onChange={(e) => updateStorageSetting('defaultStorageQuota', parseInt(e.target.value))}
-                placeholder="Enter default quota"
-              />
-              
-              <Input
-                label="Maximum Storage Quota (GB)"
-                type="number"
-                value={settings?.storageSettings?.maxStorageQuota || 0}
-                onChange={(e) => updateStorageSetting('maxStorageQuota', parseInt(e.target.value))}
-                placeholder="Enter max quota"
-              />
-              
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="enablePlatformStorage"
-                  checked={settings?.storageSettings?.enablePlatformStorage || false}
-                  onChange={(e) => updateStorageSetting('enablePlatformStorage', e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="enablePlatformStorage" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Enable Platform Storage
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="enableUserStorage"
-                  checked={settings?.storageSettings?.enableUserStorage || false}
-                  onChange={(e) => updateStorageSetting('enableUserStorage', e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="enableUserStorage" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Enable User Storage
-                </label>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+
 
         {/* Security Settings */}
         <motion.div

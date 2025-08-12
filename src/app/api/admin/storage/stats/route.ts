@@ -30,16 +30,7 @@ export const GET = requireAdmin(async () => {
     // Get total folders
     const totalFolders = await Folder.countDocuments();
 
-    // Get storage by bucket type
-    const storageByBucket = await File.aggregate([
-      {
-        $group: {
-          _id: '$bucketType',
-          totalSize: { $sum: '$size' },
-          fileCount: { $sum: 1 },
-        },
-      },
-    ]);
+
 
     // Get storage by user
     const storageByUser = await File.aggregate([
@@ -77,7 +68,7 @@ export const GET = requireAdmin(async () => {
           storageUsed: 1,
           fileCount: 1,
           folderCount: { $size: '$folders' },
-          bucketType: { $ifNull: ['$user.bucketType', 'platform'] },
+          bucketType: 'user',
         },
       },
       {
@@ -93,8 +84,6 @@ export const GET = requireAdmin(async () => {
       totalFiles: fileStats[0]?.totalFiles || 0,
       totalFolders,
       totalStorageUsed: fileStats[0]?.totalStorageUsed || 0,
-      platformStorageUsed: storageByBucket.find((b) => b._id === 'platform')?.totalSize || 0,
-      userStorageUsed: storageByBucket.find((b) => b._id === 'user')?.totalSize || 0,
       storageByUser: storageByUser.map((user) => ({
         userId: user.userId.toString(),
         userName: user.userName,

@@ -8,7 +8,7 @@ export interface IFile extends Document {
   mimeType: string;
   s3Key: string;
   s3Bucket: string;
-  bucketType: 'user' | 'drivn';
+  bucketType: 'user';
   userId: Types.ObjectId;
   folderId?: Types.ObjectId;
   path: string;
@@ -57,8 +57,9 @@ const FileSchema = new Schema<IFile>({
   },
   bucketType: {
     type: String,
-    enum: ['user', 'drivn'],
+    enum: ['user'],
     required: true,
+    default: 'user',
   },
   userId: {
     type: Schema.Types.ObjectId,

@@ -7,7 +7,6 @@ import Button from '@/components/ui/Button';
 import { StatCardSkeleton, CardSkeleton } from '@/components/ui/SkeletonLoader';
 import {
   CloudIcon,
-  ServerIcon,
   DocumentIcon,
   FolderIcon,
   ExclamationTriangleIcon,
@@ -19,8 +18,6 @@ interface StorageStats {
   totalFiles: number;
   totalFolders: number;
   totalStorageUsed: number;
-  platformStorageUsed: number;
-  userStorageUsed: number;
   storageByUser: Array<{
     userId: string;
     userName: string;
@@ -28,7 +25,7 @@ interface StorageStats {
     storageUsed: number;
     fileCount: number;
     folderCount: number;
-    bucketType: 'platform' | 'user';
+    bucketType: 'user';
   }>;
 }
 
@@ -168,27 +165,7 @@ export default function AdminStoragePage() {
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ServerIcon className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Platform Storage
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatBytes(stats?.platformStorageUsed || 0)}
-                </p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -294,12 +271,8 @@ export default function AdminStoragePage() {
                       {user.folderCount.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.bucketType === 'platform' 
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      }`}>
-                        {user.bucketType === 'platform' ? 'Platform' : 'Personal'}
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Personal S3
                       </span>
                     </td>
                   </tr>

@@ -35,10 +35,10 @@ export interface S3ConfigData {
 
 const commonProviders = [
   { name: 'AWS S3', endpoint: '', region: 'us-east-1' },
-  { name: 'Backblaze B2', endpoint: 's3.us-west-004.backblazeb2.com', region: 'us-west-004' },
-  { name: 'Wasabi', endpoint: 's3.wasabisys.com', region: 'us-east-1' },
-  { name: 'DigitalOcean Spaces', endpoint: 'nyc3.digitaloceanspaces.com', region: 'nyc3' },
-  { name: 'TEBI', endpoint: 's3.tebi.io', region: 'global' },
+  { name: 'Backblaze B2', endpoint: 'https://s3.us-west-004.backblazeb2.com', region: 'us-west-004' },
+  { name: 'Wasabi', endpoint: 'https://s3.wasabisys.com', region: 'us-east-1' },
+  { name: 'DigitalOcean Spaces', endpoint: 'https://nyc3.digitaloceanspaces.com', region: 'nyc3' },
+  { name: 'TEBI', endpoint: 'https://s3.tebi.io', region: 'global' },
   { name: 'Custom', endpoint: '', region: '' },
 ];
 

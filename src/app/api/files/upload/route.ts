@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const files = formData.getAll('files') as File[];
     const folderId = formData.get('folderId') as string | null;
     const tags = formData.get('tags') as string | null;
-    const bucketType = formData.get('bucketType') as string | null; // 'platform' or 'user'
+
 
     if (!files || files.length === 0) {
       return NextResponse.json(
@@ -32,19 +32,9 @@ export async function POST(request: NextRequest) {
     const uploadResults = [];
     const errors = [];
 
-    // Determine file size limit based on bucket type and user access
-    let maxFileSize: number;
-    let limitDescription: string;
-
-    if (bucketType === 'platform' || (!bucketType && user.canUseDrivnS3)) {
-      // Platform bucket: 1GB limit
-      maxFileSize = 1024 * 1024 * 1024; // 1GB
-      limitDescription = '1GB';
-    } else {
-      // User's own bucket: No practical limit (set to 10GB for safety)
-      maxFileSize = 10 * 1024 * 1024 * 1024; // 10GB
-      limitDescription = '10GB';
-    }
+    // Set reasonable file size limit for user's own bucket
+    const maxFileSize = 10 * 1024 * 1024 * 1024; // 10GB
+    const limitDescription = '10GB';
 
     for (const file of files) {
       try {
@@ -74,7 +64,7 @@ export async function POST(request: NextRequest) {
           buffer,
           folderId: folderId || undefined,
           tags: fileTags,
-          bucketType: bucketType as 'platform' | 'user' | undefined,
+
         });
 
         if (result.success) {
@@ -136,17 +126,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Determine file size limits based on user's bucket access
-    const platformLimit = 1024 * 1024 * 1024; // 1GB
+    // File size limit for user buckets
     const userBucketLimit = 10 * 1024 * 1024 * 1024; // 10GB (practical limit)
 
     return NextResponse.json({
       success: true,
       config: {
-        platformMaxFileSize: platformLimit,
-        userBucketMaxFileSize: userBucketLimit,
+        maxFileSize: userBucketLimit,
         maxFiles: 10, // Max files per upload
-        canUseDrivnS3: user.canUseDrivnS3 || false,
         hasOwnS3Config: !!(user.s3Config?.bucketName && user.s3Config?.accessKeyId),
         allowedTypes: [
           // Images

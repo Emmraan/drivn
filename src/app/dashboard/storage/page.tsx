@@ -2,13 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   CloudIcon,
   ServerIcon,
   ChartBarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import Card from '@/components/ui/Card';
@@ -18,12 +15,8 @@ import { StatCardSkeleton } from '@/components/ui/SkeletonLoader';
 interface StorageStats {
   totalFiles: number;
   totalFolders: number;
-  storageUsed: number;
-  storageQuota: number;
-  bucketType: 'user' | 'drivn' | 'mixed';
-  platformStorageUsed?: number;
-  userStorageUsed?: number;
-  canUseDrivnS3?: boolean;
+  totalStorageUsed: number;
+  bucketType: 'user';
   hasOwnS3Config?: boolean;
 }
 
@@ -61,29 +54,20 @@ export default function StoragePage() {
   };
 
   const getBucketTypeInfo = () => {
-    if (!stats) return { icon: ServerIcon, text: 'Unknown', color: 'text-gray-500' };
+    if (!stats) return { icon: XCircleIcon, text: 'No Storage Configured', color: 'text-red-600' };
 
-    switch (stats.bucketType) {
-      case 'drivn':
-        return {
-          icon: CheckCircleIcon,
-          text: 'DRIVN Managed Storage',
-          color: 'text-green-600',
-        };
-      case 'user':
-        return {
-          icon: ServerIcon,
-          text: 'Personal S3 Storage',
-          color: 'text-blue-600',
-        };
-      case 'mixed':
-        return {
-          icon: ExclamationTriangleIcon,
-          text: 'Mixed Storage Sources',
-          color: 'text-yellow-600',
-        };
-      default:
-        return { icon: XCircleIcon, text: 'No Storage Configured', color: 'text-red-600' };
+    if (stats.hasOwnS3Config) {
+      return {
+        icon: ServerIcon,
+        text: 'Personal S3 Storage',
+        color: 'text-blue-600',
+      };
+    } else {
+      return {
+        icon: XCircleIcon,
+        text: 'No Storage Configured',
+        color: 'text-red-600'
+      };
     }
   };
 
@@ -142,23 +126,7 @@ export default function StoragePage() {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats ? formatBytes(stats.storageUsed) : '0 Bytes'}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ServerIcon className="h-8 w-8 text-green-500" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Storage Quota
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats ? formatBytes(stats.storageQuota) : '15 GB'}
+                {stats ? formatBytes(stats.totalStorageUsed) : '0 Bytes'}
               </p>
             </div>
           </div>
@@ -203,49 +171,9 @@ export default function StoragePage() {
           Storage Usage
         </h2>
         <div className="space-y-6">
-          {/* Platform Storage (only show progress bar if user has access and admin granted it) */}
-          {stats?.canUseDrivnS3 && (stats.platformStorageUsed !== undefined) && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                  Platform Storage (DRIVN Managed)
-                </h3>
-                <span className="text-xs px-2 py-1 bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 rounded-full">
-                  Managed
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">
-                  {formatBytes(stats.platformStorageUsed)} used of {formatBytes(stats.storageQuota)}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {Math.round((stats.platformStorageUsed / stats.storageQuota) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <motion.div
-                  className={`h-3 rounded-full ${(stats.platformStorageUsed / stats.storageQuota) >= 0.9
-                      ? 'bg-red-500'
-                      : (stats.platformStorageUsed / stats.storageQuota) >= 0.7
-                        ? 'bg-yellow-500'
-                        : 'bg-primary-500'
-                    }`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((stats.platformStorageUsed / stats.storageQuota) * 100, 100)}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                />
-              </div>
-              {(stats.platformStorageUsed / stats.storageQuota) >= 0.9 && (
-                <div className="flex items-center text-red-600 dark:text-red-400 text-sm">
-                  <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                  Platform storage is almost full. Consider cleaning up files or contact admin.
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* User's Own Storage (show as "X GB/NA" format without progress bar) */}
-          {stats?.hasOwnS3Config && (stats.userStorageUsed !== undefined) && (
+          {/* Personal S3 Storage */}
+          {stats?.hasOwnS3Config && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -257,7 +185,7 @@ export default function StoragePage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {formatBytes(stats.userStorageUsed)} / No Limit
+                  {formatBytes(stats.totalStorageUsed)} / No Limit
                 </span>
                 <span className="font-medium text-green-600 dark:text-green-400">
                   Unlimited
@@ -271,38 +199,15 @@ export default function StoragePage() {
             </div>
           )}
 
-          {/* Mixed Storage Scenario */}
-          {stats?.bucketType === 'mixed' && stats?.canUseDrivnS3 && stats?.hasOwnS3Config && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                Combined Storage Summary
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
-                  <p className="text-xs font-medium text-primary-700 dark:text-primary-300 mb-1">Platform</p>
-                  <p className="text-sm font-semibold text-primary-900 dark:text-primary-100">
-                    {formatBytes(stats.platformStorageUsed || 0)}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Personal</p>
-                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                    {formatBytes(stats.userStorageUsed || 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* No Storage Configured */}
-          {stats && !stats.canUseDrivnS3 && !stats.hasOwnS3Config && stats.bucketType !== 'user' && (
+          {stats && !stats.hasOwnS3Config && (
             <div className="text-center py-8">
               <XCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No Storage Configured
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                You need to configure your S3 storage or request platform access to start using DRIVN.
+                You need to configure your S3 storage to start using DRIVN.
               </p>
               <Button
                 variant="primary"

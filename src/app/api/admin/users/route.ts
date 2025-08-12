@@ -53,14 +53,7 @@ export const GET = requireAdmin(async (request: NextRequest) => {
           },
         ]);
 
-        const stats = fileStats[0] || { totalFiles: 0, totalSize: 0, bucketTypes: [] };
-        
-        let bucketType: 'user' | 'drivn' | 'mixed' = 'user';
-        if (stats.bucketTypes.length > 1) {
-          bucketType = 'mixed';
-        } else if (stats.bucketTypes.includes('drivn')) {
-          bucketType = 'drivn';
-        }
+        const stats = fileStats[0] || { totalFiles: 0, totalSize: 0 };
 
         return {
           _id: user._id,
@@ -68,15 +61,12 @@ export const GET = requireAdmin(async (request: NextRequest) => {
           name: user.name,
           provider: user.provider,
           emailVerified: user.emailVerified,
-          canUseDrivnS3: user.canUseDrivnS3 || false,
-          storageQuota: user.storageQuota,
-          storageUsed: user.storageUsed,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
           stats: {
             totalFiles: stats.totalFiles,
             totalSize: stats.totalSize,
-            bucketType,
+            bucketType: 'user' as const,
           },
         };
       })

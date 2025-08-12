@@ -5,10 +5,7 @@ import { motion } from 'framer-motion';
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
-  CloudIcon,
   DocumentIcon,
-  CheckCircleIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { TableSkeleton } from '@/components/ui/SkeletonLoader';
@@ -20,14 +17,11 @@ interface User {
   name: string;
   provider: string;
   emailVerified?: Date;
-  canUseDrivnS3: boolean;
-  storageQuota: number;
-  storageUsed: number;
   createdAt: string;
   stats: {
     totalFiles: number;
     totalSize: number;
-    bucketType: 'user' | 'drivn' | 'mixed';
+    bucketType: 'user';
   };
 }
 
@@ -37,7 +31,7 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set());
+
 
   const loadUsers = useCallback(async () => {
     try {
@@ -81,43 +75,7 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, page, loadUsers]);
 
-  const toggleS3Access = async (userId: string, currentAccess: boolean) => {
-    try {
-      setUpdatingUsers(prev => new Set(prev).add(userId));
 
-      const response = await fetch(`/api/admin/users/${userId}/s3-access`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          canUseDrivnS3: !currentAccess,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setUsers(prev =>
-          prev.map(user =>
-            user._id === userId
-              ? { ...user, canUseDrivnS3: !currentAccess }
-              : user
-          )
-        );
-      } else {
-        console.error('Failed to toggle S3 access:', result.message);
-      }
-    } catch (error) {
-      console.error('Error toggling S3 access:', error);
-    } finally {
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
-    }
-  };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -187,13 +145,7 @@ export default function AdminUsersPage() {
                     Files & Storage
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    DRIVN S3 Access
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Joined
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
                   </th>
                 </tr>
               </thead>
@@ -245,34 +197,8 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {user.canUseDrivnS3 ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                        ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-                        )}
-                        <span className={`text-sm ${user.canUseDrivnS3
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                          }`}>
-                          {user.canUseDrivnS3 ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Button
-                        variant={user.canUseDrivnS3 ? 'outline' : 'primary'}
-                        size="sm"
-                        onClick={() => toggleS3Access(user._id, user.canUseDrivnS3)}
-                        loading={updatingUsers.has(user._id)}
-                        leftIcon={<CloudIcon className="h-4 w-4" />}
-                      >
-                        {user.canUseDrivnS3 ? 'Revoke' : 'Grant'} S3
-                      </Button>
                     </td>
                   </motion.tr>
                 ))}
