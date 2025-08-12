@@ -61,7 +61,7 @@ export class S3FileOperations {
       const timestamp = Date.now();
       const randomSuffix = Math.random().toString(36).substring(2, 8);
       const sanitizedPath = currentPath.replace(/\/+/g, '/').replace(/\/$/, '');
-      const s3Key = `${userId}${sanitizedPath}/${timestamp}-${randomSuffix}-${file.name}`;
+      const s3Key = `${userId}${sanitizedPath === '/' || sanitizedPath === '' ? '' : sanitizedPath}/${timestamp}-${randomSuffix}-${file.name}`;
 
       // Convert File to ArrayBuffer then to Uint8Array
       const arrayBuffer = await file.arrayBuffer();
@@ -84,7 +84,7 @@ export class S3FileOperations {
 
       // Log activity
       await (ActivityLog as unknown as IActivityLogModel).logActivity(userId, 'upload', file.name, {
-        filePath: `${sanitizedPath}/${file.name}`,
+        filePath: `${sanitizedPath === '/' || sanitizedPath === '' ? '' : sanitizedPath}/${file.name}`,
         fileSize: file.size,
         mimeType: file.type,
         s3Key,
@@ -108,7 +108,7 @@ export class S3FileOperations {
         lastModified: new Date(),
         mimeType: file.type,
         isFolder: false,
-        path: `${sanitizedPath}/${file.name}`,
+        path: `${sanitizedPath === '/' || sanitizedPath === '' ? '' : sanitizedPath}/${file.name}`,
         metadata: {
           'original-name': file.name,
           'user-id': userId,

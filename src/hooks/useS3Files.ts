@@ -12,7 +12,7 @@ export interface S3FileItem {
 }
 
 export interface S3ListResult {
-  items: S3FileItem[];
+  files: S3FileItem[];
   folders: S3FileItem[];
   hasMore: boolean;
   nextToken?: string;
@@ -63,17 +63,17 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
       const response = await fetch(`/api/s3-files?${params}`);
       const result = await response.json();
 
-      console.log('📥 S3 files response:', { success: result.success, itemCount: result.data?.items?.length, folderCount: result.data?.folders?.length });
+      console.log('📥 S3 files response:', { success: result.success, fileCount: result.data?.files?.length, folderCount: result.data?.folders?.length });
 
       if (result.success) {
         if (reset) {
           console.log('🔄 Resetting files and folders state');
-          setFiles(result.data.items || []);
+          setFiles(result.data.files || []);
           setFolders(result.data.folders || []);
           setNextToken(undefined); // Reset pagination token
         } else {
           console.log('➕ Appending to existing files and folders');
-          setFiles(prev => [...prev, ...(result.data.items || [])]);
+          setFiles(prev => [...prev, ...(result.data.files || [])]);
           setFolders(prev => [...prev, ...(result.data.folders || [])]);
         }
         setHasMore(result.data.hasMore || false);

@@ -109,7 +109,7 @@ export class S3ListingOperations {
                 size: 0,
                 lastModified: new Date(),
                 isFolder: true,
-                path: `${normalizedPath}/${folderName}`,
+                path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${folderName}`,
               });
             }
           }
@@ -131,7 +131,7 @@ export class S3ListingOperations {
                 size: object.Size || 0,
                 lastModified: object.LastModified || new Date(),
                 isFolder: false,
-                path: `${normalizedPath}/${fileName}`,
+                path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${fileName}`,
               };
 
               // Try to determine MIME type from file extension

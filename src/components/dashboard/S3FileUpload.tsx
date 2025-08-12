@@ -193,7 +193,7 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
                 Drop files here or click to browse
               </p>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Upload to: /{currentPath || 'root'}
+                Upload to: {currentPath ? `/${currentPath.replace(/^\/+/, '')}` : '/root'}
               </p>
               <Button
                 variant="primary"

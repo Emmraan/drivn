@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { S3FileItem } from './useS3Files';
 
 export interface S3SearchResult {
-  items: S3FileItem[];
+  files: S3FileItem[];
   hasMore: boolean;
   nextToken?: string;
   totalMatches: number;
@@ -63,13 +63,13 @@ export function useS3Search(options: UseS3SearchOptions = {}) {
 
       if (result.success) {
         if (reset) {
-          setResults(result.data.items || []);
+          setResults(result.data.files || []);
         } else {
-          setResults(prev => [...prev, ...(result.data.items || [])]);
+          setResults(prev => [...prev, ...(result.data.files || [])]);
         }
         setHasMore(result.data.hasMore || false);
         setNextToken(result.data.nextToken);
-        setTotalMatches(result.data.totalMatches || 0);
+        setTotalMatches(result.data.totalResults || 0);
       } else {
         setError(result.message || 'Search failed');
         if (reset) {
