@@ -20,16 +20,16 @@ export async function DELETE(
     }
 
     const { path } = await params;
-    const filePath = path.join('/');
+    const s3Key = path.join('/');
 
-    if (!filePath) {
+    if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'File path is required' },
+        { success: false, message: 'S3 key is required' },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.deleteFile(String(user._id), filePath);
+    const result = await S3DirectService.deleteFile(String(user._id), s3Key);
 
     if (result.success) {
       return NextResponse.json({
@@ -69,13 +69,13 @@ export async function PATCH(
     }
 
     const { path } = await params;
-    const filePath = path.join('/');
+    const s3Key = path.join('/');
     const body = await request.json();
     const { newName } = body;
 
-    if (!filePath) {
+    if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'File path is required' },
+        { success: false, message: 'S3 key is required' },
         { status: 400 }
       );
     }
@@ -87,7 +87,7 @@ export async function PATCH(
       );
     }
 
-    const result = await S3DirectService.renameFile(String(user._id), filePath, newName.trim());
+    const result = await S3DirectService.renameFile(String(user._id), s3Key, newName.trim());
 
     if (result.success) {
       return NextResponse.json({

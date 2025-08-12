@@ -2,6 +2,7 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   DeleteObjectsCommand,
+  CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getS3Client, getS3BucketName } from '../utils/s3ClientFactory';
 import { s3Cache } from '../utils/s3Cache';
@@ -254,13 +255,113 @@ export class S3FolderOperations {
         };
       }
 
-      // This is a complex operation that would require copying all objects
-      // For now, we'll return an error suggesting manual recreation
-      // Note: newFolderPath calculation removed as it's not implemented
+      // Calculate the old and new folder prefixes
+      const oldFolderPrefix = `${userId}${oldFolderPath}${oldFolderPath.endsWith('/') ? '' : '/'}`;
+
+      // Calculate the new folder path by replacing the last segment
+      const pathParts = oldFolderPath.split('/').filter(Boolean);
+      pathParts[pathParts.length - 1] = sanitizedNewName;
+      const newFolderPath = '/' + pathParts.join('/');
+      const newFolderPrefix = `${userId}${newFolderPath}/`;
+
+      // List all objects in the old folder
+      const listCommand = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: oldFolderPrefix,
+      });
+
+      const objects = await s3Client.send(listCommand);
+
+      if (!objects.Contents || objects.Contents.length === 0) {
+        return {
+          success: false,
+          message: 'Folder not found or is empty',
+          error: 'FOLDER_NOT_FOUND',
+        };
+      }
+
+      // Copy all objects to new locations
+      const copyPromises = objects.Contents.map(async (obj) => {
+        if (!obj.Key) return;
+
+        // Calculate new key by replacing the old prefix with new prefix
+        const newKey = obj.Key.replace(oldFolderPrefix, newFolderPrefix);
+
+        const copyCommand = new CopyObjectCommand({
+          Bucket: bucketName,
+          CopySource: `${bucketName}/${obj.Key}`,
+          Key: newKey,
+          MetadataDirective: 'REPLACE',
+          Metadata: {
+            'user-id': userId,
+            'renamed-at': new Date().toISOString(),
+          },
+        });
+
+        await s3Client.send(copyCommand);
+        return { oldKey: obj.Key, newKey };
+      });
+
+      const copyResults = await Promise.all(copyPromises);
+      const successfulCopies = copyResults.filter(Boolean);
+
+      // Delete old objects
+      if (successfulCopies.length > 0) {
+        const objectsToDelete = successfulCopies.map(result => ({ Key: result!.oldKey }));
+
+        // Delete in batches
+        const batchSize = 1000;
+        for (let i = 0; i < objectsToDelete.length; i += batchSize) {
+          const batch = objectsToDelete.slice(i, i + batchSize);
+
+          const deleteCommand = new DeleteObjectsCommand({
+            Bucket: bucketName,
+            Delete: {
+              Objects: batch,
+              Quiet: true,
+            },
+          });
+
+          await s3Client.send(deleteCommand);
+        }
+      }
+
+      // Log activity
+      await (ActivityLog as unknown as IActivityLogModel).logActivity(userId, 'rename_folder', sanitizedNewName, {
+        filePath: newFolderPath,
+        s3Key: newFolderPrefix,
+        metadata: {
+          oldPath: oldFolderPath,
+          newPath: newFolderPath,
+          filesRenamed: successfulCopies.length,
+        },
+      });
+
+      // Update metadata for all files in the folder
+      for (const result of successfulCopies) {
+        if (result) {
+          await FileMetadata.findOneAndUpdate(
+            { s3Key: result.oldKey },
+            { s3Key: result.newKey },
+            { upsert: false }
+          );
+        }
+      }
+
+      // Invalidate cache
+      s3Cache.invalidate(userId);
+
+      const renamedFolder: S3FolderItem = {
+        key: newFolderPrefix,
+        name: sanitizedNewName,
+        path: newFolderPath,
+        isFolder: true,
+      };
+
       return {
-        success: false,
-        message: 'Folder renaming is not supported. Please create a new folder and move files manually.',
-        error: 'OPERATION_NOT_SUPPORTED',
+        success: true,
+        message: `Folder renamed successfully. ${successfulCopies.length} items moved.`,
+        folder: renamedFolder,
       };
     } catch (error) {
       console.error('Rename folder error:', error);

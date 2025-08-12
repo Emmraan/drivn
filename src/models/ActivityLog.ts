@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, Types, Model } from 'mongoose';
 export interface IActivityLog extends Document {
   _id: string;
   userId: Types.ObjectId;
-  action: 'upload' | 'download' | 'delete' | 'create_folder' | 'delete_folder' | 'rename';
+  action: 'upload' | 'download' | 'delete' | 'create_folder' | 'delete_folder' | 'rename' | 'rename_folder';
   fileName: string;
   filePath?: string;
   fileSize?: number;
@@ -51,7 +51,7 @@ const ActivityLogSchema = new Schema<IActivityLog>({
   },
   action: {
     type: String,
-    enum: ['upload', 'download', 'delete', 'create_folder', 'delete_folder', 'rename'],
+    enum: ['upload', 'download', 'delete', 'create_folder', 'delete_folder', 'rename', 'rename_folder'],
     required: true,
     index: true,
   },

@@ -53,7 +53,7 @@ export default function S3FilesPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
-  const [renameItem, setRenameItem] = useState<{ path: string; name: string; type: 'file' | 'folder' } | null>(null);
+  const [renameItem, setRenameItem] = useState<{ key: string; name: string; type: 'file' | 'folder' } | null>(null);
 
   const {
     files,
@@ -64,10 +64,8 @@ export default function S3FilesPage() {
     hasMore,
     navigateToPath,
     refresh,
-    // uploadFiles, // Not used in this component
     deleteFile,
     renameFile,
-    // createFolder, // Not used in this component
     deleteFolder,
     renameFolder,
     getDownloadUrl,
@@ -112,27 +110,27 @@ export default function S3FilesPage() {
   }, [refresh]);
 
   const handleRenameFile = useCallback((file: FileItem) => {
-    setRenameItem({ path: file.path, name: file.name, type: 'file' });
+    setRenameItem({ key: file.key, name: file.name, type: 'file' });
     setShowRenameModal(true);
   }, []);
 
   const handleRenameFolder = useCallback((folder: FolderItem) => {
-    setRenameItem({ path: folder.path, name: folder.name, type: 'folder' });
+    setRenameItem({ key: folder.path, name: folder.name, type: 'folder' });
     setShowRenameModal(true);
   }, []);
 
   const handleRenameSubmit = useCallback(async (newName: string) => {
     if (!renameItem) return;
 
-    console.log('✏️ Starting rename operation:', { type: renameItem.type, path: renameItem.path, newName });
+    console.log('✏️ Starting rename operation:', { type: renameItem.type, key: renameItem.key, newName });
 
     try {
       let result;
 
       if (renameItem.type === 'file') {
-        result = await renameFile(renameItem.path, newName);
+        result = await renameFile(renameItem.key, newName);
       } else if (renameItem.type === 'folder') {
-        result = await renameFolder(renameItem.path, newName);
+        result = await renameFolder(renameItem.key, newName);
       } else {
         console.error('❌ Unknown rename type:', renameItem.type);
         return;
@@ -155,7 +153,7 @@ export default function S3FilesPage() {
 
   const handleDeleteFile = useCallback(async (file: FileItem) => {
     if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
-      await deleteFile(file.path);
+      await deleteFile(file.key);
     }
   }, [deleteFile]);
 
@@ -166,7 +164,7 @@ export default function S3FilesPage() {
   }, [deleteFolder]);
 
   const handleDownload = useCallback(async (file: FileItem) => {
-    const result = await getDownloadUrl(file.path);
+    const result = await getDownloadUrl(file.key);
     if (result.success && result.url) {
       window.open(result.url, '_blank');
     }

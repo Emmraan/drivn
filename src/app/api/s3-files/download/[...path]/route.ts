@@ -20,17 +20,17 @@ export async function GET(
     }
 
     const { path } = await params;
-    const filePath = path.join('/');
+    const s3Key = path.join('/');
     // Note: expiresIn is handled internally by getDownloadUrl method
 
-    if (!filePath) {
+    if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'File path is required' },
+        { success: false, message: 'S3 key is required' },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.getDownloadUrl(String(user._id), filePath);
+    const result = await S3DirectService.getDownloadUrl(String(user._id), s3Key);
 
     if (result.success) {
       return NextResponse.json({

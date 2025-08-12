@@ -1,4 +1,4 @@
-import { ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getS3Client, getS3BucketName } from '../utils/s3ClientFactory';
 import { s3Cache } from '../utils/s3Cache';
 
@@ -117,34 +117,73 @@ export class S3ListingOperations {
       }
 
       // Process files
-      const files: S3FileItem[] = [];
+      let files: S3FileItem[] = [];
       let totalSize = 0;
 
       if (response.Contents) {
-        for (const object of response.Contents) {
-          if (object.Key && !object.Key.endsWith('/')) {
-            const fileName = object.Key.replace(s3Prefix, '');
-            if (fileName) {
-              const fileItem: S3FileItem = {
-                key: object.Key,
-                name: fileName,
-                size: object.Size || 0,
-                lastModified: object.LastModified || new Date(),
-                isFolder: false,
-                path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${fileName}`,
-              };
+        // Process files in parallel to get metadata
+        const filePromises = response.Contents
+          .filter(object => object.Key && !object.Key.endsWith('/'))
+          .map(async (object) => {
+            if (!object.Key) return null;
 
-              // Try to determine MIME type from file extension
-              const extension = fileName.split('.').pop()?.toLowerCase();
+            const s3FileName = object.Key.replace(s3Prefix, '');
+            if (!s3FileName) return null;
+
+            // Try to get original filename from S3 object metadata
+            let originalFileName = s3FileName;
+            let contentType = 'application/octet-stream';
+
+            try {
+              const headCommand = new HeadObjectCommand({
+                Bucket: bucketName,
+                Key: object.Key,
+              });
+              const headResult = await s3Client.send(headCommand);
+
+              // Get original filename from metadata
+              if (headResult.Metadata?.['original-name']) {
+                originalFileName = headResult.Metadata['original-name'];
+              }
+
+              // Get content type
+              if (headResult.ContentType) {
+                contentType = headResult.ContentType;
+              }
+            } catch (error) {
+              console.warn(`Could not get metadata for ${object.Key}:`, error);
+              // Fallback: try to extract original name from the S3 filename
+              // Format: timestamp-random-originalname.ext
+              const parts = s3FileName.split('-');
+              if (parts.length >= 3) {
+                originalFileName = parts.slice(2).join('-');
+              }
+            }
+
+            const fileItem: S3FileItem = {
+              key: object.Key,
+              name: originalFileName,
+              size: object.Size || 0,
+              lastModified: object.LastModified || new Date(),
+              isFolder: false,
+              path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${originalFileName}`,
+              mimeType: contentType,
+            };
+
+            // If we didn't get MIME type from metadata, try to determine from file extension
+            if (contentType === 'application/octet-stream') {
+              const extension = originalFileName.split('.').pop()?.toLowerCase();
               if (extension) {
                 fileItem.mimeType = S3ListingOperations.getMimeTypeFromExtension(extension);
               }
-
-              files.push(fileItem);
-              totalSize += object.Size || 0;
             }
-          }
-        }
+
+            totalSize += object.Size || 0;
+            return fileItem;
+          });
+
+        const fileResults = await Promise.all(filePromises);
+        files = fileResults.filter((item): item is S3FileItem => item !== null);
       }
 
       // Generate breadcrumbs

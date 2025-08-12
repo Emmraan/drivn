@@ -150,11 +150,15 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
     }
   }, [currentPath, loadFiles]);
 
-  const deleteFile = useCallback(async (filePath: string) => {
-    console.log('🗑️ Deleting file:', filePath);
+  const deleteFile = useCallback(async (s3Key: string) => {
+    console.log('🗑️ Deleting file with S3 key:', s3Key);
 
     try {
-      const response = await fetch(`/api/s3-files/${encodeURIComponent(filePath)}`, {
+      // Split the S3 key and encode each segment separately for the dynamic route
+      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
+      const encodedKey = keySegments.join('/');
+
+      const response = await fetch(`/api/s3-files/${encodedKey}`, {
         method: 'DELETE',
       });
 
@@ -179,11 +183,15 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
     }
   }, [currentPath, loadFiles]);
 
-  const renameFile = useCallback(async (filePath: string, newName: string) => {
-    console.log('✏️ Renaming file:', { filePath, newName });
+  const renameFile = useCallback(async (s3Key: string, newName: string) => {
+    console.log('✏️ Renaming file with S3 key:', { s3Key, newName });
 
     try {
-      const response = await fetch(`/api/s3-files/${encodeURIComponent(filePath)}`, {
+      // Split the S3 key and encode each segment separately for the dynamic route
+      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
+      const encodedKey = keySegments.join('/');
+
+      const response = await fetch(`/api/s3-files/${encodedKey}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newName }),
@@ -307,20 +315,24 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
     }
   }, [currentPath, loadFiles]);
 
-  const getDownloadUrl = useCallback(async (filePath: string) => {
+  const getDownloadUrl = useCallback(async (s3Key: string) => {
     try {
-      const response = await fetch(`/api/s3-files/download/${encodeURIComponent(filePath)}`);
+      // Split the S3 key and encode each segment separately for the dynamic route
+      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
+      const encodedKey = keySegments.join('/');
+
+      const response = await fetch(`/api/s3-files/download/${encodedKey}`);
       const result = await response.json();
-      
+
       if (result.success) {
         return { success: true, url: result.url };
       } else {
         return { success: false, message: result.message };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Failed to get download URL' 
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get download URL'
       };
     }
   }, []);

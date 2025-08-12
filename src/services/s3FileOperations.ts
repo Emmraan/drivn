@@ -216,9 +216,23 @@ export class S3FileOperations {
         };
       }
 
-      // Generate new S3 key with new name
+      // Generate new S3 key with new name, preserving timestamp and random suffix
       const keyParts = s3Key.split('/');
-      keyParts[keyParts.length - 1] = newName;
+      const oldFileName = keyParts[keyParts.length - 1];
+
+      // Extract timestamp and random suffix from old filename
+      // Format: timestamp-random-originalname.ext
+      const filenameParts = oldFileName.split('-');
+      let newFileName = newName;
+
+      if (filenameParts.length >= 3) {
+        // Preserve timestamp and random suffix
+        const timestamp = filenameParts[0];
+        const randomSuffix = filenameParts[1];
+        newFileName = `${timestamp}-${randomSuffix}-${newName}`;
+      }
+
+      keyParts[keyParts.length - 1] = newFileName;
       const newS3Key = keyParts.join('/');
 
       // Copy to new key
@@ -259,9 +273,41 @@ export class S3FileOperations {
       // Invalidate cache
       s3Cache.invalidate(userId);
 
+      // Create the renamed file object to return
+      const renamedFile: S3FileItem = {
+        key: newS3Key,
+        name: newName,
+        size: 0, // Size will be updated when we get the object info
+        lastModified: new Date(),
+        mimeType: undefined,
+        isFolder: false,
+        path: newS3Key.replace(`${userId}/`, ''),
+        metadata: {
+          'original-name': newName,
+          'user-id': userId,
+          'renamed-at': new Date().toISOString(),
+        },
+      };
+
+      // Get the actual file info to populate size and mime type
+      try {
+        const headCommand = new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: newS3Key,
+        });
+        const headResult = await s3Client.send(headCommand);
+
+        renamedFile.size = headResult.ContentLength || 0;
+        renamedFile.mimeType = headResult.ContentType;
+        renamedFile.lastModified = headResult.LastModified || new Date();
+      } catch (headError) {
+        console.warn('Could not get file metadata after rename:', headError);
+      }
+
       return {
         success: true,
         message: 'File renamed successfully',
+        file: renamedFile,
       };
     } catch (error) {
       console.error('Rename error:', error);
