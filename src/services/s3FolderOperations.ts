@@ -416,11 +416,7 @@ export class S3FolderOperations {
           Bucket: bucketName,
           CopySource: `${bucketName}/${obj.Key}`,
           Key: newKey,
-          MetadataDirective: 'REPLACE',
-          Metadata: {
-            'user-id': userId,
-            'renamed-at': new Date().toISOString(),
-          },
+          MetadataDirective: 'COPY',
         });
 
         await s3Client.send(copyCommand);
