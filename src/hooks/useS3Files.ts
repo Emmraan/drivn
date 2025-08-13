@@ -268,8 +268,21 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
 
       if (result.success) {
         console.log('✅ Folder deletion successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
+
+        // Handle S3 eventual consistency by doing multiple refreshes
+        // First immediate refresh
         await loadFiles(currentPath, true, true);
+
+        // Second refresh after a short delay to handle S3 eventual consistency
+        setTimeout(async () => {
+          console.log('🔄 Secondary refresh for S3 eventual consistency...');
+          try {
+            await loadFiles(currentPath, true, true);
+          } catch (error) {
+            console.warn('Secondary refresh failed:', error);
+          }
+        }, 2000);
+
         return { success: true, stats: result.stats };
       } else {
         console.error('❌ Delete folder failed:', result.message);

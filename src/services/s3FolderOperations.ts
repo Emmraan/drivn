@@ -149,18 +149,36 @@ export class S3FolderOperations {
         };
       }
 
-      // Ensure folder path ends with /
-      const folderPrefix = `${userId}${folderPath}${folderPath.endsWith('/') ? '' : '/'}`;
+      // Normalize folder path and construct prefix
+      const normalizedFolderPath = folderPath.replace(/\/+/g, '/').replace(/\/$/, '');
+      const folderPrefix = `${userId}${normalizedFolderPath}/`;
 
-      // List all objects in the folder
-      const listCommand = new ListObjectsV2Command({
-        Bucket: bucketName,
-        Prefix: folderPrefix,
-      });
+      console.log('🗑️ Deleting folder with prefix:', folderPrefix);
 
-      const objects = await s3Client.send(listCommand);
-      
-      if (!objects.Contents || objects.Contents.length === 0) {
+      // List ALL objects in the folder (including the folder marker)
+      // Handle pagination to ensure we get all objects
+      const allObjects: Array<{ Key?: string; Size?: number; LastModified?: Date }> = [];
+      let continuationToken: string | undefined;
+
+      do {
+        const listCommand = new ListObjectsV2Command({
+          Bucket: bucketName,
+          Prefix: folderPrefix,
+          ContinuationToken: continuationToken,
+        });
+
+        const objects = await s3Client.send(listCommand);
+
+        if (objects.Contents) {
+          allObjects.push(...objects.Contents);
+        }
+
+        continuationToken = objects.NextContinuationToken;
+      } while (continuationToken);
+
+      console.log('🔍 Found objects to delete:', allObjects.map(obj => obj.Key) || []);
+
+      if (allObjects.length === 0) {
         return {
           success: false,
           message: 'Folder not found or already empty',
@@ -168,8 +186,19 @@ export class S3FolderOperations {
         };
       }
 
-      // Prepare objects for deletion
-      const objectsToDelete = objects.Contents.map(obj => ({ Key: obj.Key! }));
+      // Prepare objects for deletion - include ALL objects with the prefix
+      const objectsToDelete = allObjects
+        .filter(obj => obj.Key) // Ensure Key exists
+        .map(obj => ({ Key: obj.Key! }));
+
+      // Ensure the folder marker itself is included for deletion
+      const folderMarkerKey = folderPrefix;
+      if (!objectsToDelete.some(obj => obj.Key === folderMarkerKey)) {
+        console.log('Adding folder marker to deletion list:', folderMarkerKey);
+        objectsToDelete.push({ Key: folderMarkerKey });
+      }
+
+      console.log('📝 Final objects prepared for deletion:', objectsToDelete.map(obj => obj.Key));
 
       // Delete all objects in batches (S3 allows max 1000 objects per delete request)
       const batchSize = 1000;
@@ -177,26 +206,35 @@ export class S3FolderOperations {
 
       for (let i = 0; i < objectsToDelete.length; i += batchSize) {
         const batch = objectsToDelete.slice(i, i + batchSize);
-        
+
+        console.log(`🗑️ Deleting batch ${Math.floor(i/batchSize) + 1}:`, batch.map(obj => obj.Key));
+
         const deleteCommand = new DeleteObjectsCommand({
           Bucket: bucketName,
           Delete: {
             Objects: batch,
-            Quiet: true,
+            Quiet: false, // Set to false to get detailed results
           },
         });
 
         const deleteResult = await s3Client.send(deleteCommand);
-        totalDeleted += batch.length - (deleteResult.Errors?.length || 0);
+        const deletedCount = batch.length - (deleteResult.Errors?.length || 0);
+        totalDeleted += deletedCount;
+
+        console.log(`✅ Successfully deleted ${deletedCount} objects in this batch`);
+
+        if (deleteResult.Deleted && deleteResult.Deleted.length > 0) {
+          console.log('✅ Deleted objects:', deleteResult.Deleted.map(obj => obj.Key));
+        }
 
         if (deleteResult.Errors && deleteResult.Errors.length > 0) {
-          console.warn('Some objects failed to delete:', deleteResult.Errors);
+          console.error('❌ Failed to delete some objects:', deleteResult.Errors);
         }
       }
 
       // Log activity
-      const folderName = folderPath.split('/').filter(Boolean).pop() || 'folder';
-      await (ActivityLog as unknown as IActivityLogModel).logActivity(userId, 'delete_folder', folderName, {
+      const deletedFolderName = folderPath.split('/').filter(Boolean).pop() || 'folder';
+      await (ActivityLog as unknown as IActivityLogModel).logActivity(userId, 'delete_folder', deletedFolderName, {
         filePath: folderPath,
         s3Key: folderPrefix,
       });
@@ -207,8 +245,93 @@ export class S3FolderOperations {
         s3Key: { $regex: `^${folderPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` }
       });
 
-      // Invalidate cache
+      // Handle S3 eventual consistency with retry verification
+      // S3 delete operations are immediately consistent for the delete operation itself,
+      // but list operations might still show deleted objects due to eventual consistency
+      let verificationAttempts = 0;
+      const maxVerificationAttempts = 5; // Increased attempts
+      const verificationDelay = 2000; // Increased delay
+
+      while (verificationAttempts < maxVerificationAttempts) {
+        try {
+          // Add a small delay to allow for S3 eventual consistency
+          if (verificationAttempts > 0) {
+            await new Promise(resolve => setTimeout(resolve, verificationDelay));
+          }
+
+          // Use both direct prefix check and parent listing to verify deletion
+          const verifyCommand = new ListObjectsV2Command({
+            Bucket: bucketName,
+            Prefix: folderPrefix,
+            MaxKeys: 1,
+          });
+          const remainingObjects = await s3Client.send(verifyCommand);
+
+          // Also check if the folder appears in the parent directory listing
+          const parentPrefix = `${userId}${normalizedFolderPath.substring(0, normalizedFolderPath.lastIndexOf('/'))}/`;
+          const parentListCommand = new ListObjectsV2Command({
+            Bucket: bucketName,
+            Prefix: parentPrefix,
+            Delimiter: '/',
+            MaxKeys: 1000,
+          });
+          const parentListing = await s3Client.send(parentListCommand);
+
+          const folderStillInCommonPrefixes = parentListing.CommonPrefixes?.some(
+            prefix => prefix.Prefix === folderPrefix
+          );
+
+          console.log('🔍 Verification details:', {
+            remainingObjects: remainingObjects.Contents?.length || 0,
+            folderInCommonPrefixes: folderStillInCommonPrefixes,
+            checkedPrefix: folderPrefix,
+            parentPrefix
+          });
+
+          const hasRemainingObjects = remainingObjects.Contents && remainingObjects.Contents.length > 0;
+
+          if (hasRemainingObjects || folderStillInCommonPrefixes) {
+            verificationAttempts++;
+            console.log(`🔄 Verification attempt ${verificationAttempts}/${maxVerificationAttempts}:`, {
+              remainingObjects: hasRemainingObjects ? remainingObjects.Contents?.map(obj => obj.Key) : [],
+              stillInCommonPrefixes: folderStillInCommonPrefixes
+            });
+
+            if (verificationAttempts >= maxVerificationAttempts) {
+              console.warn('⚠️ Folder still visible after maximum verification attempts. This is likely due to S3 eventual consistency and should resolve shortly.');
+              // As a final measure, attempt a direct deletion of the folder marker
+              try {
+                console.log('🔪 Attempting final, direct deletion of folder marker:', folderPrefix);
+                const deleteMarkerCommand = new DeleteObjectsCommand({
+                  Bucket: bucketName,
+                  Delete: { Objects: [{ Key: folderPrefix }] },
+                });
+                await s3Client.send(deleteMarkerCommand);
+                console.log('✅ Final deletion command sent for folder marker.');
+              } catch (finalDeleteError) {
+                console.error('❌ Error during final direct deletion:', finalDeleteError);
+              }
+            }
+          } else {
+            console.log('✅ Folder deletion verified - no objects remain and not in CommonPrefixes:', folderPrefix);
+            break;
+          }
+        } catch (verifyError) {
+          console.warn('Could not verify folder deletion:', verifyError);
+          break;
+        }
+      }
+
+      // Aggressively invalidate cache to ensure fresh data
+      // Clear all cache entries for this user to avoid stale folder listings
       s3Cache.invalidate(userId);
+
+      // Also clear any cache entries that might contain the deleted folder path
+      const parentPath = normalizedFolderPath.substring(0, normalizedFolderPath.lastIndexOf('/'));
+      s3Cache.invalidate(`list:${userId}:${parentPath}`);
+      s3Cache.invalidate(`list:${userId}:`); // Clear root listing cache too
+
+      console.log(`✅ Folder deletion completed: ${totalDeleted} items deleted, cache invalidated`);
 
       return {
         success: true,
@@ -281,7 +404,9 @@ export class S3FolderOperations {
       }
 
       // Copy all objects to new locations
-      const copyPromises = objects.Contents.map(async (obj) => {
+      const copyPromises = objects.Contents
+        .filter(obj => obj.Key !== oldFolderPrefix) // Exclude the folder marker itself
+        .map(async (obj) => {
         if (!obj.Key) return;
 
         // Calculate new key by replacing the old prefix with new prefix
@@ -308,6 +433,8 @@ export class S3FolderOperations {
       // Delete old objects
       if (successfulCopies.length > 0) {
         const objectsToDelete = successfulCopies.map(result => ({ Key: result!.oldKey }));
+        // Also delete the old folder marker
+        objectsToDelete.push({ Key: oldFolderPrefix });
 
         // Delete in batches
         const batchSize = 1000;
@@ -325,6 +452,15 @@ export class S3FolderOperations {
           await s3Client.send(deleteCommand);
         }
       }
+
+      // Create a new folder marker for the renamed folder
+      const putCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: newFolderPrefix,
+        Body: '',
+        ContentType: 'application/x-directory',
+      });
+      await s3Client.send(putCommand);
 
       // Log activity
       await (ActivityLog as unknown as IActivityLogModel).logActivity(userId, 'rename_folder', sanitizedNewName, {

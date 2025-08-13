@@ -84,7 +84,7 @@ export class S3ListingOperations {
         }
       }
 
-      console.log('🔍 Listing S3 objects with prefix:', s3Prefix);
+      console.log('🔍 Listing S3 objects with prefix:', s3Prefix, useCache ? '(using cache)' : '(bypassing cache)');
 
       const listCommand = new ListObjectsV2Command({
         Bucket: bucketName,
@@ -96,24 +96,65 @@ export class S3ListingOperations {
 
       const response = await s3Client.send(listCommand);
 
-      // Process folders (common prefixes)
+      console.log('🔍 S3 ListObjects response:', {
+        CommonPrefixes: response.CommonPrefixes?.map(p => p.Prefix) || [],
+        Contents: response.Contents?.map(c => c.Key) || [],
+        IsTruncated: response.IsTruncated
+      });
+
+      // Process folders (common prefixes) with validation
       const folders: S3FileItem[] = [];
       if (response.CommonPrefixes) {
-        for (const prefix of response.CommonPrefixes) {
-          if (prefix.Prefix) {
-            const folderName = prefix.Prefix.replace(s3Prefix, '').replace('/', '');
-            if (folderName) {
-              folders.push({
+        // Validate each CommonPrefix by checking if it actually contains objects
+        const folderValidationPromises = response.CommonPrefixes.map(async (prefix) => {
+          if (!prefix.Prefix) return null;
+
+          const folderName = prefix.Prefix.replace(s3Prefix, '').replace('/', '');
+          if (!folderName) return null;
+
+          console.log('🔍 Validating folder from CommonPrefix:', { prefix: prefix.Prefix, folderName });
+
+          try {
+            // Check if this prefix actually contains any objects
+            const validateCommand = new ListObjectsV2Command({
+              Bucket: bucketName,
+              Prefix: prefix.Prefix,
+              MaxKeys: 1,
+            });
+
+            const validateResponse = await s3Client.send(validateCommand);
+            const hasObjects = validateResponse.Contents && validateResponse.Contents.length > 0;
+
+            if (hasObjects) {
+              console.log('✅ Folder validated - contains objects:', prefix.Prefix);
+              return {
                 key: prefix.Prefix,
                 name: folderName,
                 size: 0,
                 lastModified: new Date(),
                 isFolder: true,
                 path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${folderName}`,
-              });
+              };
+            } else {
+              console.log('❌ Folder invalid - no objects found:', prefix.Prefix);
+              return null;
             }
+          } catch (error) {
+            console.warn('Could not validate folder:', prefix.Prefix, error);
+            // If validation fails, include the folder to be safe
+            return {
+              key: prefix.Prefix,
+              name: folderName,
+              size: 0,
+              lastModified: new Date(),
+              isFolder: true,
+              path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${folderName}`,
+            };
           }
-        }
+        });
+
+        const validatedFolders = await Promise.all(folderValidationPromises);
+        folders.push(...validatedFolders.filter((folder): folder is S3FileItem => folder !== null));
       }
 
       // Process files
