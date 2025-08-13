@@ -5,6 +5,7 @@ import { S3FileOperations } from './s3FileOperations';
 import { S3FolderOperations } from './s3FolderOperations';
 import { S3ListingOperations } from './s3ListingOperations';
 import { s3Cache } from '../utils/s3Cache';
+import { S3ConfigService } from './s3ConfigService';
 
 // Re-export types for convenience
 export type { S3FileItem, UploadResult, DeleteResult } from './s3FileOperations';
@@ -44,6 +45,21 @@ export class S3DirectService {
   // Analytics Operations
   static async getStorageStats(userId: string) {
     try {
+      // First check if user has valid S3 config
+      const s3Config = await S3ConfigService.getS3Config(userId);
+      if (!s3Config || !s3Config.accessKeyId) {
+        return {
+          success: true,
+          data: {
+            totalFiles: 0,
+            totalFolders: 0,
+            totalSize: 0,
+            fileTypeStats: {},
+          },
+          message: 'No S3 configuration found',
+        };
+      }
+
       const allFiles = await S3ListingOperations.listAllFiles(userId);
 
       // Calculate file type stats

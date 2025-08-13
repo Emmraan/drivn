@@ -15,7 +15,7 @@ import { StatCardSkeleton } from '@/components/ui/SkeletonLoader';
 interface StorageStats {
   totalFiles: number;
   totalFolders: number;
-  totalStorageUsed: number;
+  storageUsed: number;
   bucketType: 'user';
   hasOwnS3Config?: boolean;
 }
@@ -36,7 +36,7 @@ export default function StoragePage() {
       const data = await response.json();
 
       if (data.success) {
-        setStats(data.stats);
+        setStats(data.data);
       }
     } catch (error) {
       console.error('Error loading storage stats:', error);
@@ -126,7 +126,7 @@ export default function StoragePage() {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats ? formatBytes(stats.totalStorageUsed) : '0 Bytes'}
+                {stats ? formatBytes(stats.storageUsed) : '0 Bytes'}
               </p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function StoragePage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {formatBytes(stats.totalStorageUsed)} / No Limit
+                  {formatBytes(stats.storageUsed)} / No Limit
                 </span>
                 <span className="font-medium text-green-600 dark:text-green-400">
                   Unlimited

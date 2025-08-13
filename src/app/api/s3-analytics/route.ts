@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
           monthlyStats: [], // Would need separate tracking
           fileTypeStats,
           timeRange: '30d',
+          hasOwnS3Config: !!(user.s3Config?.accessKeyId),
         },
         message: result.message,
       });
