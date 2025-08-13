@@ -32,7 +32,7 @@ export default function StoragePage() {
   const loadStorageStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/storage/stats');
+      const response = await fetch('/api/s3-analytics');
       const data = await response.json();
 
       if (data.success) {

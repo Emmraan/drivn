@@ -109,7 +109,7 @@ export class S3FolderOperations {
       });
 
       // Invalidate cache
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       const folder: S3FolderItem = {
         key: folderKey,
@@ -324,7 +324,7 @@ export class S3FolderOperations {
 
       // Aggressively invalidate cache to ensure fresh data
       // Clear all cache entries for this user to avoid stale folder listings
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       // Also clear any cache entries that might contain the deleted folder path
       const parentPath = normalizedFolderPath.substring(0, normalizedFolderPath.lastIndexOf('/'));
@@ -481,7 +481,7 @@ export class S3FolderOperations {
       }
 
       // Invalidate cache
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       const renamedFolder: S3FolderItem = {
         key: newFolderPrefix,

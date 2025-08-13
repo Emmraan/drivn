@@ -44,14 +44,7 @@ export class S3DirectService {
   // Analytics Operations
   static async getStorageStats(userId: string) {
     try {
-      const result = await S3ListingOperations.listFiles(userId, '/', { maxKeys: 10000 });
-
-      if (!result.success) {
-        return {
-          success: false,
-          message: result.message || result.error,
-        };
-      }
+      const allFiles = await S3ListingOperations.listAllFiles(userId);
 
       // Calculate file type stats
       const fileTypeStats: Record<string, { count: number; size: number }> = {};
@@ -74,13 +67,17 @@ export class S3DirectService {
         }
       };
 
-      processItems(result.files);
+      processItems(allFiles);
+
+      // To get the folder count, we can do a non-recursive list
+      const rootListing = await S3ListingOperations.listFiles(userId, '/');
+      const totalFolders = rootListing.success ? rootListing.folders.length : 0;
 
       return {
         success: true,
         data: {
           totalFiles,
-          totalFolders: result.totalFolders,
+          totalFolders,
           totalSize,
           fileTypeStats,
         },

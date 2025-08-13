@@ -73,7 +73,9 @@ export class S3ListingOperations {
 
       // Normalize path
       const normalizedPath = path.replace(/\/+/g, '/').replace(/\/$/, '');
-      const s3Prefix = `${userId}${normalizedPath === '/' ? '' : normalizedPath}/`;
+      const s3Prefix = [userId, normalizedPath.replace(/^\//, '')]
+        .filter(Boolean)
+        .join('/') + '/';
 
       // Check cache first
       const cacheKey = `list:${userId}:${normalizedPath}:${maxKeys}:${continuationToken || ''}`;
@@ -87,6 +89,14 @@ export class S3ListingOperations {
       console.log('🔍 Listing S3 objects with prefix:', s3Prefix, useCache ? '(using cache)' : '(bypassing cache)');
 
       const listCommand = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: s3Prefix,
+        Delimiter: '/',
+        MaxKeys: 1000, // Reduced maxKeys
+        ...(continuationToken && { ContinuationToken: continuationToken }),
+      });
+
+      console.log('🔍 Sending ListObjectsV2Command with params:', {
         Bucket: bucketName,
         Prefix: s3Prefix,
         Delimiter: '/',
@@ -107,7 +117,7 @@ export class S3ListingOperations {
       if (response.CommonPrefixes) {
         // Validate each CommonPrefix by checking if it actually contains objects
         const folderValidationPromises = response.CommonPrefixes.map(async (prefix) => {
-          if (!prefix.Prefix) return null;
+          if (!prefix.Prefix || prefix.Prefix === s3Prefix) return null;
 
           const folderName = prefix.Prefix.replace(s3Prefix, '').replace('/', '');
           if (!folderName) return null;
@@ -265,6 +275,54 @@ export class S3ListingOperations {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  /**
+   * List all files recursively for a user
+   */
+  static async listAllFiles(userId: string): Promise<S3FileItem[]> {
+    const s3Client = await getS3Client(userId);
+    const bucketName = await getS3BucketName(userId);
+    if (!s3Client || !bucketName) {
+      return [];
+    }
+
+    let allFiles: S3FileItem[] = [];
+    let continuationToken: string | undefined = undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+      const command = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: `${userId}/`,
+        ContinuationToken: continuationToken,
+      });
+
+      const response: import("@aws-sdk/client-s3").ListObjectsV2CommandOutput = await s3Client.send(command);
+
+      if (response.Contents) {
+        const fileItems = response.Contents
+          .filter(object => object.Key && object.Size && object.Size > 0)
+          .map((object: import("@aws-sdk/client-s3")._Object) => {
+            const key = object.Key || '';
+            const name = key.split('/').pop() || '';
+            return {
+              key,
+              name,
+              size: object.Size || 0,
+              lastModified: object.LastModified || new Date(),
+              isFolder: false,
+              path: key.replace(`${userId}/`, '/'),
+            };
+          });
+        allFiles = allFiles.concat(fileItems);
+      }
+
+      continuationToken = response.NextContinuationToken;
+      hasMore = !!continuationToken;
+    }
+
+    return allFiles;
   }
 
   /**

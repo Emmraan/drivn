@@ -99,7 +99,7 @@ export class S3FileOperations {
       });
 
       // Invalidate cache
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       const uploadedFile: S3FileItem = {
         key: s3Key,
@@ -179,7 +179,7 @@ export class S3FileOperations {
       await FileMetadata.findOneAndDelete({ s3Key });
 
       // Invalidate cache
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       return {
         success: true,
@@ -271,7 +271,7 @@ export class S3FileOperations {
       );
 
       // Invalidate cache
-      s3Cache.invalidate(userId);
+      s3Cache.invalidate(`list:${userId}:/`);
 
       // Create the renamed file object to return
       const renamedFile: S3FileItem = {
