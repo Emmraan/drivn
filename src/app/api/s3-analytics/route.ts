@@ -10,7 +10,7 @@ import connectDB from '@/utils/database';
  */
 export async function GET(request: NextRequest) {
   try {
-    await connectDB(); // Ensure DB connection is established
+    await connectDB();
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           totalDownloads: totalDownloads,
           storageUsed: s3StatsResult.data.totalSize,
           recentActivity,
-          monthlyStats: [], // Would need separate tracking
+          monthlyStats: [],
           fileTypeStats,
           timeRange: timeRange,
           hasOwnS3Config: !!(user.s3Config?.accessKeyId),
