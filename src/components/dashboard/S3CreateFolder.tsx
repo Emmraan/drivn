@@ -86,12 +86,12 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 backdrop-blur-md bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+        className="backdrop-blur-md rounded-lg shadow-xl w-full max-w-md"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -114,7 +114,7 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
             <div className="flex items-center">
               <FolderIcon className="h-5 w-5 text-primary-500 mr-2" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Creating in: /{parentPath || 'root'}
+                Creating in: {parentPath || 'root'}
               </span>
             </div>
           </div>

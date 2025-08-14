@@ -72,7 +72,6 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
     setIsUploading(true);
 
     try {
-      // Update all files to uploading status
       setUploadFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
 
       const formData = new FormData();
@@ -89,43 +88,39 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
       const result = await response.json();
 
       if (result.success) {
-        // Mark all as successful
-        setUploadFiles(prev => prev.map(f => ({ 
-          ...f, 
-          status: 'success' as const, 
-          progress: 100 
+        setUploadFiles(prev => prev.map(f => ({
+          ...f,
+          status: 'success' as const,
+          progress: 100
         })));
 
-        // Close modal after a short delay
         setTimeout(() => {
           onUploadComplete();
           onClose();
           setUploadFiles([]);
         }, 1500);
       } else {
-        // Handle partial success/failure
         if (result.data?.errors && result.data.errors.length > 0) {
           setUploadFiles(prev => prev.map(f => {
             const error = result.data.errors.find((err: { fileName: string; error: string }) => err.fileName === f.file.name);
-            return error 
+            return error
               ? { ...f, status: 'error' as const, error: error.error }
               : { ...f, status: 'success' as const, progress: 100 };
           }));
         } else {
-          // All failed
-          setUploadFiles(prev => prev.map(f => ({ 
-            ...f, 
-            status: 'error' as const, 
-            error: result.message || 'Upload failed' 
+          setUploadFiles(prev => prev.map(f => ({
+            ...f,
+            status: 'error' as const,
+            error: result.message || 'Upload failed'
           })));
         }
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setUploadFiles(prev => prev.map(f => ({ 
-        ...f, 
-        status: 'error' as const, 
-        error: 'Network error' 
+      setUploadFiles(prev => prev.map(f => ({
+        ...f,
+        status: 'error' as const,
+        error: 'Network error'
       })));
     } finally {
       setIsUploading(false);
@@ -154,17 +149,17 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 backdrop-blur-md bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        className="backdrop-blur-md rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Upload Files to S3
+          <h2 className="text-xl font-semibold text-white">
+            Upload Files to S3 Bucket
           </h2>
           <button
             onClick={onClose}
@@ -181,15 +176,14 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragOver
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
                 ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
-            }`}
+              }`}
           >
             <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <div>
-              <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <p className="text-lg font-medium text-white mb-2">
                 Drop files here or click to browse
               </p>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
@@ -201,8 +195,10 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
                 onClick={() => fileInputRef.current?.click()}
                 className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
               >
-                <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
-                Choose Files
+                <span className='flex items-center'>
+                  <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                  Choose Files
+                </span>
               </Button>
             </div>
 
