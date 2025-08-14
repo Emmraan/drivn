@@ -153,7 +153,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div>
       {/* Welcome section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -175,7 +175,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mt-8"
       >
         {dashboardStats.map((stat) => (
           <Card key={stat.name} className="p-6">
@@ -208,6 +208,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-8"
       >
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           Quick Actions
@@ -258,6 +259,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
+        className="mt-8"
       >
         <Card className="p-8 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20">
           <div className="text-center">
@@ -297,3 +299,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
