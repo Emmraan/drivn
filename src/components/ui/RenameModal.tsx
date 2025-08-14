@@ -77,13 +77,13 @@ export default function RenameModal({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full max-w-mdrounded-xl shadow-xl backdrop-blur-md bg-opacity-95 dark:bg-opacity-95"
+          className="relative w-full max-w-md shadow-xl backdrop-blur-md "
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               <PencilIcon className="h-6 w-6 text-primary-600" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-white">
                 {title}
               </h2>
             </div>
@@ -99,7 +99,7 @@ export default function RenameModal({
           <form onSubmit={handleSubmit} className="p-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   New name
                 </label>
                 <input
