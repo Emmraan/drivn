@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/analytics?timeRange=30d');
+      const response = await fetch('/api/s3-analytics?timeRange=30d');
       const data = await response.json();
 
       if (data.success) {

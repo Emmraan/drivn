@@ -50,7 +50,7 @@ export default function S3AnalyticsPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/analytics?timeRange=${range}`);
+      const response = await fetch(`/api/s3-analytics?timeRange=${range}`);
       const result = await response.json();
 
       if (result.success) {
