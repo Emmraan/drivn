@@ -153,13 +153,19 @@ export default function S3FilesPage() {
 
   const handleDeleteFile = useCallback(async (file: FileItem) => {
     if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
-      await deleteFile(file.key);
+      const result = await deleteFile(file.key);
+      if (!result.success) {
+        alert(`Failed to delete file: ${result.message}`);
+      }
     }
   }, [deleteFile]);
 
   const handleDeleteFolder = useCallback(async (folder: FolderItem) => {
     if (confirm(`Are you sure you want to delete the folder "${folder.name}" and all its contents?`)) {
-      await deleteFolder(folder.path);
+      const result = await deleteFolder(folder.path);
+      if (!result.success) {
+        alert(`Failed to delete folder: ${result.message}`);
+      }
     }
   }, [deleteFolder]);
 
@@ -248,7 +254,7 @@ export default function S3FilesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -292,7 +298,7 @@ export default function S3FilesPage() {
 
       {/* Breadcrumbs */}
       {!searchQuery.trim() && (
-        <nav className="flex" aria-label="Breadcrumb">
+        <nav className="mt-8 flex" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">
             {breadcrumbs.map((crumb, index) => (
               <li key={crumb.path} className="flex items-center">
@@ -310,7 +316,7 @@ export default function S3FilesPage() {
       )}
 
       {/* Search and View Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="relative flex-1 max-w-md">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -351,7 +357,7 @@ export default function S3FilesPage() {
 
       {/* Loading State */}
       {isLoading && (displayItems.length === 0 && displayFolders.length === 0) && (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4' : 'space-y-2'}>
+        <div className={viewMode === 'grid' ? 'mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4' : 'space-y-2'}>
           {Array.from({ length: 12 }).map((_, i) => (
             <FileItemSkeleton key={i} viewMode={viewMode} />
           ))}
@@ -360,7 +366,7 @@ export default function S3FilesPage() {
 
       {/* Empty State */}
       {!isLoading && displayItems.length === 0 && displayFolders.length === 0 && !error && (
-        <div className="text-center py-12">
+        <div className="mt-8 text-center py-12">
           <FolderIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {searchQuery.trim() ? 'No files found' : 'No files yet'}
@@ -385,7 +391,7 @@ export default function S3FilesPage() {
 
       {/* Files and Folders Grid/List */}
       {(displayItems.length > 0 || displayFolders.length > 0) && (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4' : 'space-y-2'}>
+        <div className={viewMode === 'grid' ? 'mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4' : 'mt-8 space-y-2'}>
           {/* Folders */}
           {displayFolders.map((folder) => (
             <ContextMenu key={folder.key} items={getFolderContextMenuItems(folder)} itemType="folder">

@@ -151,10 +151,13 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
   }, [currentPath, loadFiles]);
 
   const deleteFile = useCallback(async (s3Key: string) => {
-    console.log('🗑️ Deleting file with S3 key:', s3Key);
+    console.log('🗑️ Attempting optimistic delete for file with S3 key:', s3Key);
+
+    // Optimistic UI update: Remove the file immediately
+    setFiles(prevFiles => prevFiles.filter(file => file.key !== s3Key));
+    setError(null); // Clear any previous errors
 
     try {
-      // Split the S3 key and encode each segment separately for the dynamic route
       const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
       const encodedKey = keySegments.join('/');
 
@@ -163,22 +166,27 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
       });
 
       const result = await response.json();
-      console.log('🗑️ Delete result:', result);
+      console.log('🗑️ Delete API result:', result);
 
       if (result.success) {
-        console.log('✅ Delete successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
-        await loadFiles(currentPath, true, true);
+        console.log('✅ File deleted successfully on backend.');
+        // No need to refresh if optimistic update was correct
         return { success: true };
       } else {
-        console.error('❌ Delete failed:', result.message);
+        console.error('❌ Backend delete failed, reverting UI:', result.message);
+        setError(result.message || 'Failed to delete file on server.');
+        // Revert UI on failure
+        await loadFiles(currentPath, true, true);
         return { success: false, message: result.message };
       }
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error('❌ Delete network error, reverting UI:', error);
+      setError(error instanceof Error ? error.message : 'Network error during delete.');
+      // Revert UI on network error
+      await loadFiles(currentPath, true, true);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Delete failed'
+        message: error instanceof Error ? error.message : 'Delete failed due to network error'
       };
     }
   }, [currentPath, loadFiles]);
@@ -256,7 +264,11 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
   }, [currentPath, loadFiles]);
 
   const deleteFolder = useCallback(async (folderPath: string) => {
-    console.log('🗑️📁 Deleting folder:', folderPath);
+    console.log('🗑️📁 Attempting optimistic delete for folder:', folderPath);
+
+    // Optimistic UI update: Remove the folder immediately
+    setFolders(prevFolders => prevFolders.filter(folder => folder.path !== folderPath));
+    setError(null); // Clear any previous errors
 
     try {
       const response = await fetch(`/api/s3-folders/${encodeURIComponent(folderPath)}`, {
@@ -264,35 +276,27 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
       });
 
       const result = await response.json();
-      console.log('🗑️📁 Delete folder result:', result);
+      console.log('🗑️📁 Delete folder API result:', result);
 
       if (result.success) {
-        console.log('✅ Folder deletion successful, refreshing UI...');
-
-        // Handle S3 eventual consistency by doing multiple refreshes
-        // First immediate refresh
-        await loadFiles(currentPath, true, true);
-
-        // Second refresh after a short delay to handle S3 eventual consistency
-        setTimeout(async () => {
-          console.log('🔄 Secondary refresh for S3 eventual consistency...');
-          try {
-            await loadFiles(currentPath, true, true);
-          } catch (error) {
-            console.warn('Secondary refresh failed:', error);
-          }
-        }, 2000);
-
+        console.log('✅ Folder deleted successfully on backend.');
+        // No need to refresh if optimistic update was correct
         return { success: true, stats: result.stats };
       } else {
-        console.error('❌ Delete folder failed:', result.message);
+        console.error('❌ Backend folder delete failed, reverting UI:', result.message);
+        setError(result.message || 'Failed to delete folder on server.');
+        // Revert UI on failure
+        await loadFiles(currentPath, true, true);
         return { success: false, message: result.message };
       }
     } catch (error) {
-      console.error('❌ Delete folder error:', error);
+      console.error('❌ Folder delete network error, reverting UI:', error);
+      setError(error instanceof Error ? error.message : 'Network error during folder delete.');
+      // Revert UI on network error
+      await loadFiles(currentPath, true, true);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Delete folder failed'
+        message: error instanceof Error ? error.message : 'Delete folder failed due to network error'
       };
     }
   }, [currentPath, loadFiles]);
