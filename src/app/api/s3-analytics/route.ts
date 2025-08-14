@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
 import { S3DirectService } from '@/services/s3DirectService';
+import ActivityLog from '@/models/ActivityLog';
+import connectDB from '@/utils/database';
 
 /**
  * GET /api/s3-analytics
@@ -8,6 +10,7 @@ import { S3DirectService } from '@/services/s3DirectService';
  */
 export async function GET(request: NextRequest) {
   try {
+    await connectDB(); // Ensure DB connection is established
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
@@ -16,11 +19,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await S3DirectService.getStorageStats(String(user._id));
+    const s3StatsResult = await S3DirectService.getStorageStats(String(user._id));
 
-    if (result.success && result.data) {
+    if (s3StatsResult.success && s3StatsResult.data) {
+      const timeRange = request.nextUrl.searchParams.get('timeRange') as '7d' | '30d' | '90d' || '30d';
+      const activityStats = await ActivityLog.getUserStats(String(user._id), timeRange);
+      
+      console.log('Activity Stats:', activityStats);
+
+      const totalDownloads = activityStats.download?.count || 0;
+      console.log('Total Downloads:', totalDownloads);
+
       // Transform file type stats to match expected format
-      const fileTypeStats = Object.entries(result.data.fileTypeStats).map(([extension, stats]) => ({
+      const fileTypeStats = Object.entries(s3StatsResult.data.fileTypeStats).map(([extension, stats]) => ({
         _id: getFileTypeCategory(extension),
         count: stats.count,
         size: stats.size,
@@ -39,21 +50,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          totalFiles: result.data.totalFiles,
-          totalFolders: result.data.totalFolders,
-          totalDownloads: 0, // Not available from S3 directly
-          storageUsed: result.data.totalSize,
+          totalFiles: s3StatsResult.data.totalFiles,
+          totalFolders: s3StatsResult.data.totalFolders,
+          totalDownloads: totalDownloads,
+          storageUsed: s3StatsResult.data.totalSize,
           recentActivity,
           monthlyStats: [], // Would need separate tracking
           fileTypeStats,
-          timeRange: '30d',
+          timeRange: timeRange,
           hasOwnS3Config: !!(user.s3Config?.accessKeyId),
         },
-        message: result.message,
+        message: s3StatsResult.message,
       });
     } else {
       return NextResponse.json(
-        { success: false, message: result.message },
+        { success: false, message: s3StatsResult.message },
         { status: 400 }
       );
     }

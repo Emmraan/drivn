@@ -191,4 +191,12 @@ ActivityLogSchema.statics.getRecentActivity = async function(
     .select('action fileName timestamp fileSize mimeType');
 };
 
-export default mongoose.models.ActivityLog || mongoose.model<IActivityLog, IActivityLogModel>('ActivityLog', ActivityLogSchema);
+let ActivityLog: IActivityLogModel;
+
+if (mongoose.models.ActivityLog) {
+  ActivityLog = mongoose.models.ActivityLog as unknown as IActivityLogModel;
+} else {
+  ActivityLog = mongoose.model<IActivityLog, IActivityLogModel>('ActivityLog', ActivityLogSchema);
+}
+
+export default ActivityLog;
