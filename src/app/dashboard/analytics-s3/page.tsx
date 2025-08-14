@@ -50,7 +50,7 @@ export default function S3AnalyticsPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/s3-analytics?timeRange=${range}`);
+      const response = await fetch(`/api/analytics?timeRange=${range}`);
       const result = await response.json();
 
       if (result.success) {
@@ -255,7 +255,6 @@ export default function S3AnalyticsPage() {
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatNumber(data.totalDownloads)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Not tracked in S3</p>
                   </div>
                 </div>
               </Card>
@@ -331,9 +330,7 @@ export default function S3AnalyticsPage() {
                     S3 Direct Analytics
                   </h3>
                   <p className="text-blue-800 dark:text-blue-200 text-sm">
-                    These analytics are calculated directly from your S3 bucket contents. Some features like download tracking, 
-                    recent activity, and monthly trends are not available when using S3 directly, as this information 
-                    is not stored in S3 metadata. For complete analytics, consider implementing additional tracking mechanisms.
+                    These analytics are calculated directly from your S3 bucket contents.
                   </p>
                 </div>
               </div>

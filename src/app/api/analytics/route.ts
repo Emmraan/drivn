@@ -4,6 +4,7 @@ import connectDB from '@/utils/database';
 import ActivityLog, { IActivityLogModel } from '@/models/ActivityLog';
 import FileMetadata, { IFileMetadataModel } from '@/models/FileMetadata';
 import { Types } from 'mongoose';
+import { S3DirectService } from '@/services/s3DirectService';
 
 /**
  * GET /api/analytics
@@ -24,17 +25,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '30d';
 
-    // Calculate date range
-    // Time range is handled by ActivityLog.getUserStats method
-
     // Get basic stats from hybrid models
-    const [fileMetadataStats, activityStats] = await Promise.all([
+    const [fileMetadataStats, activityStats, s3Stats] = await Promise.all([
       (FileMetadata as unknown as IFileMetadataModel).getStorageStats(user._id),
       (ActivityLog as unknown as IActivityLogModel).getUserStats(user._id, timeRange as '7d' | '30d' | '90d'),
+      S3DirectService.getStorageStats(String(user._id)),
     ]);
 
     const totalFiles = fileMetadataStats.totalFiles;
-    const totalFolders = 0; // Folders are now virtual in S3, not tracked separately
+    const totalFolders = s3Stats.success ? s3Stats.data?.totalFolders || 0 : 0;
     const totalDownloads = activityStats.download?.count || 0;
     const storageUsed = fileMetadataStats.totalSize;
 
