@@ -1,6 +1,6 @@
-import { ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3';
-import { getS3Client, getS3BucketName } from '../utils/s3ClientFactory';
-import { s3Cache } from '../utils/s3Cache';
+import { ListObjectsV2Command, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
+import { s3Cache } from "../utils/s3Cache";
 
 export interface S3FileItem {
   key: string;
@@ -43,7 +43,7 @@ export class S3ListingOperations {
    */
   static async listFiles(
     userId: string,
-    path: string = '/',
+    path: string = "/",
     options: {
       maxKeys?: number;
       continuationToken?: string;
@@ -52,7 +52,7 @@ export class S3ListingOperations {
   ): Promise<ListResult> {
     try {
       const { maxKeys = 1000, continuationToken, useCache = true } = options;
-      
+
       const s3Client = await getS3Client(userId);
       const bucketName = await getS3BucketName(userId);
 
@@ -66,19 +66,20 @@ export class S3ListingOperations {
           totalSize: 0,
           totalFiles: 0,
           totalFolders: 0,
-          message: 'S3 configuration not found. Please configure your storage settings.',
-          error: 'S3_CONFIG_MISSING',
+          message:
+            "S3 configuration not found. Please configure your storage settings.",
+          error: "S3_CONFIG_MISSING",
         };
       }
 
-      // Normalize path
-      const normalizedPath = path.replace(/\/+/g, '/').replace(/\/$/, '');
-      const s3Prefix = [userId, normalizedPath.replace(/^\//, '')]
-        .filter(Boolean)
-        .join('/') + '/';
+      const normalizedPath = path.replace(/\/+/g, "/").replace(/\/$/, "");
+      const s3Prefix =
+        [userId, normalizedPath.replace(/^\//, "")].filter(Boolean).join("/") +
+        "/";
 
-      // Check cache first
-      const cacheKey = `list:${userId}:${normalizedPath}:${maxKeys}:${continuationToken || ''}`;
+      const cacheKey = `list:${userId}:${normalizedPath}:${maxKeys}:${
+        continuationToken || ""
+      }`;
       if (useCache) {
         const cached = s3Cache.get(cacheKey);
         if (cached) {
@@ -86,159 +87,184 @@ export class S3ListingOperations {
         }
       }
 
-      console.log('🔍 Listing S3 objects with prefix:', s3Prefix, useCache ? '(using cache)' : '(bypassing cache)');
+      console.log(
+        "🔍 Listing S3 objects with prefix:",
+        s3Prefix,
+        useCache ? "(using cache)" : "(bypassing cache)"
+      );
 
       const listCommand = new ListObjectsV2Command({
         Bucket: bucketName,
         Prefix: s3Prefix,
-        Delimiter: '/',
-        MaxKeys: 1000, // Reduced maxKeys
+        Delimiter: "/",
+        MaxKeys: 1000,
         ...(continuationToken && { ContinuationToken: continuationToken }),
       });
 
-      console.log('🔍 Sending ListObjectsV2Command with params:', {
+      console.log("🔍 Sending ListObjectsV2Command with params:", {
         Bucket: bucketName,
         Prefix: s3Prefix,
-        Delimiter: '/',
+        Delimiter: "/",
         MaxKeys: maxKeys,
         ContinuationToken: continuationToken,
       });
 
       const response = await s3Client.send(listCommand);
 
-      console.log('🔍 S3 ListObjects response:', {
-        CommonPrefixes: response.CommonPrefixes?.map(p => p.Prefix) || [],
-        Contents: response.Contents?.map(c => c.Key) || [],
-        IsTruncated: response.IsTruncated
+      console.log("🔍 S3 ListObjects response:", {
+        CommonPrefixes: response.CommonPrefixes?.map((p) => p.Prefix) || [],
+        Contents: response.Contents?.map((c) => c.Key) || [],
+        IsTruncated: response.IsTruncated,
       });
 
-      // Process folders (common prefixes) with validation
       const folders: S3FileItem[] = [];
       if (response.CommonPrefixes) {
-        // Validate each CommonPrefix by checking if it actually contains objects
-        const folderValidationPromises = response.CommonPrefixes.map(async (prefix) => {
-          if (!prefix.Prefix || prefix.Prefix === s3Prefix) return null;
+        const folderValidationPromises = response.CommonPrefixes.map(
+          async (prefix) => {
+            if (!prefix.Prefix || prefix.Prefix === s3Prefix) return null;
 
-          const folderName = prefix.Prefix.replace(s3Prefix, '').replace('/', '');
-          if (!folderName) return null;
+            const folderName = prefix.Prefix.replace(s3Prefix, "").replace(
+              "/",
+              ""
+            );
+            if (!folderName) return null;
 
-          console.log('🔍 Validating folder from CommonPrefix:', { prefix: prefix.Prefix, folderName });
-
-          try {
-            // Check if this prefix actually contains any objects
-            const validateCommand = new ListObjectsV2Command({
-              Bucket: bucketName,
-              Prefix: prefix.Prefix,
-              MaxKeys: 1,
+            console.log("🔍 Validating folder from CommonPrefix:", {
+              prefix: prefix.Prefix,
+              folderName,
             });
 
-            const validateResponse = await s3Client.send(validateCommand);
-            const hasObjects = validateResponse.Contents && validateResponse.Contents.length > 0;
+            try {
+              const validateCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix.Prefix,
+                MaxKeys: 1,
+              });
 
-            if (hasObjects) {
-              console.log('✅ Folder validated - contains objects:', prefix.Prefix);
+              const validateResponse = await s3Client.send(validateCommand);
+              const hasObjects =
+                validateResponse.Contents &&
+                validateResponse.Contents.length > 0;
+
+              if (hasObjects) {
+                console.log(
+                  "✅ Folder validated - contains objects:",
+                  prefix.Prefix
+                );
+                return {
+                  key: prefix.Prefix,
+                  name: folderName,
+                  size: 0,
+                  lastModified: new Date(),
+                  isFolder: true,
+                  path: `${
+                    normalizedPath === "/" || normalizedPath === ""
+                      ? ""
+                      : normalizedPath
+                  }/${folderName}`,
+                };
+              } else {
+                console.log(
+                  "❌ Folder invalid - no objects found:",
+                  prefix.Prefix
+                );
+                return null;
+              }
+            } catch (error) {
+              console.warn("Could not validate folder:", prefix.Prefix, error);
               return {
                 key: prefix.Prefix,
                 name: folderName,
                 size: 0,
                 lastModified: new Date(),
                 isFolder: true,
-                path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${folderName}`,
+                path: `${
+                  normalizedPath === "/" || normalizedPath === ""
+                    ? ""
+                    : normalizedPath
+                }/${folderName}`,
               };
-            } else {
-              console.log('❌ Folder invalid - no objects found:', prefix.Prefix);
-              return null;
             }
-          } catch (error) {
-            console.warn('Could not validate folder:', prefix.Prefix, error);
-            // If validation fails, include the folder to be safe
-            return {
-              key: prefix.Prefix,
-              name: folderName,
-              size: 0,
-              lastModified: new Date(),
-              isFolder: true,
-              path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${folderName}`,
-            };
           }
-        });
+        );
 
         const validatedFolders = await Promise.all(folderValidationPromises);
-        folders.push(...validatedFolders.filter((folder): folder is S3FileItem => folder !== null));
+        folders.push(
+          ...validatedFolders.filter(
+            (folder): folder is S3FileItem => folder !== null
+          )
+        );
       }
 
-      // Process files
       let files: S3FileItem[] = [];
       let totalSize = 0;
 
       if (response.Contents) {
-        // Process files in parallel to get metadata
-        const filePromises = response.Contents
-          .filter(object => object.Key && !object.Key.endsWith('/'))
-          .map(async (object) => {
-            if (!object.Key) return null;
+        const filePromises = response.Contents.filter(
+          (object) => object.Key && !object.Key.endsWith("/")
+        ).map(async (object) => {
+          if (!object.Key) return null;
 
-            const s3FileName = object.Key.replace(s3Prefix, '');
-            if (!s3FileName) return null;
+          const s3FileName = object.Key.replace(s3Prefix, "");
+          if (!s3FileName) return null;
 
-            // Try to get original filename from S3 object metadata
-            let originalFileName = s3FileName;
-            let contentType = 'application/octet-stream';
+          let originalFileName = s3FileName;
+          let contentType = "application/octet-stream";
 
-            try {
-              const headCommand = new HeadObjectCommand({
-                Bucket: bucketName,
-                Key: object.Key,
-              });
-              const headResult = await s3Client.send(headCommand);
+          try {
+            const headCommand = new HeadObjectCommand({
+              Bucket: bucketName,
+              Key: object.Key,
+            });
+            const headResult = await s3Client.send(headCommand);
 
-              // Get original filename from metadata
-              if (headResult.Metadata?.['original-name']) {
-                originalFileName = headResult.Metadata['original-name'];
-              }
-
-              // Get content type
-              if (headResult.ContentType) {
-                contentType = headResult.ContentType;
-              }
-            } catch (error) {
-              console.warn(`Could not get metadata for ${object.Key}:`, error);
-              // Fallback: try to extract original name from the S3 filename
-              // Format: timestamp-random-originalname.ext
-              const parts = s3FileName.split('-');
-              if (parts.length >= 3) {
-                originalFileName = parts.slice(2).join('-');
-              }
+            if (headResult.Metadata?.["original-name"]) {
+              originalFileName = headResult.Metadata["original-name"];
             }
 
-            const fileItem: S3FileItem = {
-              key: object.Key,
-              name: originalFileName,
-              size: object.Size || 0,
-              lastModified: object.LastModified || new Date(),
-              isFolder: false,
-              path: `${normalizedPath === '/' || normalizedPath === '' ? '' : normalizedPath}/${originalFileName}`,
-              mimeType: contentType,
-            };
-
-            // If we didn't get MIME type from metadata, try to determine from file extension
-            if (contentType === 'application/octet-stream') {
-              const extension = originalFileName.split('.').pop()?.toLowerCase();
-              if (extension) {
-                fileItem.mimeType = S3ListingOperations.getMimeTypeFromExtension(extension);
-              }
+            if (headResult.ContentType) {
+              contentType = headResult.ContentType;
             }
+          } catch (error) {
+            console.warn(`Could not get metadata for ${object.Key}:`, error);
+            const parts = s3FileName.split("-");
+            if (parts.length >= 3) {
+              originalFileName = parts.slice(2).join("-");
+            }
+          }
 
-            totalSize += object.Size || 0;
-            return fileItem;
-          });
+          const fileItem: S3FileItem = {
+            key: object.Key,
+            name: originalFileName,
+            size: object.Size || 0,
+            lastModified: object.LastModified || new Date(),
+            isFolder: false,
+            path: `${
+              normalizedPath === "/" || normalizedPath === ""
+                ? ""
+                : normalizedPath
+            }/${originalFileName}`,
+            mimeType: contentType,
+          };
+
+          if (contentType === "application/octet-stream") {
+            const extension = originalFileName.split(".").pop()?.toLowerCase();
+            if (extension) {
+              fileItem.mimeType =
+                S3ListingOperations.getMimeTypeFromExtension(extension);
+            }
+          }
+
+          totalSize += object.Size || 0;
+          return fileItem;
+        });
 
         const fileResults = await Promise.all(filePromises);
         files = fileResults.filter((item): item is S3FileItem => item !== null);
       }
 
-      // Generate breadcrumbs
-      const breadcrumbs = S3ListingOperations.generateBreadcrumbs(normalizedPath);
+      const breadcrumbs =
+        S3ListingOperations.generateBreadcrumbs(normalizedPath);
 
       const result: ListResult = {
         success: true,
@@ -253,15 +279,16 @@ export class S3ListingOperations {
         nextToken: response.NextContinuationToken,
       };
 
-      // Cache the result
       if (useCache) {
-        s3Cache.set(cacheKey, result, 2 * 60 * 1000); // 2 minutes cache
+        s3Cache.set(cacheKey, result, 2 * 60 * 1000);
       }
 
-      console.log(`📁 Listed ${files.length} files and ${folders.length} folders`);
+      console.log(
+        `📁 Listed ${files.length} files and ${folders.length} folders`
+      );
       return result;
     } catch (error) {
-      console.error('List files error:', error);
+      console.error("List files error:", error);
       return {
         success: false,
         files: [],
@@ -271,8 +298,8 @@ export class S3ListingOperations {
         totalSize: 0,
         totalFiles: 0,
         totalFolders: 0,
-        message: 'Failed to list files',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: "Failed to list files",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -298,23 +325,24 @@ export class S3ListingOperations {
         ContinuationToken: continuationToken,
       });
 
-      const response: import("@aws-sdk/client-s3").ListObjectsV2CommandOutput = await s3Client.send(command);
+      const response: import("@aws-sdk/client-s3").ListObjectsV2CommandOutput =
+        await s3Client.send(command);
 
       if (response.Contents) {
-        const fileItems = response.Contents
-          .filter(object => object.Key && object.Size && object.Size > 0)
-          .map((object: import("@aws-sdk/client-s3")._Object) => {
-            const key = object.Key || '';
-            const name = key.split('/').pop() || '';
-            return {
-              key,
-              name,
-              size: object.Size || 0,
-              lastModified: object.LastModified || new Date(),
-              isFolder: false,
-              path: key.replace(`${userId}/`, '/'),
-            };
-          });
+        const fileItems = response.Contents.filter(
+          (object) => object.Key && object.Size && object.Size > 0
+        ).map((object: import("@aws-sdk/client-s3")._Object) => {
+          const key = object.Key || "";
+          const name = key.split("/").pop() || "";
+          return {
+            key,
+            name,
+            size: object.Size || 0,
+            lastModified: object.LastModified || new Date(),
+            isFolder: false,
+            path: key.replace(`${userId}/`, "/"),
+          };
+        });
         allFiles = allFiles.concat(fileItems);
       }
 
@@ -338,7 +366,7 @@ export class S3ListingOperations {
   ): Promise<SearchResult> {
     try {
       const { maxResults = 100, mimeTypeFilter } = options;
-      
+
       const s3Client = await getS3Client(userId);
       const bucketName = await getS3BucketName(userId);
 
@@ -348,24 +376,25 @@ export class S3ListingOperations {
           files: [],
           totalResults: 0,
           query,
-          message: 'S3 configuration not found',
-          error: 'S3_CONFIG_MISSING',
+          message: "S3 configuration not found",
+          error: "S3_CONFIG_MISSING",
         };
       }
 
-      // Check cache first
-      const cacheKey = `search:${userId}:${query}:${mimeTypeFilter || ''}:${maxResults}`;
+      const cacheKey = `search:${userId}:${query}:${
+        mimeTypeFilter || ""
+      }:${maxResults}`;
       const cached = s3Cache.get(cacheKey);
       if (cached) {
         return cached as SearchResult;
       }
 
-      console.log('🔍 Searching S3 objects for query:', query);
+      console.log("🔍 Searching S3 objects for query:", query);
 
       const listCommand = new ListObjectsV2Command({
         Bucket: bucketName,
         Prefix: `${userId}/`,
-        MaxKeys: 1000, // Get more objects to search through
+        MaxKeys: 1000,
       });
 
       const response = await s3Client.send(listCommand);
@@ -373,25 +402,29 @@ export class S3ListingOperations {
 
       if (response.Contents) {
         const queryLower = query.toLowerCase();
-        
+
         for (const object of response.Contents) {
-          if (object.Key && !object.Key.endsWith('/')) {
-            const fileName = object.Key.split('/').pop() || '';
-            
-            // Check if filename matches query
+          if (object.Key && !object.Key.endsWith("/")) {
+            const fileName = object.Key.split("/").pop() || "";
+
             if (fileName.toLowerCase().includes(queryLower)) {
-              const extension = fileName.split('.').pop()?.toLowerCase();
-              const mimeType = extension ? S3ListingOperations.getMimeTypeFromExtension(extension) : undefined;
-              
-              // Apply MIME type filter if specified
-              if (mimeTypeFilter && mimeType && !mimeType.includes(mimeTypeFilter)) {
+              const extension = fileName.split(".").pop()?.toLowerCase();
+              const mimeType = extension
+                ? S3ListingOperations.getMimeTypeFromExtension(extension)
+                : undefined;
+
+              if (
+                mimeTypeFilter &&
+                mimeType &&
+                !mimeType.includes(mimeTypeFilter)
+              ) {
                 continue;
               }
 
-              const pathParts = object.Key.split('/');
-              pathParts.shift(); // Remove userId
-              pathParts.pop(); // Remove filename
-              const filePath = '/' + pathParts.join('/');
+              const pathParts = object.Key.split("/");
+              pathParts.shift();
+              pathParts.pop();
+              const filePath = "/" + pathParts.join("/");
 
               matchingFiles.push({
                 key: object.Key,
@@ -400,7 +433,7 @@ export class S3ListingOperations {
                 lastModified: object.LastModified || new Date(),
                 mimeType,
                 isFolder: false,
-                path: filePath + '/' + fileName,
+                path: filePath + "/" + fileName,
               });
 
               if (matchingFiles.length >= maxResults) {
@@ -418,20 +451,19 @@ export class S3ListingOperations {
         query,
       };
 
-      // Cache the result
-      s3Cache.set(cacheKey, result, 1 * 60 * 1000); // 1 minute cache for search
+      s3Cache.set(cacheKey, result, 1 * 60 * 1000);
 
       console.log(`🔍 Found ${matchingFiles.length} matching files`);
       return result;
     } catch (error) {
-      console.error('Search files error:', error);
+      console.error("Search files error:", error);
       return {
         success: false,
         files: [],
         totalResults: 0,
         query,
-        message: 'Failed to search files',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: "Failed to search files",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -439,22 +471,24 @@ export class S3ListingOperations {
   /**
    * Generate breadcrumbs for navigation
    */
-  private static generateBreadcrumbs(path: string): Array<{ name: string; path: string }> {
-    const breadcrumbs = [{ name: 'Home', path: '/' }];
-    
-    if (path !== '/') {
-      const parts = path.split('/').filter(Boolean);
-      let currentPath = '';
-      
+  private static generateBreadcrumbs(
+    path: string
+  ): Array<{ name: string; path: string }> {
+    const breadcrumbs = [{ name: "Home", path: "/" }];
+
+    if (path !== "/") {
+      const parts = path.split("/").filter(Boolean);
+      let currentPath = "";
+
       for (const part of parts) {
-        currentPath += '/' + part;
+        currentPath += "/" + part;
         breadcrumbs.push({
           name: part,
           path: currentPath,
         });
       }
     }
-    
+
     return breadcrumbs;
   }
 
@@ -464,57 +498,57 @@ export class S3ListingOperations {
   private static getMimeTypeFromExtension(extension: string): string {
     const mimeTypes: Record<string, string> = {
       // Images
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      gif: 'image/gif',
-      webp: 'image/webp',
-      svg: 'image/svg+xml',
-      bmp: 'image/bmp',
-      ico: 'image/x-icon',
-      
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      gif: "image/gif",
+      webp: "image/webp",
+      svg: "image/svg+xml",
+      bmp: "image/bmp",
+      ico: "image/x-icon",
+
       // Documents
-      pdf: 'application/pdf',
-      doc: 'application/msword',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      xls: 'application/vnd.ms-excel',
-      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      ppt: 'application/vnd.ms-powerpoint',
-      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      
+      pdf: "application/pdf",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xls: "application/vnd.ms-excel",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+
       // Text
-      txt: 'text/plain',
-      csv: 'text/csv',
-      json: 'application/json',
-      xml: 'application/xml',
-      html: 'text/html',
-      css: 'text/css',
-      js: 'application/javascript',
-      ts: 'application/typescript',
-      
+      txt: "text/plain",
+      csv: "text/csv",
+      json: "application/json",
+      xml: "application/xml",
+      html: "text/html",
+      css: "text/css",
+      js: "application/javascript",
+      ts: "application/typescript",
+
       // Video
-      mp4: 'video/mp4',
-      avi: 'video/x-msvideo',
-      mov: 'video/quicktime',
-      wmv: 'video/x-ms-wmv',
-      flv: 'video/x-flv',
-      webm: 'video/webm',
-      
+      mp4: "video/mp4",
+      avi: "video/x-msvideo",
+      mov: "video/quicktime",
+      wmv: "video/x-ms-wmv",
+      flv: "video/x-flv",
+      webm: "video/webm",
+
       // Audio
-      mp3: 'audio/mpeg',
-      wav: 'audio/wav',
-      flac: 'audio/flac',
-      aac: 'audio/aac',
-      ogg: 'audio/ogg',
-      
+      mp3: "audio/mpeg",
+      wav: "audio/wav",
+      flac: "audio/flac",
+      aac: "audio/aac",
+      ogg: "audio/ogg",
+
       // Archives
-      zip: 'application/zip',
-      rar: 'application/vnd.rar',
-      '7z': 'application/x-7z-compressed',
-      tar: 'application/x-tar',
-      gz: 'application/gzip',
+      zip: "application/zip",
+      rar: "application/vnd.rar",
+      "7z": "application/x-7z-compressed",
+      tar: "application/x-tar",
+      gz: "application/gzip",
     };
-    
-    return mimeTypes[extension] || 'application/octet-stream';
+
+    return mimeTypes[extension] || "application/octet-stream";
   }
 }

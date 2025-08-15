@@ -21,7 +21,6 @@ export async function GET(
 
     const { path } = await params;
     const s3Key = path.join('/');
-    // Note: expiresIn is handled internally by getDownloadUrl method
 
     if (!s3Key) {
       return NextResponse.json(

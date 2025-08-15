@@ -115,7 +115,6 @@ export function validateS3Config(config: S3Config): {
     return { valid: false, errors };
   }
 
-  // Validate required string fields
   const requiredStringFields = [
     "accessKeyId",
     "secretAccessKey",
@@ -129,28 +128,24 @@ export function validateS3Config(config: S3Config): {
     }
   }
 
-  // Validate optional endpoint field
   if (config.endpoint !== undefined) {
     if (typeof config.endpoint !== "string") {
       errors.push("endpoint must be a string if provided");
     }
   }
 
-  // Validate optional forcePathStyle field
   if (config.forcePathStyle !== undefined) {
     if (typeof config.forcePathStyle !== "boolean") {
       errors.push("forcePathStyle must be a boolean if provided");
     }
   }
 
-  // Validate region format (basic check)
   if (config.region && !/^[a-z0-9-]+$/.test(config.region)) {
     errors.push(
       "region must contain only lowercase letters, numbers, and hyphens"
     );
   }
 
-  // Validate bucket name (basic S3 bucket naming rules)
   if (config.bucketName) {
     if (config.bucketName.length < 3 || config.bucketName.length > 63) {
       errors.push("bucket name must be between 3 and 63 characters");

@@ -22,7 +22,7 @@ function VerifyEmailContent() {
   });
   useEffect(() => {
     const token = searchParams.get('token');
-    
+
     if (!token) {
       setVerificationState({
         status: 'error',
@@ -88,7 +88,7 @@ function VerifyEmailContent() {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setVerificationState({
           status: 'success',

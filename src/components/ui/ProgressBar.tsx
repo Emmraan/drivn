@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
 interface ProgressBarProps {
-  progress: number; // 0-100
+  progress: number;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'success' | 'error' | 'warning';
   showPercentage?: boolean;

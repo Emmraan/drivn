@@ -72,7 +72,6 @@ export function Skeleton({
   );
 }
 
-// Predefined skeleton components for common use cases
 export function SkeletonCard({ className }: { className?: string }) {
   return (
     <div className={cn('glass rounded-xl p-6 space-y-4', className)}>

@@ -12,15 +12,15 @@ interface SkeletonProps {
   lines?: number;
 }
 
-export function Skeleton({ 
-  className, 
-  variant = 'rectangular', 
-  width, 
-  height, 
-  lines = 1 
+export function Skeleton({
+  className,
+  variant = 'rectangular',
+  width,
+  height,
+  lines = 1
 }: SkeletonProps) {
   const baseClasses = 'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700';
-  
+
   const variantClasses = {
     text: 'rounded',
     circular: 'rounded-full',
@@ -74,7 +74,6 @@ export function Skeleton({
   );
 }
 
-// Pre-built skeleton components for common use cases
 export function CardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('p-6 space-y-4', className)}>

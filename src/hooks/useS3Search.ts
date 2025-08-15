@@ -111,7 +111,6 @@ export function useS3Search(options: UseS3SearchOptions = {}) {
     setNextToken(undefined);
   }, []);
 
-  // Debounced search effect
   useEffect(() => {
     if (!currentQuery) {
       clearResults();

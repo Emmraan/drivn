@@ -45,7 +45,7 @@ export function hasPermission(user: User | null, permission: 'admin' | 'user'): 
     case 'admin':
       return isUserAdmin(user);
     case 'user':
-      return true; // All authenticated users have user permissions
+      return true;
     default:
       return false;
   }

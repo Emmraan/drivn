@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Check if user exists
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return NextResponse.json(
@@ -28,7 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is already verified
     if (user.emailVerified) {
       return NextResponse.json(
         { success: false, message: 'Email is already verified' },
@@ -36,10 +34,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Delete any existing verification tokens for this email
     await VerificationToken.deleteMany({ email: email.toLowerCase().trim() });
 
-    // Generate new verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
     
     await VerificationToken.create({
@@ -47,7 +43,6 @@ export async function POST(request: NextRequest) {
       token: verificationToken,
     });
 
-    // Send verification email
     await emailService.sendVerificationEmail(email.toLowerCase().trim(), verificationToken);
 
     return NextResponse.json(

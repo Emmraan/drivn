@@ -13,8 +13,8 @@ export const GET = requireAdmin(async () => {
       platformSettings: {
         siteName: process.env.SITE_NAME || 'DRIVN',
         siteDescription: process.env.SITE_DESCRIPTION || 'Cloud Storage Platform',
-        maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '104857600'), // 100MB default
-        allowedFileTypes: ['*'], // All file types allowed by default
+        maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '104857600'),
+        allowedFileTypes: ['*'],
         enableRegistration: process.env.ENABLE_REGISTRATION !== 'false',
         requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
       },
@@ -22,7 +22,7 @@ export const GET = requireAdmin(async () => {
         enableUserStorage: process.env.ENABLE_USER_STORAGE !== 'false',
       },
       securitySettings: {
-        sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || '1440'), // 24 hours default
+        sessionTimeout: parseInt(process.env.SESSION_TIMEOUT || '1440'),
         maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5'),
         enableTwoFactor: process.env.ENABLE_TWO_FACTOR === 'true',
         passwordMinLength: parseInt(process.env.PASSWORD_MIN_LENGTH || '8'),
@@ -65,7 +65,6 @@ export const PUT = requireAdmin(async (request: NextRequest) => {
       securitySettings,
     });
 
-    // Validate required fields
     if (!platformSettings?.siteName) {
       return NextResponse.json(
         { success: false, message: 'Site name is required' },

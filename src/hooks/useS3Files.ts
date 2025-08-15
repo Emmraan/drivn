@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from "react";
 
 export interface S3FileItem {
   key: string;
@@ -25,7 +25,10 @@ export interface UseS3FilesOptions {
   includeMetadata?: boolean;
 }
 
-export function useS3Files(initialPath: string = '', options: UseS3FilesOptions = {}) {
+export function useS3Files(
+  initialPath: string = "",
+  options: UseS3FilesOptions = {}
+) {
   const [files, setFiles] = useState<S3FileItem[]>([]);
   const [folders, setFolders] = useState<S3FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState(initialPath);
@@ -36,307 +39,377 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
 
   const { autoLoad = true, maxKeys = 50, includeMetadata = false } = options;
 
-  const loadFiles = useCallback(async (path: string = currentPath, reset: boolean = true, forceRefresh: boolean = false) => {
-    console.log('🔄 loadFiles called:', { path, reset, forceRefresh, currentPath });
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
+  const loadFiles = useCallback(
+    async (
+      path: string = currentPath,
+      reset: boolean = true,
+      forceRefresh: boolean = false
+    ) => {
+      console.log("🔄 loadFiles called:", {
         path,
-        maxKeys: maxKeys.toString(),
-        includeMetadata: includeMetadata.toString(),
+        reset,
+        forceRefresh,
+        currentPath,
       });
 
-      // Add cache busting parameter for force refresh
-      if (forceRefresh) {
-        params.append('_t', Date.now().toString());
-        params.append('noCache', 'true');
-      }
+      setLoading(true);
+      setError(null);
 
-      if (!reset && nextToken) {
-        params.append('continuationToken', nextToken);
-      }
+      try {
+        const params = new URLSearchParams({
+          path,
+          maxKeys: maxKeys.toString(),
+          includeMetadata: includeMetadata.toString(),
+        });
 
-      console.log('📡 Fetching S3 files with params:', params.toString());
-      const response = await fetch(`/api/s3-files?${params}`);
-      const result = await response.json();
+        if (forceRefresh) {
+          params.append("_t", Date.now().toString());
+          params.append("noCache", "true");
+        }
 
-      console.log('📥 S3 files response:', { success: result.success, fileCount: result.data?.files?.length, folderCount: result.data?.folders?.length });
+        if (!reset && nextToken) {
+          params.append("continuationToken", nextToken);
+        }
 
-      if (result.success) {
-        if (reset) {
-          console.log('🔄 Resetting files and folders state');
-          setFiles(result.data.files || []);
-          setFolders(result.data.folders || []);
-          setNextToken(undefined); // Reset pagination token
+        console.log("📡 Fetching S3 files with params:", params.toString());
+        const response = await fetch(`/api/s3-files?${params}`);
+        const result = await response.json();
+
+        console.log("📥 S3 files response:", {
+          success: result.success,
+          fileCount: result.data?.files?.length,
+          folderCount: result.data?.folders?.length,
+        });
+
+        if (result.success) {
+          if (reset) {
+            console.log("🔄 Resetting files and folders state");
+            setFiles(result.data.files || []);
+            setFolders(result.data.folders || []);
+            setNextToken(undefined);
+          } else {
+            console.log("➕ Appending to existing files and folders");
+            setFiles((prev) => [...prev, ...(result.data.files || [])]);
+            setFolders((prev) => [...prev, ...(result.data.folders || [])]);
+          }
+          setHasMore(result.data.hasMore || false);
+          if (result.data.nextToken) {
+            setNextToken(result.data.nextToken);
+          }
         } else {
-          console.log('➕ Appending to existing files and folders');
-          setFiles(prev => [...prev, ...(result.data.files || [])]);
-          setFolders(prev => [...prev, ...(result.data.folders || [])]);
+          console.error("❌ Failed to load files:", result.message);
+          setError(result.message || "Failed to load files");
         }
-        setHasMore(result.data.hasMore || false);
-        if (result.data.nextToken) {
-          setNextToken(result.data.nextToken);
-        }
-      } else {
-        console.error('❌ Failed to load files:', result.message);
-        setError(result.message || 'Failed to load files');
+      } catch (err) {
+        console.error("❌ Error loading files:", err);
+        setError(err instanceof Error ? err.message : "Failed to load files");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('❌ Error loading files:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load files');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPath, maxKeys, includeMetadata, nextToken]);
+    },
+    [currentPath, maxKeys, includeMetadata, nextToken]
+  );
 
   const loadMore = useCallback(() => {
     if (hasMore && !loading) {
-      console.log('📄 Loading more items for path:', currentPath);
-      loadFiles(currentPath, false, false); // Don't force refresh for pagination
+      console.log("📄 Loading more items for path:", currentPath);
+      loadFiles(currentPath, false, false);
     }
   }, [hasMore, loading, loadFiles, currentPath]);
 
-  const navigateToPath = useCallback((newPath: string) => {
-    console.log('🧭 Navigating to path:', { from: currentPath, to: newPath });
-    setCurrentPath(newPath);
-    setNextToken(undefined);
-    loadFiles(newPath, true, true); // Force refresh when navigating
-  }, [loadFiles, currentPath]);
+  const navigateToPath = useCallback(
+    (newPath: string) => {
+      console.log("🧭 Navigating to path:", { from: currentPath, to: newPath });
+      setCurrentPath(newPath);
+      setNextToken(undefined);
+      loadFiles(newPath, true, true);
+    },
+    [loadFiles, currentPath]
+  );
 
   const refresh = useCallback(() => {
-    console.log('🔄 Manual refresh triggered for path:', currentPath);
+    console.log("🔄 Manual refresh triggered for path:", currentPath);
     setNextToken(undefined);
-    loadFiles(currentPath, true, true); // Force refresh
+    loadFiles(currentPath, true, true);
   }, [loadFiles, currentPath]);
 
-  const uploadFiles = useCallback(async (filesToUpload: File[], uploadPath?: string) => {
-    console.log('📤 Starting file upload:', { fileCount: filesToUpload.length, uploadPath, currentPath });
-
-    const formData = new FormData();
-    filesToUpload.forEach(file => formData.append('files', file));
-    if (uploadPath !== undefined) {
-      formData.append('path', uploadPath);
-    } else {
-      formData.append('path', currentPath);
-    }
-
-    try {
-      const response = await fetch('/api/s3-files', {
-        method: 'POST',
-        body: formData,
+  const uploadFiles = useCallback(
+    async (filesToUpload: File[], uploadPath?: string) => {
+      console.log("📤 Starting file upload:", {
+        fileCount: filesToUpload.length,
+        uploadPath,
+        currentPath,
       });
 
-      const result = await response.json();
-      console.log('📤 Upload result:', result);
-
-      if (result.success) {
-        console.log('✅ Upload successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
-        await loadFiles(currentPath, true, true);
-        return { success: true, data: result.data };
+      const formData = new FormData();
+      filesToUpload.forEach((file) => formData.append("files", file));
+      if (uploadPath !== undefined) {
+        formData.append("path", uploadPath);
       } else {
-        console.error('❌ Upload failed:', result.message);
-        return { success: false, message: result.message };
+        formData.append("path", currentPath);
       }
-    } catch (error) {
-      console.error('❌ Upload error:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Upload failed'
-      };
-    }
-  }, [currentPath, loadFiles]);
 
-  const deleteFile = useCallback(async (s3Key: string) => {
-    console.log('🗑️ Attempting optimistic delete for file with S3 key:', s3Key);
+      try {
+        const response = await fetch("/api/s3-files", {
+          method: "POST",
+          body: formData,
+        });
 
-    // Optimistic UI update: Remove the file immediately
-    setFiles(prevFiles => prevFiles.filter(file => file.key !== s3Key));
-    setError(null); // Clear any previous errors
+        const result = await response.json();
+        console.log("📤 Upload result:", result);
 
-    try {
-      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
-      const encodedKey = keySegments.join('/');
-
-      const response = await fetch(`/api/s3-files/${encodedKey}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-      console.log('🗑️ Delete API result:', result);
-
-      if (result.success) {
-        console.log('✅ File deleted successfully on backend.');
-        // No need to refresh if optimistic update was correct
-        return { success: true };
-      } else {
-        console.error('❌ Backend delete failed, reverting UI:', result.message);
-        setError(result.message || 'Failed to delete file on server.');
-        // Revert UI on failure
-        await loadFiles(currentPath, true, true);
-        return { success: false, message: result.message };
-      }
-    } catch (error) {
-      console.error('❌ Delete network error, reverting UI:', error);
-      setError(error instanceof Error ? error.message : 'Network error during delete.');
-      // Revert UI on network error
-      await loadFiles(currentPath, true, true);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Delete failed due to network error'
-      };
-    }
-  }, [currentPath, loadFiles]);
-
-  const renameFile = useCallback(async (s3Key: string, newName: string) => {
-    console.log('✏️ Renaming file with S3 key:', { s3Key, newName });
-
-    try {
-      // Split the S3 key and encode each segment separately for the dynamic route
-      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
-      const encodedKey = keySegments.join('/');
-
-      const response = await fetch(`/api/s3-files/${encodedKey}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newName }),
-      });
-
-      const result = await response.json();
-      console.log('✏️ Rename result:', result);
-
-      if (result.success) {
-        console.log('✅ Rename successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
-        await loadFiles(currentPath, true, true);
-        return { success: true, data: result.data };
-      } else {
-        console.error('❌ Rename failed:', result.message);
-        return { success: false, message: result.message };
-      }
-    } catch (error) {
-      console.error('❌ Rename error:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Rename failed'
-      };
-    }
-  }, [currentPath, loadFiles]);
-
-  const createFolder = useCallback(async (folderName: string, parentPath?: string) => {
-    console.log('📁 Creating folder:', { folderName, parentPath, currentPath });
-
-    try {
-      const response = await fetch('/api/s3-folders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: folderName,
-          parentPath: parentPath !== undefined ? parentPath : currentPath
-        }),
-      });
-
-      const result = await response.json();
-      console.log('📁 Create folder result:', result);
-
-      if (result.success) {
-        console.log('✅ Folder creation successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
-        const targetPath = parentPath !== undefined ? parentPath : currentPath;
-        if (targetPath === currentPath) {
+        if (result.success) {
+          console.log("✅ Upload successful, refreshing UI...");
           await loadFiles(currentPath, true, true);
+          return { success: true, data: result.data };
+        } else {
+          console.error("❌ Upload failed:", result.message);
+          return { success: false, message: result.message };
         }
-        return { success: true, data: result.data };
-      } else {
-        console.error('❌ Create folder failed:', result.message);
-        return { success: false, message: result.message };
+      } catch (error) {
+        console.error("❌ Upload error:", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "Upload failed",
+        };
       }
-    } catch (error) {
-      console.error('❌ Create folder error:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Create folder failed'
-      };
-    }
-  }, [currentPath, loadFiles]);
+    },
+    [currentPath, loadFiles]
+  );
 
-  const deleteFolder = useCallback(async (folderPath: string) => {
-    console.log('🗑️📁 Attempting optimistic delete for folder:', folderPath);
+  const deleteFile = useCallback(
+    async (s3Key: string) => {
+      console.log(
+        "🗑️ Attempting optimistic delete for file with S3 key:",
+        s3Key
+      );
 
-    // Optimistic UI update: Remove the folder immediately
-    setFolders(prevFolders => prevFolders.filter(folder => folder.path !== folderPath));
-    setError(null); // Clear any previous errors
+      setFiles((prevFiles) => prevFiles.filter((file) => file.key !== s3Key));
+      setError(null);
 
-    try {
-      const response = await fetch(`/api/s3-folders/${encodeURIComponent(folderPath)}`, {
-        method: 'DELETE',
+      try {
+        const keySegments = s3Key
+          .split("/")
+          .map((segment) => encodeURIComponent(segment));
+        const encodedKey = keySegments.join("/");
+
+        const response = await fetch(`/api/s3-files/${encodedKey}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json();
+        console.log("🗑️ Delete API result:", result);
+
+        if (result.success) {
+          console.log("✅ File deleted successfully on backend.");
+          return { success: true };
+        } else {
+          console.error(
+            "❌ Backend delete failed, reverting UI:",
+            result.message
+          );
+          setError(result.message || "Failed to delete file on server.");
+          await loadFiles(currentPath, true, true);
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error("❌ Delete network error, reverting UI:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Network error during delete."
+        );
+        await loadFiles(currentPath, true, true);
+        return {
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Delete failed due to network error",
+        };
+      }
+    },
+    [currentPath, loadFiles]
+  );
+
+  const renameFile = useCallback(
+    async (s3Key: string, newName: string) => {
+      console.log("✏️ Renaming file with S3 key:", { s3Key, newName });
+
+      try {
+        const keySegments = s3Key
+          .split("/")
+          .map((segment) => encodeURIComponent(segment));
+        const encodedKey = keySegments.join("/");
+
+        const response = await fetch(`/api/s3-files/${encodedKey}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newName }),
+        });
+
+        const result = await response.json();
+        console.log("✏️ Rename result:", result);
+
+        if (result.success) {
+          console.log("✅ Rename successful, refreshing UI...");
+          await loadFiles(currentPath, true, true);
+          return { success: true, data: result.data };
+        } else {
+          console.error("❌ Rename failed:", result.message);
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error("❌ Rename error:", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "Rename failed",
+        };
+      }
+    },
+    [currentPath, loadFiles]
+  );
+
+  const createFolder = useCallback(
+    async (folderName: string, parentPath?: string) => {
+      console.log("📁 Creating folder:", {
+        folderName,
+        parentPath,
+        currentPath,
       });
 
-      const result = await response.json();
-      console.log('🗑️📁 Delete folder API result:', result);
+      try {
+        const response = await fetch("/api/s3-folders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: folderName,
+            parentPath: parentPath !== undefined ? parentPath : currentPath,
+          }),
+        });
 
-      if (result.success) {
-        console.log('✅ Folder deleted successfully on backend.');
-        // No need to refresh if optimistic update was correct
-        return { success: true, stats: result.stats };
-      } else {
-        console.error('❌ Backend folder delete failed, reverting UI:', result.message);
-        setError(result.message || 'Failed to delete folder on server.');
-        // Revert UI on failure
-        await loadFiles(currentPath, true, true);
-        return { success: false, message: result.message };
+        const result = await response.json();
+        console.log("📁 Create folder result:", result);
+
+        if (result.success) {
+          console.log("✅ Folder creation successful, refreshing UI...");
+          const targetPath =
+            parentPath !== undefined ? parentPath : currentPath;
+          if (targetPath === currentPath) {
+            await loadFiles(currentPath, true, true);
+          }
+          return { success: true, data: result.data };
+        } else {
+          console.error("❌ Create folder failed:", result.message);
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error("❌ Create folder error:", error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Create folder failed",
+        };
       }
-    } catch (error) {
-      console.error('❌ Folder delete network error, reverting UI:', error);
-      setError(error instanceof Error ? error.message : 'Network error during folder delete.');
-      // Revert UI on network error
-      await loadFiles(currentPath, true, true);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Delete folder failed due to network error'
-      };
-    }
-  }, [currentPath, loadFiles]);
+    },
+    [currentPath, loadFiles]
+  );
 
-  const renameFolder = useCallback(async (folderPath: string, newName: string) => {
-    console.log('✏️📁 Renaming folder:', { folderPath, newName });
+  const deleteFolder = useCallback(
+    async (folderPath: string) => {
+      console.log("🗑️📁 Attempting optimistic delete for folder:", folderPath);
 
-    try {
-      const response = await fetch(`/api/s3-folders/${encodeURIComponent(folderPath)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newName }),
-      });
+      setFolders((prevFolders) =>
+        prevFolders.filter((folder) => folder.path !== folderPath)
+      );
+      setError(null);
 
-      const result = await response.json();
-      console.log('✏️📁 Rename folder result:', result);
+      try {
+        const response = await fetch(
+          `/api/s3-folders/${encodeURIComponent(folderPath)}`,
+          {
+            method: "DELETE",
+          }
+        );
 
-      if (result.success) {
-        console.log('✅ Folder rename successful, refreshing UI...');
-        // Force refresh from S3 to get real-time data
+        const result = await response.json();
+        console.log("🗑️📁 Delete folder API result:", result);
+
+        if (result.success) {
+          console.log("✅ Folder deleted successfully on backend.");
+          return { success: true, stats: result.stats };
+        } else {
+          console.error(
+            "❌ Backend folder delete failed, reverting UI:",
+            result.message
+          );
+          setError(result.message || "Failed to delete folder on server.");
+          await loadFiles(currentPath, true, true);
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error("❌ Folder delete network error, reverting UI:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Network error during folder delete."
+        );
         await loadFiles(currentPath, true, true);
-        return { success: true, data: result.data, stats: result.stats };
-      } else {
-        console.error('❌ Folder rename failed:', result.message);
-        return { success: false, message: result.message };
+        return {
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Delete folder failed due to network error",
+        };
       }
-    } catch (error) {
-      console.error('❌ Folder rename error:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Rename folder failed'
-      };
-    }
-  }, [currentPath, loadFiles]);
+    },
+    [currentPath, loadFiles]
+  );
+
+  const renameFolder = useCallback(
+    async (folderPath: string, newName: string) => {
+      console.log("✏️📁 Renaming folder:", { folderPath, newName });
+
+      try {
+        const response = await fetch(
+          `/api/s3-folders/${encodeURIComponent(folderPath)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ newName }),
+          }
+        );
+
+        const result = await response.json();
+        console.log("✏️📁 Rename folder result:", result);
+
+        if (result.success) {
+          console.log("✅ Folder rename successful, refreshing UI...");
+          await loadFiles(currentPath, true, true);
+          return { success: true, data: result.data, stats: result.stats };
+        } else {
+          console.error("❌ Folder rename failed:", result.message);
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error("❌ Folder rename error:", error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Rename folder failed",
+        };
+      }
+    },
+    [currentPath, loadFiles]
+  );
 
   const getDownloadUrl = useCallback(async (s3Key: string) => {
     try {
-      // Split the S3 key and encode each segment separately for the dynamic route
-      const keySegments = s3Key.split('/').map(segment => encodeURIComponent(segment));
-      const encodedKey = keySegments.join('/');
+      const keySegments = s3Key
+        .split("/")
+        .map((segment) => encodeURIComponent(segment));
+      const encodedKey = keySegments.join("/");
 
       const response = await fetch(`/api/s3-files/download/${encodedKey}`);
       const result = await response.json();
@@ -349,17 +422,17 @@ export function useS3Files(initialPath: string = '', options: UseS3FilesOptions 
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to get download URL'
+        message:
+          error instanceof Error ? error.message : "Failed to get download URL",
       };
     }
   }, []);
 
-  // Auto-load on mount and path changes
   useEffect(() => {
     if (autoLoad) {
-      console.log('🚀 Auto-loading files for path:', currentPath);
+      console.log("🚀 Auto-loading files for path:", currentPath);
       const loadData = async () => {
-        await loadFiles(currentPath, true, true); // Force refresh on mount/path change
+        await loadFiles(currentPath, true, true);
       };
       loadData();
     }

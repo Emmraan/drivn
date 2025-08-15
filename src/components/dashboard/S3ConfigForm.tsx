@@ -59,7 +59,6 @@ export default function S3ConfigForm({ onSave, onTest, initialConfig, loading }:
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Update selected provider when endpoint changes
   useEffect(() => {
     const provider = commonProviders.find(p => p.endpoint === config.endpoint);
     if (provider) {

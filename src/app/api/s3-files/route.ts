@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 S3 files API called:', { path, maxKeys, continuationToken, includeMetadata, noCache, userId: String(user._id) });
 
-    // Force clear cache if noCache is requested
     if (noCache) {
       S3DirectService.forceClearUserCache(String(user._id));
     }
@@ -33,7 +32,7 @@ export async function GET(request: NextRequest) {
     const result = await S3DirectService.listItems(String(user._id), path, {
       maxKeys,
       continuationToken,
-      useCache: !noCache, // Disable cache when noCache is true
+      useCache: !noCache,
     });
 
     if (result.success) {

@@ -24,16 +24,13 @@ export class AuthService {
     try {
       await connectDB();
 
-      // Check if user already exists
       const existingUser = await User.findOne({ email: data.email });
       if (existingUser) {
         return { success: false, message: 'User already exists with this email' };
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(data.password, 12);
 
-      // Create user
       const user = new User({
         email: data.email,
         password: hashedPassword,
@@ -43,7 +40,6 @@ export class AuthService {
 
       await user.save();
 
-      // Generate verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
       
       await VerificationToken.create({
@@ -51,7 +47,6 @@ export class AuthService {
         token: verificationToken,
       });
 
-      // Send verification email
       await emailService.sendVerificationEmail(data.email, verificationToken);
 
       return {
@@ -74,19 +69,16 @@ export class AuthService {
     try {
       await connectDB();
 
-      // Find user
       const user = await User.findOne({ email: data.email, provider: 'credentials' });
       if (!user || !user.password) {
         return { success: false, message: 'Invalid email or password' };
       }
 
-      // Check password
       const isValidPassword = await bcrypt.compare(data.password, user.password);
       if (!isValidPassword) {
         return { success: false, message: 'Invalid email or password' };
       }
 
-      // Check if email is verified
       if (!user.emailVerified) {
         return {
           success: false,
@@ -95,7 +87,6 @@ export class AuthService {
         };
       }
 
-      // Generate JWT token
       const token = jwt.sign(
         { userId: user._id, email: user.email },
         JWT_SECRET,
@@ -123,13 +114,11 @@ export class AuthService {
     try {
       await connectDB();
 
-      // Find verification token
       const verificationToken = await VerificationToken.findOne({ token });
       if (!verificationToken || verificationToken.expires < new Date()) {
         return { success: false, message: 'Invalid or expired verification token' };
       }
 
-      // Update user email verification and get user data
       const user = await User.findOneAndUpdate(
         { email: verificationToken.email },
         { emailVerified: new Date() },
@@ -140,10 +129,8 @@ export class AuthService {
         return { success: false, message: 'User not found' };
       }
 
-      // Delete verification token
       await VerificationToken.deleteOne({ token });
 
-      // Generate JWT token for auto-login
       const authToken = jwt.sign(
         { userId: user._id, email: user.email },
         JWT_SECRET,
@@ -182,21 +169,17 @@ export class AuthService {
     try {
       await connectDB();
 
-      // Find user
       const user = await User.findOne({ email: email.toLowerCase().trim() });
       if (!user) {
         return { success: false, message: 'User not found' };
       }
 
-      // Check if already verified
       if (user.emailVerified) {
         return { success: false, message: 'Email is already verified' };
       }
 
-      // Delete existing verification tokens
       await VerificationToken.deleteMany({ email: email.toLowerCase().trim() });
 
-      // Generate new verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
 
       await VerificationToken.create({
@@ -204,7 +187,6 @@ export class AuthService {
         token: verificationToken,
       });
 
-      // Send verification email
       await emailService.sendVerificationEmail(email.toLowerCase().trim(), verificationToken);
 
       return {

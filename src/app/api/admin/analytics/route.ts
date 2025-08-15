@@ -16,13 +16,11 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const range = searchParams.get('range') || '30d';
 
-    // Calculate date range
     const now = new Date();
     const daysBack = range === '7d' ? 7 : range === '30d' ? 30 : 90;
     const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
     const previousStartDate = new Date(startDate.getTime() - daysBack * 24 * 60 * 60 * 1000);
 
-    // Get user growth
     const currentUsers = await User.countDocuments({
       createdAt: { $gte: startDate },
     });
@@ -31,7 +29,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     });
     const totalUsers = await User.countDocuments();
 
-    // Get file uploads from activity logs
     const currentUploads = await ActivityLog.countDocuments({
       action: 'upload',
       timestamp: { $gte: startDate },
@@ -41,7 +38,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
-    // Get storage usage from file metadata
     const currentStorageStats = await FileMetadata.aggregate([
       {
         $match: {
@@ -79,7 +75,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       },
     ]);
 
-    // Get active users (users who uploaded files in the period)
     const currentActiveUsers = await ActivityLog.distinct('userId', {
       action: 'upload',
       timestamp: { $gte: startDate },
@@ -89,7 +84,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
-    // Get top users by activity
     const topUsers = await ActivityLog.aggregate([
       {
         $match: {
@@ -134,7 +128,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       },
     ]);
 
-    // Calculate percentage changes
     const calculateChange = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
       return ((current - previous) / previous) * 100;

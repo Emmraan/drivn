@@ -28,14 +28,12 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
       return;
     }
 
-    // Validate folder name
     const trimmedName = name.trim();
     if (trimmedName.length > 255) {
       setError('Folder name must be less than 255 characters');
       return;
     }
 
-    // Check for invalid characters
     const invalidChars = /[<>:"/\\|?*]/;
     if (invalidChars.test(trimmedName)) {
       setError('Folder name contains invalid characters');
@@ -60,7 +58,6 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
       const result = await response.json();
 
       if (result.success) {
-        // Reset form and close modal
         setName('');
         onFolderCreated();
         onClose();

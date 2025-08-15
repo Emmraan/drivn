@@ -28,7 +28,6 @@ export class S3ConfigService {
     config: S3Config
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // Validate configuration first
       const validation = validateS3Config(config);
       if (!validation.valid) {
         return {
@@ -39,7 +38,6 @@ export class S3ConfigService {
         };
       }
 
-      // Create S3 client with provided credentials
       const s3Client = new S3Client({
         region: config.region,
         endpoint: config.endpoint,
@@ -50,9 +48,10 @@ export class S3ConfigService {
         },
       });
 
-      // Test 1: Check if bucket exists and is accessible
       try {
-        await s3Client.send(new HeadBucketCommand({ Bucket: config.bucketName }));
+        await s3Client.send(
+          new HeadBucketCommand({ Bucket: config.bucketName })
+        );
       } catch (error) {
         if (error instanceof Error && error.name === "NotFound") {
           return {
@@ -71,7 +70,6 @@ export class S3ConfigService {
         throw error;
       }
 
-      // Test 2: Try to upload a test file
       const testKey = `drivn-test-${Date.now()}.txt`;
       const testContent = "DRIVN connection test - safe to delete";
 
@@ -85,7 +83,6 @@ export class S3ConfigService {
           })
         );
 
-        // Test 3: Clean up test file
         await s3Client.send(
           new DeleteObjectCommand({
             Bucket: config.bucketName,
@@ -184,7 +181,6 @@ export class S3ConfigService {
     try {
       await connectDB();
 
-      // Validate configuration
       const validation = validateS3Config(config);
       if (!validation.valid) {
         return {
@@ -195,16 +191,13 @@ export class S3ConfigService {
         };
       }
 
-      // Test connection before saving
       const testResult = await this.testS3Connection(config);
       if (!testResult.success) {
         return testResult;
       }
 
-      // Encrypt the configuration
       const encryptedConfig = encryptS3Config(config, userId);
 
-      // Update user's S3 configuration
       const user = await User.findById(userId);
       if (!user) {
         return {
@@ -214,8 +207,8 @@ export class S3ConfigService {
       }
 
       user.s3Config = {
-        accessKeyId: encryptedConfig, // Store entire encrypted config in accessKeyId field
-        secretAccessKey: "", // Clear other fields for security
+        accessKeyId: encryptedConfig,
+        secretAccessKey: "",
         region: "",
         bucketName: "",
         endpoint: "",
@@ -263,7 +256,6 @@ export class S3ConfigService {
         return null;
       }
 
-      // Decrypt the configuration
       const decryptedConfig = decryptS3Config(
         user.s3Config.accessKeyId,
         userId
@@ -294,7 +286,6 @@ export class S3ConfigService {
         };
       }
 
-      // Clear S3 configuration
       user.s3Config = undefined;
       await user.save();
 
@@ -305,7 +296,6 @@ export class S3ConfigService {
         message: "S3 configuration deleted successfully",
       };
     } catch (error) {
-      // Optional: Extract message safely
       const errorMessage =
         typeof error === "object" && error !== null && "message" in error
           ? String((error as { message: unknown }).message)

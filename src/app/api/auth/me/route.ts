@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { isAdminEmail } from '@/auth/middleware/adminMiddleware';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { isAdminEmail } from "@/auth/middleware/adminMiddleware";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,12 +8,11 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Not authenticated' },
+        { success: false, message: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Check if user is admin
     const isAdmin = isAdminEmail(user.email);
 
     return NextResponse.json({
@@ -24,14 +23,14 @@ export async function GET(request: NextRequest) {
         name: user.name,
         emailVerified: user.emailVerified,
         image: user.image,
-        role: isAdmin ? 'Admin' : 'User',
+        role: isAdmin ? "Admin" : "User",
         isAdmin,
       },
     });
   } catch (error) {
-    console.error('Get user API error:', error);
+    console.error("Get user API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

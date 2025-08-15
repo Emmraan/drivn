@@ -17,13 +17,13 @@ interface RenameModalProps {
   type: 'file' | 'folder';
 }
 
-export default function RenameModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  currentName, 
+export default function RenameModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  currentName,
   title,
-  type 
+  type
 }: RenameModalProps) {
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
@@ -37,31 +37,31 @@ export default function RenameModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const trimmedName = newName.trim();
-    
+
     if (!trimmedName) {
       setError(`${type === 'file' ? 'File' : 'Folder'} name cannot be empty`);
       return;
     }
-    
+
     if (trimmedName === currentName) {
       onClose();
       return;
     }
-    
+
     // Validate name
     const invalidChars = /[<>:"/\\|?*]/;
     if (invalidChars.test(trimmedName)) {
       setError('Name contains invalid characters');
       return;
     }
-    
+
     if (trimmedName.length > 255) {
       setError('Name must be less than 255 characters');
       return;
     }
-    
+
     onConfirm(trimmedName);
     onClose();
   };
@@ -72,7 +72,7 @@ export default function RenameModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md transition-opacity" onClick={onClose} />
-        
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}

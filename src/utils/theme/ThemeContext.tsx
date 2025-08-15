@@ -18,27 +18,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Check for saved theme preference or default to system preference
+
     const savedTheme = localStorage.getItem('theme') as Theme;
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    
+
     const initialTheme = savedTheme || systemTheme;
     setThemeState(initialTheme);
-    
-    // Apply theme to document
+
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
   const setTheme = (newTheme: Theme) => {
-    // Add transition class before theme change
     document.documentElement.classList.add('theme-transition');
 
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
 
-    // Remove transition class after animation completes
     setTimeout(() => {
       document.documentElement.classList.remove('theme-transition');
     }, 300);
@@ -48,7 +44,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  // Prevent hydration mismatch
   if (!mounted) {
     return <div style={{ visibility: 'hidden' }}>{children}</div>;
   }

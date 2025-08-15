@@ -21,7 +21,6 @@ export async function getAuthenticatedAdmin(request: NextRequest) {
       return null;
     }
 
-    // Check if user email matches admin email
     if (user.email.toLowerCase() === adminEmail.toLowerCase()) {
       return user;
     }
@@ -66,7 +65,6 @@ export function requireAdmin<T extends unknown[]>(
       );
     }
 
-    // Add admin to request object
     (request as NextRequest & { admin: typeof admin }).admin = admin;
 
     return handler(request, ...args);

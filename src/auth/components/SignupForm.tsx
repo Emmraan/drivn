@@ -100,7 +100,6 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
     setError('');
     setSuccess('');
 
-    // Use the validateForm function
     if (!validateForm()) {
       setError('Please fix the validation errors');
       setLoading(false);

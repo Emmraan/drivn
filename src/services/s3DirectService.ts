@@ -17,35 +17,28 @@ export type { ListResult, SearchResult } from './s3ListingOperations';
  * Provides a unified interface for all S3 operations
  */
 export class S3DirectService {
-  // File Operations
   static uploadFile = S3FileOperations.uploadFile;
   static deleteFile = S3FileOperations.deleteFile;
   static renameFile = S3FileOperations.renameFile;
   static getDownloadUrl = S3FileOperations.getDownloadUrl;
 
-  // Folder Operations
   static createFolder = S3FolderOperations.createFolder;
   static deleteFolder = S3FolderOperations.deleteFolder;
   static renameFolder = S3FolderOperations.renameFolder;
 
-  // Listing Operations
   static listFiles = S3ListingOperations.listFiles;
   static searchFiles = S3ListingOperations.searchFiles;
 
-  // Cache Operations
   static clearCache = () => s3Cache.clear();
   static invalidateCache = (pattern: string) => s3Cache.invalidate(pattern);
   static forceClearUserCache = (userId: string) => s3Cache.invalidate(userId);
   static getCacheSize = () => s3Cache.size();
   static getCacheKeys = () => s3Cache.keys();
 
-  // Alias methods for backward compatibility
   static listItems = S3ListingOperations.listFiles;
 
-  // Analytics Operations
   static async getStorageStats(userId: string) {
     try {
-      // First check if user has valid S3 config
       const s3Config = await S3ConfigService.getS3Config(userId);
       if (!s3Config || !s3Config.accessKeyId) {
         return {
@@ -62,7 +55,6 @@ export class S3DirectService {
 
       const allFiles = await S3ListingOperations.listAllFiles(userId);
 
-      // Calculate file type stats
       const fileTypeStats: Record<string, { count: number; size: number }> = {};
       let totalSize = 0;
       let totalFiles = 0;
@@ -85,7 +77,6 @@ export class S3DirectService {
 
       processItems(allFiles);
 
-      // To get the folder count, we can do a non-recursive list
       const rootListing = await S3ListingOperations.listFiles(userId, '/');
       const totalFolders = rootListing.success ? rootListing.folders.length : 0;
 
@@ -109,7 +100,6 @@ export class S3DirectService {
     }
   }
 
-  // Test S3 Connection
   static async testS3Connection(userId: string) {
     try {
       const result = await S3ListingOperations.listFiles(userId, '/', { maxKeys: 1 });

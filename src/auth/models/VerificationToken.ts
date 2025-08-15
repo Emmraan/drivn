@@ -23,15 +23,13 @@ const VerificationTokenSchema = new Schema<IVerificationToken>({
   expires: {
     type: Date,
     required: true,
-    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000),
   },
 }, {
   timestamps: true,
 });
 
-// Indexes for performance and cleanup
 VerificationTokenSchema.index({ email: 1 });
-// Note: token field already has unique index from schema definition
-VerificationTokenSchema.index({ expires: 1 }, { expireAfterSeconds: 0 }); // Auto-delete expired tokens
+VerificationTokenSchema.index({ expires: 1 }, { expireAfterSeconds: 0 });
 
 export default mongoose.models.VerificationToken || mongoose.model<IVerificationToken>('VerificationToken', VerificationTokenSchema);

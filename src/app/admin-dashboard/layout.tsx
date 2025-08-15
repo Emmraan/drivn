@@ -27,14 +27,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         router.push('/');
         return;
       }
-
-      // Since middleware already validates admin access for /admin-dashboard routes,
-      // we can trust that if the user reached this component, they are an admin.
-      // This eliminates the race condition and API call dependency.
     }
   }, [user, loading, router, mounted]);
 
-  // Show loading skeleton while auth is loading or component is mounting
   if (loading || !mounted) {
     return (
       <div className="min-h-screen bg-background">
@@ -45,7 +40,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // If no user, don't render anything (redirect will happen in useEffect)
   if (!user) {
     return null;
   }

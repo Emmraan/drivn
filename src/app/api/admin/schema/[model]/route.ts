@@ -5,7 +5,6 @@ import User from '@/auth/models/User';
 import ActivityLog from '@/models/ActivityLog';
 import FileMetadata from '@/models/FileMetadata';
 
-// Model mapping
 const MODEL_MAP = {
   User,
   ActivityLog,
@@ -33,7 +32,6 @@ export const GET = requireAdmin(async (
       );
     }
 
-    // Get the schema from the model
     const schema = ModelClass.schema;
     const paths = schema.paths;
     
@@ -143,8 +141,7 @@ function getSchemaType(schemaType: any): string {
         return 'Mixed';
     }
   }
-  
-  // Handle nested schemas and special cases
+
   if (schemaType.schema) {
     return 'Object';
   }

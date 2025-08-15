@@ -18,8 +18,8 @@ interface ContextMenuProps {
   items: ContextMenuItem[];
   children: React.ReactNode;
   className?: string;
-  enableLeftClick?: boolean; // New prop to enable left-click
-  itemType?: 'file' | 'folder'; // New prop to specify item type
+  enableLeftClick?: boolean;
+  itemType?: 'file' | 'folder';
 }
 
 export default function ContextMenu({ items, children, className, enableLeftClick = false, itemType }: ContextMenuProps) {
@@ -29,7 +29,6 @@ export default function ContextMenu({ items, children, className, enableLeftClic
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
-  // Fix hydration mismatch by only rendering portal content after mount
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -49,7 +48,6 @@ export default function ContextMenu({ items, children, className, enableLeftClic
   };
 
   const handleLeftClick = (e: React.MouseEvent) => {
-    // Only enable left-click for files, not folders
     if (enableLeftClick && itemType === 'file') {
       e.preventDefault();
       e.stopPropagation();
@@ -88,24 +86,23 @@ export default function ContextMenu({ items, children, className, enableLeftClic
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
-      
-      // Adjust position if menu would go off screen
+
       if (menuRef.current) {
         const menuRect = menuRef.current.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
+
         let adjustedX = position.x;
         let adjustedY = position.y;
-        
+
         if (position.x + menuRect.width > viewportWidth) {
           adjustedX = position.x - menuRect.width;
         }
-        
+
         if (position.y + menuRect.height > viewportHeight) {
           adjustedY = position.y - menuRect.height;
         }
-        
+
         if (adjustedX !== position.x || adjustedY !== position.y) {
           setPosition({ x: adjustedX, y: adjustedY });
         }
@@ -165,8 +162,8 @@ export default function ContextMenu({ items, children, className, enableLeftClic
                         item.disabled
                           ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                           : item.variant === 'danger'
-                          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                       )}
                     >
                       {IconComponent && (
@@ -187,14 +184,12 @@ export default function ContextMenu({ items, children, className, enableLeftClic
   );
 }
 
-// Hook for managing context menu state
 export function useContextMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [targetItem, setTargetItem] = useState<{ _id: string; name: string; [key: string]: unknown } | null>(null);
+  const [targetItem, setTargetItem] = useState<{ _id: string; name: string;[key: string]: unknown } | null>(null);
 
-  const openContextMenu = (e: React.MouseEvent, item?: { _id: string; name: string; [key: string]: unknown } | null, itemType?: 'file' | 'folder') => {
-    // For left-click, only allow files
+  const openContextMenu = (e: React.MouseEvent, item?: { _id: string; name: string;[key: string]: unknown } | null, itemType?: 'file' | 'folder') => {
     if (e.type === 'click' && itemType !== 'file') {
       return;
     }

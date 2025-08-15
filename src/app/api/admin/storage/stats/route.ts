@@ -12,10 +12,8 @@ export const GET = requireAdmin(async () => {
   try {
     await connectDB();
 
-    // Get total users
     const totalUsers = await User.countDocuments();
 
-    // Get total files and storage
     const fileStats = await FileMetadata.aggregate([
       {
         $group: {
@@ -26,12 +24,10 @@ export const GET = requireAdmin(async () => {
       },
     ]);
 
-    // Folders are now virtual in S3, not tracked separately
     const totalFolders = 0;
 
 
 
-    // Get storage by user
     const storageByUser = await FileMetadata.aggregate([
       {
         $group: {

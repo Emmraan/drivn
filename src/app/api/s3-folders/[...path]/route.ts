@@ -32,7 +32,6 @@ export async function DELETE(
     const result = await S3DirectService.deleteFolder(String(user._id), folderPath);
 
     if (result.success) {
-      // Force clear all cache for this user to ensure fresh data
       S3DirectService.forceClearUserCache(String(user._id));
 
       return NextResponse.json({

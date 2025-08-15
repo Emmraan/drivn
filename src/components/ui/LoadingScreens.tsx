@@ -25,7 +25,7 @@ export function AccountCreationLoading({ message }: LoadingScreenProps) {
         <div className="w-24 h-24 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center">
           <UserPlusIcon className="w-12 h-12 text-white" />
         </div>
-        
+
         {/* Orbiting dots */}
         <motion.div
           className="absolute inset-0"
@@ -77,10 +77,10 @@ export function AccountCreationLoading({ message }: LoadingScreenProps) {
             className="flex items-center space-x-2"
             initial={{ opacity: 0.3 }}
             animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ 
-              duration: 1.5, 
-              repeat: Infinity, 
-              delay: step.delay 
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: step.delay
             }}
           >
             <CheckCircleIcon className="w-5 h-5 text-green-500" />
@@ -105,12 +105,12 @@ export function LoginLoading({ message }: LoadingScreenProps) {
       {/* Animated Login Icon */}
       <motion.div
         className="relative mb-8"
-        animate={{ 
+        animate={{
           scale: [1, 1.1, 1],
           rotate: [0, 5, -5, 0]
         }}
-        transition={{ 
-          duration: 2, 
+        transition={{
+          duration: 2,
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -118,16 +118,16 @@ export function LoginLoading({ message }: LoadingScreenProps) {
         <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
           <ArrowRightOnRectangleIcon className="w-12 h-12 text-white" />
         </div>
-        
+
         {/* Pulsing ring */}
         <motion.div
           className="absolute inset-0 rounded-full border-4 border-blue-300 dark:border-blue-600"
-          animate={{ 
+          animate={{
             scale: [1, 1.3, 1],
             opacity: [0.7, 0.3, 0.7]
           }}
-          transition={{ 
-            duration: 1.5, 
+          transition={{
+            duration: 1.5,
             repeat: Infinity,
             ease: "easeInOut"
           }}

@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate folder name
     const trimmedName = name.trim();
     if (trimmedName.length > 255) {
       return NextResponse.json(
@@ -35,7 +34,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for invalid characters
     const invalidChars = /[<>:"/\\|?*]/;
     if (invalidChars.test(trimmedName)) {
       return NextResponse.json(

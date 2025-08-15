@@ -30,7 +30,6 @@ export default function PageTransition({ children, className }: PageTransitionPr
   );
 }
 
-// Specialized transition components for different page types
 export function DashboardPageTransition({ children, className }: PageTransitionProps) {
   return (
     <motion.div

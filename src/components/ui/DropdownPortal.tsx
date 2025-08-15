@@ -28,13 +28,10 @@ export default function DropdownPortal({
     setMounted(true);
   }, []);
 
-  // Handle click outside when using portal
   useEffect(() => {
     if (isOpen && onClickOutside && mounted) {
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as Node;
-
-        // Check if click is outside both the trigger and the dropdown
         const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
         const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
 
@@ -43,7 +40,6 @@ export default function DropdownPortal({
         }
       };
 
-      // Use a small delay to ensure the portal is rendered
       const timeoutId = setTimeout(() => {
         document.addEventListener('mousedown', handleClickOutside);
       }, 0);
@@ -60,19 +56,18 @@ export default function DropdownPortal({
       const updatePosition = () => {
         const rect = triggerRef.current!.getBoundingClientRect();
         setPosition({
-          top: rect.bottom + window.scrollY + 8, // 8px gap
-          left: rect.right - 256 + window.scrollX, // 256px is dropdown width (w-64)
+          top: rect.bottom + window.scrollY + 8,
+          left: rect.right - 256 + window.scrollX,
           width: 256
         });
       };
 
       updatePosition();
-      
-      // Update position on scroll and resize
+
       const handleUpdate = () => updatePosition();
       window.addEventListener('scroll', handleUpdate);
       window.addEventListener('resize', handleUpdate);
-      
+
       return () => {
         window.removeEventListener('scroll', handleUpdate);
         window.removeEventListener('resize', handleUpdate);
@@ -84,7 +79,6 @@ export default function DropdownPortal({
     return null;
   }
 
-  // Fallback to inline positioning if portal fails or is disabled
   if (fallbackToInline || typeof window === 'undefined') {
     return (
       <div className={`absolute dropdown-menu-top right-0 mt-2 ${className}`}>
@@ -111,7 +105,6 @@ export default function DropdownPortal({
   try {
     return createPortal(portalContent, document.body);
   } catch (error) {
-    // Fallback to inline if portal fails
     console.warn('Portal failed, falling back to inline dropdown:', error);
     return (
       <div className={`absolute dropdown-menu-top right-0 mt-2 ${className}`}>

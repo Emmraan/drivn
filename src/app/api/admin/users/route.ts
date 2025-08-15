@@ -18,7 +18,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
 
-    // Build search query
     const searchQuery = search
       ? {
           $or: [
@@ -28,7 +27,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
         }
       : {};
 
-    // Get users with pagination
     const skip = (page - 1) * limit;
     const users = await User.find(searchQuery)
       .select('-password -s3Config.secretAccessKey')
@@ -38,7 +36,6 @@ export const GET = requireAdmin(async (request: NextRequest) => {
 
     const totalUsers = await User.countDocuments(searchQuery);
 
-    // Get file statistics for each user
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
         const fileStats = await FileMetadata.aggregate([

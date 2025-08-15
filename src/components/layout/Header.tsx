@@ -61,7 +61,6 @@ export default function Header() {
           >
             <ThemeToggle />
 
-            {/* Only show auth buttons for unauthenticated users on public routes */}
             <>
               <Button
                 variant="ghost"
@@ -117,7 +116,7 @@ export default function Header() {
                     {item.name}
                   </a>
                 ))}
-                
+
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="space-y-2">
                     <button

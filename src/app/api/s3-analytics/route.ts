@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       const totalDownloads = activityStats.download?.count || 0;
       console.log('Total Downloads:', totalDownloads);
 
-      // Transform file type stats to match expected format
       const fileTypeStats = Object.entries(s3StatsResult.data.fileTypeStats).map(([extension, stats]) => ({
         _id: getFileTypeCategory(extension),
         count: stats.count,

@@ -33,7 +33,7 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>,
     'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration'>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   loading?: boolean;
   loadingText?: string;
   loadingType?: 'spinner' | 'dots' | 'pulse' | 'progress';
@@ -55,55 +55,55 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           disabled={disabled || loading}
           {...props}
         >
-        {loading && loadingType === 'dots' && (
-          <motion.div className="flex space-x-1 mr-2">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-1.5 h-1.5 bg-current rounded-full"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-        {loading && loadingType !== 'dots' && (
-          <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
+          {loading && loadingType === 'dots' && (
+            <motion.div className="flex space-x-1 mr-2">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 h-1.5 bg-current rounded-full"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </motion.div>
+          )}
+          {loading && loadingType !== 'dots' && (
+            <svg
+              className="animate-spin -ml-1 mr-2 h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          )}
+          {!loading && leftIcon && <span className="mr-2">{leftIcon}</span>}
+          <motion.span
+            animate={loading ? { opacity: [0.75, 1, 0.75] } : { opacity: 1 }}
+            transition={loading ? { duration: 1.5, repeat: Infinity } : undefined}
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-        )}
-        {!loading && leftIcon && <span className="mr-2">{leftIcon}</span>}
-        <motion.span
-          animate={loading ? { opacity: [0.75, 1, 0.75] } : { opacity: 1 }}
-          transition={loading ? { duration: 1.5, repeat: Infinity } : undefined}
-        >
-          {loading && loadingText ? loadingText : children}
-        </motion.span>
-        {!loading && rightIcon && <span className="ml-2">{rightIcon}</span>}
+            {loading && loadingText ? loadingText : children}
+          </motion.span>
+          {!loading && rightIcon && <span className="ml-2">{rightIcon}</span>}
         </button>
       </motion.div>
     );

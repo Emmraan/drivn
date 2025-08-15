@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3ConfigService } from '@/services/s3ConfigService';
-import { validateS3Config } from '@/utils/encryption';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3ConfigService } from "@/services/s3ConfigService";
+import { validateS3Config } from "@/utils/encryption";
 
 /**
  * POST /api/s3-config/test
@@ -12,20 +12,27 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const body = await request.json();
-    const { accessKeyId, secretAccessKey, region, bucketName, endpoint, forcePathStyle } = body;
+    const {
+      accessKeyId,
+      secretAccessKey,
+      region,
+      bucketName,
+      endpoint,
+      forcePathStyle,
+    } = body;
 
-    // Validate required fields
     if (!accessKeyId || !secretAccessKey || !region || !bucketName) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Access Key ID, Secret Access Key, Region, and Bucket are required' 
+        {
+          success: false,
+          message:
+            "Access Key ID, Secret Access Key, Region, and Bucket are required",
         },
         { status: 400 }
       );
@@ -40,19 +47,19 @@ export async function POST(request: NextRequest) {
       forcePathStyle: forcePathStyle || false,
     };
 
-    // Validate configuration format
     const validation = validateS3Config(s3Config);
     if (!validation.valid) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: `Configuration validation failed: ${validation.errors.join(', ')}` 
+        {
+          success: false,
+          message: `Configuration validation failed: ${validation.errors.join(
+            ", "
+          )}`,
         },
         { status: 400 }
       );
     }
 
-    // Test connection without saving
     const testResult = await S3ConfigService.testS3Connection(s3Config);
 
     if (testResult.success) {
@@ -61,9 +68,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(testResult, { status: 400 });
     }
   } catch (error) {
-    console.error('Error testing S3 configuration:', error);
+    console.error("Error testing S3 configuration:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

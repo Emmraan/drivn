@@ -37,7 +37,6 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
 
   isUserAdmin(user);
 
-  // Close dropdown handler
   const handleCloseDropdown = () => {
     setIsProfileOpen(false);
   };
@@ -53,18 +52,14 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
   };
 
   const handleBackToDashboard = () => {
-    // Close dropdown first, then navigate
     setIsProfileOpen(false);
-    // Small delay to ensure dropdown closes before navigation
     setTimeout(() => {
       router.push('/dashboard');
     }, 100);
   };
 
   const handleSettings = () => {
-    // Close dropdown first, then navigate
     setIsProfileOpen(false);
-    // Small delay to ensure dropdown closes before navigation
     setTimeout(() => {
       router.push('/admin-dashboard/settings');
     }, 100);
@@ -148,70 +143,70 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
                       transition={{ duration: 0.2 }}
                       className="w-full"
                     >
-                    {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center space-x-3">
-                        {user.image ? (
-                          <Image
-                            src={user.image}
-                            alt={user.name}
-                            width={40}
-                            height={40}
-                            className="h-10 w-10 rounded-full"
-                          />
-                        ) : (
-                          <UserCircleIcon className="h-10 w-10 text-gray-400" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {user.email}
-                          </p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 mt-1">
-                            <ShieldCheckIcon className="h-3 w-3 mr-1" />
-                            Admin
-                          </span>
+                      {/* User Info Header */}
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center space-x-3">
+                          {user.image ? (
+                            <Image
+                              src={user.image}
+                              alt={user.name}
+                              width={40}
+                              height={40}
+                              className="h-10 w-10 rounded-full"
+                            />
+                          ) : (
+                            <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {user.email}
+                            </p>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 mt-1">
+                              <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                              Admin
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Menu Items */}
-                    <div className="py-1 bg-white dark:bg-gray-900">
-                      {/* Settings */}
-                      <motion.button
-                        onClick={handleSettings}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
-                        whileHover={{ x: 4 }}
-                      >
-                        <CogIcon className="h-4 w-4" />
-                        <span>Admin Settings</span>
-                      </motion.button>
+                      {/* Menu Items */}
+                      <div className="py-1 bg-white dark:bg-gray-900">
+                        {/* Settings */}
+                        <motion.button
+                          onClick={handleSettings}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                          whileHover={{ x: 4 }}
+                        >
+                          <CogIcon className="h-4 w-4" />
+                          <span>Admin Settings</span>
+                        </motion.button>
 
-                      {/* Back to User Dashboard */}
-                      <motion.button
-                        onClick={handleBackToDashboard}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
-                        whileHover={{ x: 4 }}
-                      >
-                        <HomeIcon className="h-4 w-4" />
-                        <span>User Dashboard</span>
-                      </motion.button>
+                        {/* Back to User Dashboard */}
+                        <motion.button
+                          onClick={handleBackToDashboard}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                          whileHover={{ x: 4 }}
+                        >
+                          <HomeIcon className="h-4 w-4" />
+                          <span>User Dashboard</span>
+                        </motion.button>
 
-                      {/* Divider */}
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                        {/* Divider */}
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
 
-                      {/* Logout */}
-                      <motion.button
-                        onClick={handleLogout}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-3"
-                        whileHover={{ x: 4 }}
-                      >
-                        <ArrowRightOnRectangleIcon className="h-4 w-4" />
-                        <span>Sign Out</span>
-                      </motion.button>
-                    </div>
+                        {/* Logout */}
+                        <motion.button
+                          onClick={handleLogout}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-3"
+                          whileHover={{ x: 4 }}
+                        >
+                          <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                          <span>Sign Out</span>
+                        </motion.button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
