@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                 Array.isArray(validationResult.errors) &&
                 validationResult.errors.length > 0 &&
                 typeof validationResult.errors[0].message === 'string'
-                  ? validationResult.errors[0].message
+                  ? 'Disposable email is not allowed'
                   : 'Email failed external validation',
             },
             { status: 400 }
