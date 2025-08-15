@@ -427,7 +427,7 @@ export class S3FolderOperations {
       const successfulCopies = copyResults.filter(Boolean);
 
       // Delete old objects
-      if (successfulCopies.length > 0) {
+      if (objects.Contents && objects.Contents.length > 0) {
         const objectsToDelete = successfulCopies.map(result => ({ Key: result!.oldKey }));
         // Also delete the old folder marker
         objectsToDelete.push({ Key: oldFolderPrefix });
