@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     if (!loading && mounted) {
       if (!user) {
-        router.push('/login');
+        router.push('/');
         return;
       }
 
