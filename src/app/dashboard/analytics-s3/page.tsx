@@ -8,10 +8,12 @@ import {
   CloudArrowUpIcon,
   ChartBarIcon,
   ArrowPathIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/SkeletonLoader';
+import { useRouter } from 'next/navigation';
 
 interface AnalyticsData {
   totalFiles: number;
@@ -44,19 +46,30 @@ export default function S3AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
+  const [hasS3Config, setHasS3Config] = useState(false);
+  const router = useRouter();
 
   const loadAnalytics = useCallback(async (range: string = timeRange) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/s3-analytics?timeRange=${range}`);
-      const result = await response.json();
+      const [analyticsResponse, configResponse] = await Promise.all([
+        fetch(`/api/s3-analytics?timeRange=${range}`),
+        fetch('/api/s3-config'),
+      ]);
 
-      if (result.success) {
-        setData(result.data);
+      const analyticsResult = await analyticsResponse.json();
+      const configResult = await configResponse.json();
+
+      if (configResult.success) {
+        setHasS3Config(configResult.hasConfig);
+      }
+
+      if (analyticsResult.success) {
+        setData(analyticsResult.data);
       } else {
-        setError(result.message || 'Failed to load analytics');
+        setError(analyticsResult.message || 'Failed to load analytics');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
@@ -176,7 +189,7 @@ export default function S3AnalyticsPage() {
       )}
 
       {/* Analytics Content */}
-      {data && (
+      {data && hasS3Config && (
         <>
           {/* Overview Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -337,6 +350,26 @@ export default function S3AnalyticsPage() {
             </Card>
           </motion.div>
         </>
+      )}
+
+      {!loading && !hasS3Config && (
+        <Card className="p-6">
+          <div className="text-center py-8">
+            <XCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              No Storage Configured
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              You need to configure your S3 storage to start using DRIVN.
+            </p>
+            <Button
+              variant="primary"
+              onClick={() => router.push('/dashboard/settings')}
+            >
+              Configure Storage
+            </Button>
+          </div>
+        </Card>
       )}
     </div>
   );

@@ -37,24 +37,37 @@ export interface DeleteResult {
   error?: string;
 }
 
-async function fileExists(s3Client: S3Client, bucketName: string, key: string): Promise<boolean> {
+async function fileExists(
+  s3Client: S3Client,
+  bucketName: string,
+  key: string
+): Promise<boolean> {
   try {
     const command = new HeadObjectCommand({ Bucket: bucketName, Key: key });
     await s3Client.send(command);
     return true;
-  } catch (error: any) {
-    if (error.name === 'NotFound') {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'name' in error && (error as Error).name === 'NotFound') {
       return false;
     }
     throw error;
   }
 }
 
-async function getUniqueS3Key(s3Client: S3Client, bucketName: string, originalKey: string): Promise<string> {
+
+async function getUniqueS3Key(
+  s3Client: S3Client,
+  bucketName: string,
+  originalKey: string
+): Promise<string> {
   let s3Key = originalKey;
   let counter = 1;
-  const fileExtension = originalKey.includes('.') ? '.' + originalKey.split('.').pop() : '';
-  const fileNameWithoutExt = fileExtension ? originalKey.substring(0, originalKey.lastIndexOf('.')) : originalKey;
+  const fileExtension = originalKey.includes(".")
+    ? "." + originalKey.split(".").pop()
+    : "";
+  const fileNameWithoutExt = fileExtension
+    ? originalKey.substring(0, originalKey.lastIndexOf("."))
+    : originalKey;
 
   while (await fileExists(s3Client, bucketName, s3Key)) {
     s3Key = `${fileNameWithoutExt}(${counter})${fileExtension}`;
@@ -336,7 +349,7 @@ export class S3FileOperations {
       const originalS3Key = `${userId}${
         sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
       }/${fileName}`;
-      
+
       const s3Key = await getUniqueS3Key(s3Client, bucketName, originalS3Key);
 
       const putObjectCommand = new PutObjectCommand({

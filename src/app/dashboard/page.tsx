@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { useAuth } from '@/auth/context/AuthContext';
-import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
-import S3FileUpload from '@/components/dashboard/S3FileUpload';
-import S3CreateFolder from '@/components/dashboard/S3CreateFolder';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { useAuth } from "@/auth/context/AuthContext";
+import { DashboardSkeleton } from "@/components/ui/SkeletonLoader";
+import S3FileUpload from "@/components/dashboard/S3FileUpload";
+import S3CreateFolder from "@/components/dashboard/S3CreateFolder";
 import {
   CloudIcon,
   FolderIcon,
@@ -17,34 +17,35 @@ import {
   PlusIcon,
   ArrowUpTrayIcon,
   DocumentIcon,
-} from '@heroicons/react/24/outline';
-import Link from 'next/link';
+} from "@heroicons/react/24/outline";
+import Link from "next/link";
 
-const getQuickActions = (setShowUploadModal: (show: boolean) => void, setShowCreateFolderModal: (show: boolean) => void) => [
+const getQuickActions = (
+  setShowUploadModal: (show: boolean) => void,
+  setShowCreateFolderModal: (show: boolean) => void
+) => [
   {
-    name: 'Upload Files',
-    description: 'Upload files to your cloud storage',
+    name: "Upload Files",
+    description: "Upload files to your cloud storage",
     onClick: () => setShowUploadModal(true),
     icon: ArrowUpTrayIcon,
-    color: 'bg-blue-500',
+    color: "bg-blue-500",
   },
   {
-    name: 'Create Folder',
-    description: 'Organize your files with folders',
+    name: "Create Folder",
+    description: "Organize your files with folders",
     onClick: () => setShowCreateFolderModal(true),
     icon: PlusIcon,
-    color: 'bg-green-500',
+    color: "bg-green-500",
   },
   {
-    name: 'Configure S3',
-    description: 'Set up your S3 storage credentials',
-    href: '/dashboard/settings',
+    name: "Configure S3",
+    description: "Set up your S3 storage credentials",
+    href: "/dashboard/settings",
     icon: CogIcon,
-    color: 'bg-purple-500',
+    color: "bg-purple-500",
   },
 ];
-
-
 
 interface DashboardStats {
   totalFiles: number;
@@ -65,23 +66,33 @@ export default function DashboardPage() {
     storageUsed: 0,
     totalDownloads: 0,
   });
+  const [hasS3Config, setHasS3Config] = useState(false);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/s3-analytics?timeRange=30d');
-      const data = await response.json();
+      const [analyticsResponse, configResponse] = await Promise.all([
+        fetch("/api/s3-analytics?timeRange=30d"),
+        fetch("/api/s3-config"),
+      ]);
 
-      if (data.success) {
+      const analyticsData = await analyticsResponse.json();
+      const configData = await configResponse.json();
+
+      if (analyticsData.success) {
         setStats({
-          totalFiles: data.data.totalFiles,
-          totalFolders: data.data.totalFolders,
-          storageUsed: data.data.storageUsed,
-          totalDownloads: data.data.totalDownloads,
+          totalFiles: analyticsData.data.totalFiles,
+          totalFolders: analyticsData.data.totalFolders,
+          storageUsed: analyticsData.data.storageUsed,
+          totalDownloads: analyticsData.data.totalDownloads,
         });
       }
+
+      if (configData.success) {
+        setHasS3Config(configData.hasConfig);
+      }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error("Error loading dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -95,7 +106,7 @@ export default function DashboardPage() {
     loadDashboardData();
     setShowUploadModal(false);
     setTimeout(() => {
-      router.push('/dashboard/files-s3');
+      router.push("/dashboard/files-s3");
     }, 1000);
   };
 
@@ -103,48 +114,51 @@ export default function DashboardPage() {
     loadDashboardData();
     setShowCreateFolderModal(false);
     setTimeout(() => {
-      router.push('/dashboard/files-s3');
+      router.push("/dashboard/files-s3");
     }, 1000);
   };
 
-  const quickActions = getQuickActions(setShowUploadModal, setShowCreateFolderModal);
+  const quickActions = getQuickActions(
+    setShowUploadModal,
+    setShowCreateFolderModal
+  );
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const dashboardStats = [
     {
-      name: 'Total Files',
+      name: "Total Files",
       value: stats.totalFiles.toString(),
       icon: DocumentIcon,
-      change: 'Files uploaded',
-      changeType: 'neutral' as const,
+      change: "Files uploaded",
+      changeType: "neutral" as const,
     },
     {
-      name: 'Total Folders',
+      name: "Total Folders",
       value: stats.totalFolders.toString(),
       icon: FolderIcon,
-      change: 'Folders created',
-      changeType: 'neutral' as const,
+      change: "Folders created",
+      changeType: "neutral" as const,
     },
     {
-      name: 'Storage Used',
+      name: "Storage Used",
       value: formatBytes(stats.storageUsed),
       icon: CloudIcon,
-      change: 'Total storage',
-      changeType: 'neutral' as const,
+      change: "Total storage",
+      changeType: "neutral" as const,
     },
     {
-      name: 'Downloads',
+      name: "Downloads",
       value: stats.totalDownloads.toString(),
       icon: ChartBarIcon,
-      change: 'Total downloads',
-      changeType: 'neutral' as const,
+      change: "Total downloads",
+      changeType: "neutral" as const,
     },
   ];
 
@@ -169,134 +183,138 @@ export default function DashboardPage() {
           </p>
         </div>
       </motion.div>
-
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mt-8"
-      >
-        {dashboardStats.map((stat) => (
-          <Card key={stat.name} className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <stat.icon className="h-8 w-8 text-gray-400" />
-              </div>
-              <div className="ml-4 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                    {stat.name}
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {stat.value}
-                    </div>
-                  </dd>
-                  <dd className="text-sm text-gray-500 dark:text-gray-400">
-                    {stat.change}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </motion.div>
-
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="mt-8"
-      >
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {quickActions.map((action) => {
-            const content = (
-              <Card hover className="p-6 h-full">
+      
+      {hasS3Config ? (
+        <>
+          {/* Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mt-8"
+          >
+            {dashboardStats.map((stat) => (
+              <Card key={stat.name} className="p-6">
                 <div className="flex items-center">
-                  <div className={`flex-shrink-0 p-3 rounded-lg ${action.color}`}>
-                    <action.icon className="h-6 w-6 text-white" />
+                  <div className="flex-shrink-0">
+                    <stat.icon className="h-8 w-8 text-gray-400" />
                   </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      {action.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {action.description}
-                    </p>
+                  <div className="ml-4 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        {stat.name}
+                      </dt>
+                      <dd className="flex items-baseline">
+                        <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                          {stat.value}
+                        </div>
+                      </dd>
+                      <dd className="text-sm text-gray-500 dark:text-gray-400">
+                        {stat.change}
+                      </dd>
+                    </dl>
                   </div>
                 </div>
               </Card>
-            );
+            ))}
+          </motion.div>
 
-            if (action.href) {
-              return (
-                <Link key={action.name} href={action.href}>
-                  {content}
-                </Link>
-              );
-            } else {
-              return (
-                <button
-                  key={action.name}
-                  onClick={action.onClick}
-                  className="text-left w-full"
-                >
-                  {content}
-                </button>
-              );
-            }
-          })}
-        </div>
-      </motion.div>
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-8"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {quickActions.map((action) => {
+                const content = (
+                  <Card hover className="p-6 h-full">
+                    <div className="flex items-center">
+                      <div
+                        className={`flex-shrink-0 p-3 rounded-lg ${action.color}`}
+                      >
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                          {action.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {action.description}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
 
-      {/* Getting Started */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="mt-8"
-      >
-        <Card className="p-8 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20">
-          <div className="text-center">
-            <CloudIcon className="mx-auto h-12 w-12 text-primary-600 dark:text-primary-400" />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
-              Get Started with DRIVN
-            </h3>
-            <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Configure your S3-compatible storage credentials to start uploading and managing your files.
-              DRIVN works with any S3-compatible provider including AWS S3, Backblaze B2, Wasabi, and more.
-            </p>
-            <div className="mt-6">
-              <Link href="/dashboard/settings">
-                <Button size="lg">
-                  Configure Storage
-                </Button>
-              </Link>
+                if (action.href) {
+                  return (
+                    <Link key={action.name} href={action.href}>
+                      {content}
+                    </Link>
+                  );
+                } else {
+                  return (
+                    <button
+                      key={action.name}
+                      onClick={action.onClick}
+                      className="text-left w-full"
+                    >
+                      {content}
+                    </button>
+                  );
+                }
+              })}
             </div>
-          </div>
-        </Card>
-      </motion.div>
+          </motion.div>
 
-      {/* Modals */}
-      <S3FileUpload
-        isOpen={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        onUploadComplete={handleUploadComplete}
-        currentPath="/"
-      />
+          {/* Modals */}
+          <S3FileUpload
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            onUploadComplete={handleUploadComplete}
+            currentPath="/"
+          />
 
-      <S3CreateFolder
-        isOpen={showCreateFolderModal}
-        onClose={() => setShowCreateFolderModal(false)}
-        onFolderCreated={handleFolderCreated}
-        parentPath="/"
-      />
+          <S3CreateFolder
+            isOpen={showCreateFolderModal}
+            onClose={() => setShowCreateFolderModal(false)}
+            onFolderCreated={handleFolderCreated}
+            parentPath="/"
+          />
+        </>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-8"
+        >
+          <Card className="p-8 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20">
+            <div className="text-center">
+              <CloudIcon className="mx-auto h-12 w-12 text-primary-600 dark:text-primary-400" />
+              <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+                Get Started with DRIVN
+              </h3>
+              <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Configure your S3-compatible storage credentials to start
+                uploading and managing your files. DRIVN works with any
+                S3-compatible provider including AWS S3, Backblaze B2, Wasabi,
+                and more.
+              </p>
+              <div className="mt-6">
+                <Link href="/dashboard/settings">
+                  <Button size="lg">Configure Storage</Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
-
