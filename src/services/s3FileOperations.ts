@@ -9,7 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
 import { s3Cache } from "../utils/s3Cache";
 import ActivityLog, { IActivityLogModel } from "../models/ActivityLog";
-import FileMetadata, { IFileMetadataModel } from "../models/FileMetadata";
+import FileMetadata from "../models/FileMetadata";
 
 export interface S3FileItem {
   key: string;

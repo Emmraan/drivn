@@ -72,62 +72,84 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
     setIsUploading(true);
     setUploadFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
 
-    const uploadPromises = uploadFiles.map(async (uploadFile) => {
-      try {
-        const presignedUrlResponse = await fetch('/api/s3-files/presigned-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: uploadFile.file.name,
-            fileType: uploadFile.file.type,
-            fileSize: uploadFile.file.size,
-            path: currentPath,
-          }),
-        });
+    const uploadPromises = uploadFiles.map(uploadFile => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const presignedUrlResponse = await fetch('/api/s3-files/presigned-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: uploadFile.file.name,
+              fileType: uploadFile.file.type,
+              fileSize: uploadFile.file.size,
+              path: currentPath,
+            }),
+          });
 
-        if (!presignedUrlResponse.ok) {
-          const errorData = await presignedUrlResponse.json();
-          throw new Error(errorData.message || 'Failed to get pre-signed URL');
+          if (!presignedUrlResponse.ok) {
+            const errorData = await presignedUrlResponse.json();
+            throw new Error(errorData.message || 'Failed to get pre-signed URL');
+          }
+
+          const { data } = await presignedUrlResponse.json();
+          const { url } = data;
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url, true);
+          xhr.setRequestHeader('Content-Type', uploadFile.file.type);
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+              setUploadFiles(prev => prev.map(f =>
+                f.id === uploadFile.id ? { ...f, progress } : f
+              ));
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              setUploadFiles(prev => prev.map(f =>
+                f.id === uploadFile.id ? { ...f, status: 'success' as const, progress: 100 } : f
+              ));
+              resolve(xhr.response);
+            } else {
+              reject(new Error('S3 upload failed'));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error('S3 upload failed'));
+          };
+
+          xhr.send(uploadFile.file);
+
+        } catch (error) {
+          console.error('Upload error:', error);
+          setUploadFiles(prev => prev.map(f =>
+            f.id === uploadFile.id
+              ? { ...f, status: 'error' as const, error: error instanceof Error ? error.message : 'Upload failed' }
+              : f
+          ));
+          reject(error);
         }
-
-        const { data } = await presignedUrlResponse.json();
-        const { url } = data;
-
-        const uploadResponse = await fetch(url, {
-          method: 'PUT',
-          body: uploadFile.file,
-          headers: { 'Content-Type': uploadFile.file.type },
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('S3 upload failed');
-        }
-
-        setUploadFiles(prev => prev.map(f =>
-          f.id === uploadFile.id ? { ...f, status: 'success' as const, progress: 100 } : f
-        ));
-      } catch (error) {
-        console.error('Upload error:', error);
-        setUploadFiles(prev => prev.map(f =>
-          f.id === uploadFile.id
-            ? { ...f, status: 'error' as const, error: error instanceof Error ? error.message : 'Upload failed' }
-            : f
-        ));
-      }
+      });
     });
 
-    await Promise.all(uploadPromises);
+    try {
+      await Promise.all(uploadPromises);
+    } catch (error) {
+      console.error('One or more uploads failed', error);
+    }
 
     setIsUploading(false);
 
-    const allFinished = uploadFiles.every(f => f.status === 'success' || f.status === 'error');
-    if (allFinished) {
-      setTimeout(() => {
-        onUploadComplete();
-        onClose();
-        setUploadFiles([]);
-      }, 1500);
-    }
+    setTimeout(() => {
+      onUploadComplete();
+      onClose();
+      setUploadFiles([]);
+    }, 1500);
+
   }, [uploadFiles, currentPath, onUploadComplete, onClose]);
 
   const getStatusIcon = (status: UploadFile['status']) => {
