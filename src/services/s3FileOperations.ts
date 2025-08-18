@@ -4,6 +4,7 @@ import {
   CopyObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
@@ -34,6 +35,32 @@ export interface DeleteResult {
   message: string;
   deletedCount?: number;
   error?: string;
+}
+
+async function fileExists(s3Client: S3Client, bucketName: string, key: string): Promise<boolean> {
+  try {
+    const command = new HeadObjectCommand({ Bucket: bucketName, Key: key });
+    await s3Client.send(command);
+    return true;
+  } catch (error: any) {
+    if (error.name === 'NotFound') {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function getUniqueS3Key(s3Client: S3Client, bucketName: string, originalKey: string): Promise<string> {
+  let s3Key = originalKey;
+  let counter = 1;
+  const fileExtension = originalKey.includes('.') ? '.' + originalKey.split('.').pop() : '';
+  const fileNameWithoutExt = fileExtension ? originalKey.substring(0, originalKey.lastIndexOf('.')) : originalKey;
+
+  while (await fileExists(s3Client, bucketName, s3Key)) {
+    s3Key = `${fileNameWithoutExt}(${counter})${fileExtension}`;
+    counter++;
+  }
+  return s3Key;
 }
 
 export class S3FileOperations {
@@ -305,12 +332,12 @@ export class S3FileOperations {
         };
       }
 
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
       const sanitizedPath = currentPath.replace(/\/+/g, "/").replace(/\/$/, "");
-      const s3Key = `${userId}${
+      const originalS3Key = `${userId}${
         sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
-      }/${timestamp}-${randomSuffix}-${fileName}`;
+      }/${fileName}`;
+      
+      const s3Key = await getUniqueS3Key(s3Client, bucketName, originalS3Key);
 
       const putObjectCommand = new PutObjectCommand({
         Bucket: bucketName,
