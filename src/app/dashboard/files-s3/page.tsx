@@ -79,7 +79,6 @@ export default function S3FilesPage() {
     clearResults,
   } = useS3Search({ debounceMs: 300, maxKeys: 50 });
 
-  // Generate breadcrumbs from current path
   const breadcrumbs: Breadcrumb[] = [
     { name: 'My Files', path: '' },
     ...currentPath.split('/').filter(Boolean).map((segment, index, array) => ({

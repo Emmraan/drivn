@@ -17,10 +17,11 @@ export type { ListResult, SearchResult } from './s3ListingOperations';
  * Provides a unified interface for all S3 operations
  */
 export class S3DirectService {
-  static uploadFile = S3FileOperations.uploadFile;
+  
   static deleteFile = S3FileOperations.deleteFile;
   static renameFile = S3FileOperations.renameFile;
   static getDownloadUrl = S3FileOperations.getDownloadUrl;
+  static getUploadPresignedUrl = S3FileOperations.getUploadPresignedUrl;
 
   static createFolder = S3FolderOperations.createFolder;
   static deleteFolder = S3FolderOperations.deleteFolder;

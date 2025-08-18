@@ -70,60 +70,63 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
     if (uploadFiles.length === 0) return;
 
     setIsUploading(true);
+    setUploadFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
 
-    try {
-      setUploadFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
+    const uploadPromises = uploadFiles.map(async (uploadFile) => {
+      try {
+        const presignedUrlResponse = await fetch('/api/s3-files/presigned-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: uploadFile.file.name,
+            fileType: uploadFile.file.type,
+            fileSize: uploadFile.file.size,
+            path: currentPath,
+          }),
+        });
 
-      const formData = new FormData();
-      uploadFiles.forEach(uploadFile => {
-        formData.append('files', uploadFile.file);
-      });
-      formData.append('path', currentPath);
-
-      const response = await fetch('/api/s3-files', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setUploadFiles(prev => prev.map(f => ({
-          ...f,
-          status: 'success' as const,
-          progress: 100
-        })));
-
-        setTimeout(() => {
-          onUploadComplete();
-          onClose();
-          setUploadFiles([]);
-        }, 1500);
-      } else {
-        if (result.data?.errors && result.data.errors.length > 0) {
-          setUploadFiles(prev => prev.map(f => {
-            const error = result.data.errors.find((err: { fileName: string; error: string }) => err.fileName === f.file.name);
-            return error
-              ? { ...f, status: 'error' as const, error: error.error }
-              : { ...f, status: 'success' as const, progress: 100 };
-          }));
-        } else {
-          setUploadFiles(prev => prev.map(f => ({
-            ...f,
-            status: 'error' as const,
-            error: result.message || 'Upload failed'
-          })));
+        if (!presignedUrlResponse.ok) {
+          const errorData = await presignedUrlResponse.json();
+          throw new Error(errorData.message || 'Failed to get pre-signed URL');
         }
+
+        const { data } = await presignedUrlResponse.json();
+        const { url } = data;
+
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          body: uploadFile.file,
+          headers: { 'Content-Type': uploadFile.file.type },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('S3 upload failed');
+        }
+
+        setUploadFiles(prev => prev.map(f =>
+          f.id === uploadFile.id ? { ...f, status: 'success' as const, progress: 100 } : f
+        ));
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadFiles(prev => prev.map(f =>
+          f.id === uploadFile.id
+            ? { ...f, status: 'error' as const, error: error instanceof Error ? error.message : 'Upload failed' }
+            : f
+        ));
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadFiles(prev => prev.map(f => ({
-        ...f,
-        status: 'error' as const,
-        error: 'Network error'
-      })));
-    } finally {
-      setIsUploading(false);
+    });
+
+    await Promise.all(uploadPromises);
+
+    setIsUploading(false);
+
+    const allFinished = uploadFiles.every(f => f.status === 'success' || f.status === 'error');
+    if (allFinished) {
+      setTimeout(() => {
+        onUploadComplete();
+        onClose();
+        setUploadFiles([]);
+      }, 1500);
     }
   }, [uploadFiles, currentPath, onUploadComplete, onClose]);
 
@@ -177,8 +180,8 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
-                ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
+              ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
+              : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
               }`}
           >
             <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />

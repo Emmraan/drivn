@@ -38,110 +38,6 @@ export interface DeleteResult {
 
 export class S3FileOperations {
   /**
-   * Upload a file to S3
-   */
-  static async uploadFile(
-    userId: string,
-    file: File,
-    currentPath: string = "/"
-  ): Promise<UploadResult> {
-    try {
-      const s3Client = await getS3Client(userId);
-      const bucketName = await getS3BucketName(userId);
-
-      if (!s3Client || !bucketName) {
-        return {
-          success: false,
-          message:
-            "S3 configuration not found. Please configure your storage settings.",
-          error: "S3_CONFIG_MISSING",
-        };
-      }
-
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const sanitizedPath = currentPath.replace(/\/+/g, "/").replace(/\/$/, "");
-      const s3Key = `${userId}${
-        sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
-      }/${timestamp}-${randomSuffix}-${file.name}`;
-
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      const uploadCommand = new PutObjectCommand({
-        Bucket: bucketName,
-        Key: s3Key,
-        Body: uint8Array,
-        ContentType: file.type || "application/octet-stream",
-        Metadata: {
-          "original-name": file.name.replace(/[^\w\-_.]/g, "_"),
-          "user-id": userId,
-          "uploaded-at": new Date().toISOString(),
-          "file-size": file.size.toString(),
-        },
-      });
-
-      await s3Client.send(uploadCommand);
-
-      await (ActivityLog as unknown as IActivityLogModel).logActivity(
-        userId,
-        "upload",
-        file.name,
-        {
-          filePath: `${
-            sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
-          }/${file.name}`,
-          fileSize: file.size,
-          mimeType: file.type,
-          s3Key,
-        }
-      );
-
-      await (FileMetadata as unknown as IFileMetadataModel).syncFromS3Object(
-        userId,
-        {
-          Key: s3Key,
-          Size: file.size,
-          LastModified: new Date(),
-          ContentType: file.type,
-        }
-      );
-
-      s3Cache.invalidate(`list:${userId}:/`);
-
-      const uploadedFile: S3FileItem = {
-        key: s3Key,
-        name: file.name,
-        size: file.size,
-        lastModified: new Date(),
-        mimeType: file.type,
-        isFolder: false,
-        path: `${
-          sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
-        }/${file.name}`,
-        metadata: {
-          "original-name": file.name,
-          "user-id": userId,
-          "uploaded-at": new Date().toISOString(),
-        },
-      };
-
-      return {
-        success: true,
-        message: "File uploaded successfully",
-        file: uploadedFile,
-      };
-    } catch (error) {
-      console.error("Upload error:", error);
-      return {
-        success: false,
-        message: "Failed to upload file",
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
-
-  /**
    * Delete a file from S3
    */
   static async deleteFile(
@@ -237,8 +133,8 @@ export class S3FileOperations {
       let newFileName = newName;
 
       if (filenameParts.length >= 3) {
-        const timestamp = filenameParts[0];
-        const randomSuffix = filenameParts[1];
+        const timestamp = filenameParts;
+        const randomSuffix = filenameParts;
         newFileName = `${timestamp}-${randomSuffix}-${newName}`;
       }
 
@@ -379,6 +275,71 @@ export class S3FileOperations {
       return {
         success: false,
         message: "Failed to generate download URL",
+      };
+    }
+  }
+
+  /**
+   * Get a pre-signed URL for uploading a file to S3
+   */
+  static async getUploadPresignedUrl(
+    userId: string,
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+    currentPath: string = "/"
+  ): Promise<{
+    success: boolean;
+    url?: string;
+    key?: string;
+    message: string;
+  }> {
+    try {
+      const s3Client = await getS3Client(userId);
+      const bucketName = await getS3BucketName(userId);
+
+      if (!s3Client || !bucketName) {
+        return {
+          success: false,
+          message: "S3 configuration not found",
+        };
+      }
+
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const sanitizedPath = currentPath.replace(/\/+/g, "/").replace(/\/$/, "");
+      const s3Key = `${userId}${
+        sanitizedPath === "/" || sanitizedPath === "" ? "" : sanitizedPath
+      }/${timestamp}-${randomSuffix}-${fileName}`;
+
+      const putObjectCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: s3Key,
+        ContentType: fileType,
+        ContentLength: fileSize,
+        Metadata: {
+          "original-name": fileName.replace(/[^\w\-_.]/g, "_"),
+          "user-id": userId,
+          "uploaded-at": new Date().toISOString(),
+          "file-size": fileSize.toString(),
+        },
+      });
+
+      const signedUrl = await getSignedUrl(s3Client, putObjectCommand, {
+        expiresIn: 3600,
+      });
+
+      return {
+        success: true,
+        url: signedUrl,
+        key: s3Key,
+        message: "Pre-signed URL generated successfully",
+      };
+    } catch (error) {
+      console.error("Generate pre-signed URL error:", error);
+      return {
+        success: false,
+        message: "Failed to generate pre-signed URL",
       };
     }
   }
