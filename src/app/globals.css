@@ -158,12 +158,6 @@ html {
   z-index: 10;
 }
 
-/* Force proper stacking for glass elements */
-.glass {
-  /* Ensure glass elements don't create problematic stacking contexts */
-  position: relative;
-}
-
 /* Production-specific fixes for z-index issues */
 @media (min-width: 1px) {
   /* Force high z-index for all dropdown menus */

@@ -179,6 +179,7 @@ export default function SettingsPage() {
             transition={{
               repeat: Infinity,
               ease: "linear",
+              duration: 10,
             }}
           >
             <CogIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
