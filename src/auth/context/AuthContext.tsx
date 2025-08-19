@@ -20,6 +20,8 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string; error?: string }>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<{ success: boolean; message: string; error?: string }>;
+  updateUserProfile: (userData: Partial<User>) => void;
+  updateUserPassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,9 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
-          password, 
+        body: JSON.stringify({
+          email,
+          password,
           name,
           confirmPassword: password
         }),
@@ -150,6 +152,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserProfile = (userData: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...userData });
+    }
+  };
+
+  const updateUserPassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Network error occurred.',
+        error: error as string
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -158,6 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signup,
       logout,
       verifyEmail,
+      updateUserProfile,
+      updateUserPassword,
     }}>
       {children}
     </AuthContext.Provider>

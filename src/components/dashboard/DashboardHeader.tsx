@@ -15,6 +15,7 @@ import {
   ChevronDownIcon,
   ShieldCheckIcon,
   CogIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 
 interface DashboardHeaderProps {
@@ -64,6 +65,13 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
     setIsProfileOpen(false);
     setTimeout(() => {
       router.push('/dashboard/settings');
+    }, 100);
+  };
+
+  const handleProfile = () => {
+    setIsProfileOpen(false);
+    setTimeout(() => {
+      router.push('/dashboard/profile');
     }, 100);
   };
 
@@ -178,6 +186,16 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
 
                       {/* Menu Items */}
                       <div className="py-1 bg-white dark:bg-gray-900">
+                        {/* Profile */}
+                        <motion.button
+                          onClick={handleProfile}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                          whileHover={{ x: 4 }}
+                        >
+                          <UserIcon className="h-4 w-4" />
+                          <span>Profile</span>
+                        </motion.button>
+
                         {/* Settings */}
                         <motion.button
                           onClick={handleSettings}
