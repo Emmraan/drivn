@@ -1,46 +1,78 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import Card from '@/components/ui/Card';
-import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React from "react";
+import { motion } from "framer-motion";
+import Card from "@/components/ui/Card";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const features = [
-  'End-to-End Encryption',
-  'Open Source',
-  'S3-Compatible SDK',
-  'Self-Hostable',
-  'Zero-Knowledge Architecture',
-  'Transparent Pricing',
-  'No Vendor Lock-in',
-  'Built-in Version Control',
-  'Global CDN',
-  'Developer-First Design',
+  "End-to-End Encryption",
+  "Open Source",
+  "S3-Compatible SDK",
+  "Self-Hostable",
+  "Zero-Knowledge Architecture",
+  "No Vendor Lock-in",
+  "Built-in Version Control",
+  "Global CDN",
+  "Developer-First Design",
 ];
 
 const providers = [
   {
-    name: 'DRIVN',
-    logo: '🚀',
+    name: "DRIVN",
+    logo: "🚀",
     features: [true, true, true, true, true, true, true, true, true, true],
     highlight: true,
   },
   {
-    name: 'AWS S3',
-    logo: '☁️',
-    features: [false, false, true, false, false, false, false, true, true, false],
+    name: "AWS S3",
+    logo: "☁️",
+    features: [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+    ],
     highlight: false,
   },
   {
-    name: 'Google Drive',
-    logo: '📁',
-    features: [false, false, false, false, false, false, false, true, true, false],
+    name: "Google Drive",
+    logo: "📁",
+    features: [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+    ],
     highlight: false,
   },
   {
-    name: 'Dropbox',
-    logo: '📦',
-    features: [false, false, false, false, false, false, false, true, true, false],
+    name: "Dropbox",
+    logo: "📦",
+    features: [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+    ],
     highlight: false,
   },
 ];
@@ -57,13 +89,14 @@ export default function ComparisonSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            How DRIVN{' '}
+            How DRIVN{" "}
             <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
               Compares
             </span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            See why developers and businesses choose DRIVN over traditional cloud storage providers.
+            See why developers and businesses choose DRIVN over traditional
+            cloud storage providers.
           </p>
         </motion.div>
 
@@ -86,8 +119,8 @@ export default function ComparisonSection() {
                         key={provider.name}
                         className={`text-center py-4 px-6 font-semibold ${
                           provider.highlight
-                            ? 'text-primary-600 dark:text-primary-400'
-                            : 'text-gray-900 dark:text-white'
+                            ? "text-primary-600 dark:text-primary-400"
+                            : "text-gray-900 dark:text-white"
                         }`}
                       >
                         <div className="flex flex-col items-center">
@@ -117,13 +150,16 @@ export default function ComparisonSection() {
                         {feature}
                       </td>
                       {providers.map((provider) => (
-                        <td key={provider.name} className="py-4 px-6 text-center">
+                        <td
+                          key={provider.name}
+                          className="py-4 px-6 text-center"
+                        >
                           {provider.features[featureIndex] ? (
                             <CheckIcon
                               className={`w-6 h-6 mx-auto ${
                                 provider.highlight
-                                  ? 'text-primary-600'
-                                  : 'text-green-500'
+                                  ? "text-primary-600"
+                                  : "text-green-500"
                               }`}
                             />
                           ) : (
@@ -151,10 +187,18 @@ export default function ComparisonSection() {
             Ready to experience the difference?
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-              Start Free Trial
+            <button
+              onClick={() => (window.location.href = "/signup")}
+              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Started Free
             </button>
-            <button className="px-8 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button
+              onClick={() =>
+                window.open("https://github.com/Emmraan/drivn", "_blank")
+              }
+              className="px-8 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
               View on Github
             </button>
           </div>

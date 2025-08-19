@@ -112,22 +112,6 @@ export default function FAQSection() {
             </motion.div>
           ))}
         </div>
-
-        {/* Contact CTA */}
-        <motion.div
-          className="text-center mt-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Still have questions?
-          </p>
-          <button className="text-primary-600 hover:text-primary-500 font-medium">
-            Contact our support team →
-          </button>
-        </motion.div>
       </div>
     </section>
   );

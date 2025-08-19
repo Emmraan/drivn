@@ -23,7 +23,7 @@ const features = [
   },
   {
     icon: GlobeAltIcon,
-    title: 'S3-Compatible API',
+    title: 'S3-SKD Compatible',
     description: 'Drop-in replacement for Amazon S3. Use existing tools and libraries without any changes.',
     color: 'text-blue-500',
   },
@@ -35,8 +35,8 @@ const features = [
   },
   {
     icon: CloudArrowUpIcon,
-    title: 'Unlimited Storage',
-    description: 'Scale from gigabytes to petabytes. Pay only for what you use with transparent pricing.',
+    title: 'Your Own Storage',
+    description: 'Store and access your data securely anytime with full control and flexible scalability.',
     color: 'text-indigo-500',
   },
   {

@@ -14,7 +14,7 @@ export default function HeroSection() {
   };
 
   const handleViewGitHub = () => {
-    window.open('https://github.com/your-username/drivn', '_blank');
+    window.open('https://github.com/Emmraan/drivn', '_blank');
   };
 
   return (
@@ -105,11 +105,11 @@ export default function HeroSection() {
             </div>
             <div className="flex items-center px-4 py-2 rounded-full glass">
               <GlobeAltIcon className="w-5 h-5 text-blue-500 mr-2" />
-              <span className="text-sm font-medium">S3-Compatible SDK</span>
+              <span className="text-sm font-medium">S3-SDK Compatible</span>
             </div>
             <div className="flex items-center px-4 py-2 rounded-full glass">
               <CloudArrowUpIcon className="w-5 h-5 text-purple-500 mr-2" />
-              <span className="text-sm font-medium">Unlimited Storage</span>
+              <span className="text-sm font-medium">Your Storage</span>
             </div>
           </motion.div>
 
