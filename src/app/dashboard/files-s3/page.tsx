@@ -20,6 +20,7 @@ import Button from '@/components/ui/Button';
 import { FileItemSkeleton } from '@/components/ui/SkeletonLoader';
 import ContextMenu, { ContextMenuItem } from '@/components/ui/ContextMenu';
 import RenameModal from '@/components/ui/RenameModal';
+import DeleteModal from '@/components/ui/DeleteModal';
 import { useS3Files } from '@/hooks/useS3Files';
 import { useS3Search } from '@/hooks/useS3Search';
 import S3FileUpload from '@/components/dashboard/S3FileUpload';
@@ -54,6 +55,8 @@ export default function S3FilesPage() {
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameItem, setRenameItem] = useState<{ key: string; name: string; type: 'file' | 'folder' } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{ key: string; name: string; type: 'file' | 'folder' } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const {
     files,
@@ -150,23 +153,15 @@ export default function S3FilesPage() {
     }
   }, [renameItem, renameFile, renameFolder]);
 
-  const handleDeleteFile = useCallback(async (file: FileItem) => {
-    if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
-      const result = await deleteFile(file.key);
-      if (!result.success) {
-        alert(`Failed to delete file: ${result.message}`);
-      }
-    }
-  }, [deleteFile]);
+  const handleDeleteFile = useCallback((file: FileItem) => {
+    setDeleteItem({ key: file.key, name: file.name, type: 'file' });
+    setShowDeleteModal(true);
+  }, []);
 
-  const handleDeleteFolder = useCallback(async (folder: FolderItem) => {
-    if (confirm(`Are you sure you want to delete the folder "${folder.name}" and all its contents?`)) {
-      const result = await deleteFolder(folder.path);
-      if (!result.success) {
-        alert(`Failed to delete folder: ${result.message}`);
-      }
-    }
-  }, [deleteFolder]);
+  const handleDeleteFolder = useCallback((folder: FolderItem) => {
+    setDeleteItem({ key: folder.path, name: folder.name, type: 'folder' });
+    setShowDeleteModal(true);
+  }, []);
 
   const handleDownload = useCallback(async (file: FileItem) => {
     const result = await getDownloadUrl(file.key);
@@ -515,6 +510,28 @@ export default function S3FilesPage() {
         onConfirm={handleRenameSubmit}
         title={`Rename ${renameItem?.type || 'item'}`}
         type={renameItem?.type || 'file'}
+      />
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeleteItem(null);
+        }}
+        onConfirm={async () => {
+          if (!deleteItem) return;
+          if (deleteItem.type === 'file') {
+            await deleteFile(deleteItem.key);
+          } else {
+            await deleteFolder(deleteItem.key);
+          }
+          setShowDeleteModal(false);
+          setDeleteItem(null);
+          refresh();
+        }}
+        title={`Delete ${deleteItem?.type || 'item'}`}
+        message={`Are you sure you want to delete this ${deleteItem?.type}? This action cannot be undone.`}
+        itemName={deleteItem?.name || ''}
+        type={deleteItem?.type || 'file'}
       />
     </div>
   );
