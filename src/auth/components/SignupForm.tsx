@@ -11,6 +11,7 @@ import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
 import { AccountCreationLoading } from '@/components/ui/LoadingScreens';
 import { EnvelopeIcon, LockClosedIcon, UserIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 interface SignupFormProps {
   onToggleMode?: () => void;
@@ -23,12 +24,14 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [agreedToTermsError, setAgreedToTermsError] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const { signup } = useAuth();
@@ -82,13 +85,15 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
     const emailErr = validateEmail(email);
     const passwordErr = validatePassword(password);
     const confirmPasswordErr = validateConfirmPassword(password, confirmPassword);
+    const agreedToTermsErr = agreedToTerms ? '' : 'You must agree to the Terms of Service and Privacy Policy';
 
     setNameError(nameErr);
     setEmailError(emailErr);
     setPasswordError(passwordErr);
     setConfirmPasswordError(confirmPasswordErr);
+    setAgreedToTermsError(agreedToTermsErr);
 
-    if (nameErr || emailErr || passwordErr || confirmPasswordErr) {
+    if (nameErr || emailErr || passwordErr || confirmPasswordErr || agreedToTermsErr) {
       return false;
     }
     return true;
@@ -106,7 +111,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
       return;
     }
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !agreedToTerms) {
       setError('All fields are required');
       setLoading(false);
       return;
@@ -283,6 +288,33 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   error={confirmPasswordError}
                 />
               </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.65 }}
+                className="flex items-center"
+              >
+                <input
+                  type="checkbox"
+                  id="termsCheckbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="termsCheckbox" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                  I agree to the <Link href="/terms" rel="noopener noreferrer" className="text-primary-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" rel="noopener noreferrer" className="text-primary-600 hover:underline">Privacy Policy</Link>
+                </label>
+              </motion.div>
+              {agreedToTermsError && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                >
+                  <p className="text-sm text-red-600 dark:text-red-400">{agreedToTermsError}</p>
+                </motion.div>
+              )}
 
               {error && (
                 <motion.div
