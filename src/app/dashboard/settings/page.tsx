@@ -1,17 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import S3ConfigForm, { S3ConfigData } from '@/components/dashboard/S3ConfigForm';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { SkeletonSettings } from '@/components/ui/Skeleton';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import S3ConfigForm, {
+  S3ConfigData,
+} from "@/components/dashboard/S3ConfigForm";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { SkeletonSettings } from "@/components/ui/Skeleton";
 import {
   CogIcon,
   TrashIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 interface S3ConfigStatus {
   hasConfig: boolean;
@@ -27,30 +29,29 @@ export default function SettingsPage() {
   const [configStatus, setConfigStatus] = useState<S3ConfigStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     message: string;
   } | null>(null);
 
-  // Load existing configuration
   useEffect(() => {
     loadS3Config();
   }, []);
 
   const loadS3Config = async () => {
     try {
-      const response = await fetch('/api/s3-config', {
-        credentials: 'include',
+      const response = await fetch("/api/s3-config", {
+        credentials: "include",
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setConfigStatus(data);
       } else {
-        console.error('Failed to load S3 config');
+        console.error("Failed to load S3 config");
         setConfigStatus({ hasConfig: false });
       }
     } catch (error) {
-      console.error('Error loading S3 config:', error);
+      console.error("Error loading S3 config:", error);
       setConfigStatus({ hasConfig: false });
     } finally {
       setLoading(false);
@@ -59,95 +60,98 @@ export default function SettingsPage() {
 
   const handleTestConnection = async (config: S3ConfigData) => {
     try {
-      const response = await fetch('/api/s3-config/test', {
-        method: 'POST',
+      const response = await fetch("/api/s3-config/test", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify(config),
       });
 
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error('Test connection error:', error);
+      console.error("Test connection error:", error);
       return {
         success: false,
-        message: 'Failed to test connection. Please try again.',
+        message: "Failed to test connection. Please try again.",
       };
     }
   };
 
   const handleSaveConfig = async (config: S3ConfigData) => {
     try {
-      const response = await fetch('/api/s3-config', {
-        method: 'POST',
+      const response = await fetch("/api/s3-config", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify(config),
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setNotification({
-          type: 'success',
-          message: 'S3 configuration saved successfully!',
+          type: "success",
+          message: "S3 configuration saved successfully!",
         });
         await loadS3Config();
       } else {
         setNotification({
-          type: 'error',
-          message: result.message || 'Failed to save configuration',
+          type: "error",
+          message: result.message || "Failed to save configuration",
         });
       }
     } catch (error) {
-      console.error('Save config error:', error);
+      console.error("Save config error:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to save configuration. Please try again.',
+        type: "error",
+        message: "Failed to save configuration. Please try again.",
       });
     }
   };
 
   const handleDeleteConfig = async () => {
-    if (!confirm('Are you sure you want to delete your S3 configuration? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete your S3 configuration? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     try {
-      const response = await fetch('/api/s3-config', {
-        method: 'DELETE',
-        credentials: 'include',
+      const response = await fetch("/api/s3-config", {
+        method: "DELETE",
+        credentials: "include",
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setNotification({
-          type: 'success',
-          message: 'S3 configuration deleted successfully!',
+          type: "success",
+          message: "S3 configuration deleted successfully!",
         });
         await loadS3Config();
       } else {
         setNotification({
-          type: 'error',
-          message: result.message || 'Failed to delete configuration',
+          type: "error",
+          message: result.message || "Failed to delete configuration",
         });
       }
     } catch (error) {
-      console.error('Delete config error:', error);
+      console.error("Delete config error:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to delete configuration. Please try again.',
+        type: "error",
+        message: "Failed to delete configuration. Please try again.",
       });
     }
   };
 
-  // Auto-hide notifications after 5 seconds
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -170,7 +174,16 @@ export default function SettingsPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center space-x-3 mb-8">
-          <CogIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <CogIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+          </motion.div>
+
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Settings
@@ -189,29 +202,31 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${
-            notification.type === 'success'
-              ? 'border-green-200 dark:border-green-800'
-              : 'border-red-200 dark:border-red-800'
+            notification.type === "success"
+              ? "border-green-200 dark:border-green-800"
+              : "border-red-200 dark:border-red-800"
           }`}
         >
-          {notification.type === 'success' ? (
+          {notification.type === "success" ? (
             <CheckCircleIcon className="h-5 w-5 text-green-500 flex-shrink-0" />
           ) : (
             <ExclamationTriangleIcon className="h-5 w-5 text-red-500 flex-shrink-0" />
           )}
-          <p className={`text-sm font-medium ${
-            notification.type === 'success'
-              ? 'text-green-800 dark:text-green-200'
-              : 'text-red-800 dark:text-red-200'
-          }`}>
+          <p
+            className={`text-sm font-medium ${
+              notification.type === "success"
+                ? "text-green-800 dark:text-green-200"
+                : "text-red-800 dark:text-red-200"
+            }`}
+          >
             {notification.message}
           </p>
           <button
             onClick={() => setNotification(null)}
             className={`ml-auto text-sm underline ${
-              notification.type === 'success'
-                ? 'text-green-700 dark:text-green-300'
-                : 'text-red-700 dark:text-red-300'
+              notification.type === "success"
+                ? "text-green-700 dark:text-green-300"
+                : "text-red-700 dark:text-red-300"
             }`}
           >
             Dismiss
@@ -235,10 +250,17 @@ export default function SettingsPage() {
                     S3 Configuration Active
                   </h3>
                   <div className="mt-2 text-sm text-green-700 dark:text-green-300 space-y-1">
-                    <p><strong>Region:</strong> {configStatus.config?.region}</p>
-                    <p><strong>Bucket:</strong> {configStatus.config?.bucketName}</p>
+                    <p>
+                      <strong>Region:</strong> {configStatus.config?.region}
+                    </p>
+                    <p>
+                      <strong>Bucket:</strong> {configStatus.config?.bucketName}
+                    </p>
                     {configStatus.config?.endpoint && (
-                      <p><strong>Endpoint:</strong> {configStatus.config.endpoint}</p>
+                      <p>
+                        <strong>Endpoint:</strong>{" "}
+                        {configStatus.config.endpoint}
+                      </p>
                     )}
                   </div>
                 </div>
