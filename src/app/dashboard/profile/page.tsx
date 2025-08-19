@@ -100,6 +100,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ image: 'An error occurred while updating profile image' });
+      console.log(error);
     } finally {
       setIsUploading(false);
     }
@@ -128,6 +129,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ general: 'An error occurred while updating profile' });
+      console.log(error);
     } finally {
       setIsUpdating(false);
     }
@@ -163,6 +165,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ password: 'An error occurred while changing password' });
+      console.log(error);
     } finally {
       setIsChangingPassword(false);
     }
