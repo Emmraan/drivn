@@ -195,13 +195,27 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="container mx-auto px-4 py-8"
+    >
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="text-2xl font-bold mb-6"
+      >
+        Profile Settings
+      </motion.h1>
 
       {successMessage && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
           className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between"
         >
           <div className="flex items-center">
@@ -219,14 +233,27 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Profile Image Section */}
-        <div className="glass p-6 rounded-lg shadow-md">
-          <h2 className="text-xl text-center font-semibold mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="glass p-6 rounded-lg shadow-md"
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="text-xl text-center font-semibold mb-4"
+          >
             Profile Picture
-          </h2>
+          </motion.h2>
           <div className="flex flex-col items-center">
-            <div
+            <motion.div
               className="relative w-32 h-32 rounded-full overflow-hidden mb-4 cursor-pointer group"
               onClick={handleImageClick}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
               {profileImage ? (
                 <Image
@@ -240,10 +267,15 @@ export default function ProfilePage() {
                   <UserCircleIcon className="h-20 w-20 text-gray-400" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <motion.div
+                className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
                 <CameraIcon className="h-8 w-8 text-white" />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
             <input
               type="file"
               ref={fileInputRef}
@@ -271,29 +303,47 @@ export default function ProfilePage() {
                 </Link>
               </p>
             ) : null}
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleImageClick}
-              loading={isUploading}
-              loadingText="Uploading..."
-              disabled={hasS3Config === null || hasS3Config === false}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              {hasS3Config === null
-                ? "Checking..."
-                : hasS3Config
-                ? "Change Picture"
-                : "Configure S3 First"}
-            </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleImageClick}
+                loading={isUploading}
+                loadingText="Uploading..."
+                disabled={hasS3Config === null || hasS3Config === false}
+              >
+                {hasS3Config === null
+                  ? "Checking..."
+                  : hasS3Config
+                  ? "Change Picture"
+                  : "Configure S3 First"}
+              </Button>
+            </motion.div>
             {errors.image && (
               <p className="mt-2 text-sm text-red-600">{errors.image}</p>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Profile Information Section */}
-        <div className="glass p-6 rounded-lg shadow-md md:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="glass p-6 rounded-lg shadow-md md:col-span-2"
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="text-xl font-semibold mb-4"
+          >
+            Personal Information
+          </motion.h2>
           <form onSubmit={handleProfileUpdate}>
             <div className="space-y-4">
               <Input
@@ -315,21 +365,39 @@ export default function ProfilePage() {
                 <p className="text-sm text-red-600">{errors.general}</p>
               )}
               <div className="pt-2">
-                <Button
-                  type="submit"
-                  loading={isUpdating}
-                  loadingText="Updating..."
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
-                  Update Profile
-                </Button>
+                  <Button
+                    type="submit"
+                    loading={isUpdating}
+                    loadingText="Updating..."
+                  >
+                    Update Profile
+                  </Button>
+                </motion.div>
               </div>
             </div>
           </form>
-        </div>
+        </motion.div>
 
         {/* Password Change Section */}
-        <div className="glass p-6 rounded-lg shadow-md md:col-span-3">
-          <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="glass p-6 rounded-lg shadow-md md:col-span-3"
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="text-xl font-semibold mb-4"
+          >
+            Change Password
+          </motion.h2>
           <form onSubmit={handlePasswordChange}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
@@ -361,18 +429,24 @@ export default function ProfilePage() {
               <p className="mt-2 text-sm text-red-600">{errors.password}</p>
             )}
             <div className="mt-4">
-              <Button
-                type="submit"
-                variant="secondary"
-                loading={isChangingPassword}
-                loadingText="Changing Password..."
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                Change Password
-              </Button>
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  loading={isChangingPassword}
+                  loadingText="Changing Password..."
+                >
+                  Change Password
+                </Button>
+              </motion.div>
             </div>
           </form>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
