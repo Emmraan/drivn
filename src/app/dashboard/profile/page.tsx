@@ -1,53 +1,78 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { useAuth } from '@/auth/context/AuthContext';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import { UserCircleIcon, CameraIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { useAuth } from "@/auth/context/AuthContext";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import {
+  UserCircleIcon,
+  CameraIcon,
+  CheckIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { ProfileSkeleton } from "@/components/ui/Skeleton";
 
 export default function ProfilePage() {
   const { user, loading, updateUserProfile, updateUserPassword } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
+  const [hasS3Config, setHasS3Config] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
+      if (profileImage && profileImage.startsWith("blob:")) {
+        URL.revokeObjectURL(profileImage);
+      }
+      setName(user.name || "");
+      setEmail(user.email || "");
       setProfileImage(user.image || null);
+
+      if (user.s3Config) {
+        setHasS3Config(true);
+      } else {
+        setHasS3Config(false);
+      }
     }
-  }, [user]);
+  }, [user, profileImage]);
+
+  useEffect(() => {
+    return () => {
+      if (profileImage && profileImage.startsWith("blob:")) {
+        URL.revokeObjectURL(profileImage);
+      }
+    };
+  }, [profileImage]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!user) {
-    router.push('/login');
+    router.push("/");
     return null;
   }
 
   const handleImageClick = () => {
+    if (!hasS3Config) {
+      router.push("/dashboard/settings");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -55,52 +80,50 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrors({ image: 'Please select an image file' });
+    if (!file.type.startsWith("image/")) {
+      setErrors({ image: "Please select an image file" });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setErrors({ image: 'Image size should be less than 5MB' });
+      setErrors({ image: "Image size should be less than 5MB" });
       return;
     }
 
     setIsUploading(true);
     setErrors({});
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Data = event.target?.result as string;
-      setProfileImage(base64Data);
-      updateProfileImage(base64Data);
-    };
-    reader.onerror = () => {
-      setErrors({ image: 'Failed to read the image file' });
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImage(previewUrl);
+
+    updateProfileImage(file);
   };
 
-  const updateProfileImage = async (imageData: string) => {
+  const updateProfileImage = async (file: File) => {
     try {
-      const response = await fetch('/api/user/profile/image', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageData }),
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/user/profile/image", {
+        method: "PUT",
+        body: formData,
       });
 
       const data = await response.json();
 
       if (data.success) {
-        updateUserProfile({ image: imageData });
-        setSuccessMessage('Profile image updated successfully');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        updateUserProfile({ image: data.user.image });
+        setProfileImage(data.user.image);
+        setSuccessMessage("Profile image updated successfully");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        setErrors({ image: data.message || 'Failed to update profile image' });
+        setErrors({ image: data.message || "Failed to update profile image" });
+        setProfileImage(user?.image || null);
       }
     } catch (error) {
-      setErrors({ image: 'An error occurred while updating profile image' });
+      setErrors({ image: "An error occurred while updating profile image" });
       console.log(error);
+      setProfileImage(user?.image || null);
     } finally {
       setIsUploading(false);
     }
@@ -112,9 +135,9 @@ export default function ProfilePage() {
     setIsUpdating(true);
 
     try {
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),
       });
 
@@ -122,13 +145,13 @@ export default function ProfilePage() {
 
       if (data.success) {
         updateUserProfile({ name, email });
-        setSuccessMessage('Profile updated successfully');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setSuccessMessage("Profile updated successfully");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        setErrors({ general: data.message || 'Failed to update profile' });
+        setErrors({ general: data.message || "Failed to update profile" });
       }
     } catch (error) {
-      setErrors({ general: 'An error occurred while updating profile' });
+      setErrors({ general: "An error occurred while updating profile" });
       console.log(error);
     } finally {
       setIsUpdating(false);
@@ -140,12 +163,12 @@ export default function ProfilePage() {
     setErrors({});
 
     if (newPassword.length < 8) {
-      setErrors({ newPassword: 'Password must be at least 8 characters long' });
+      setErrors({ newPassword: "Password must be at least 8 characters long" });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrors({ confirmPassword: 'Passwords do not match' });
+      setErrors({ confirmPassword: "Passwords do not match" });
       return;
     }
 
@@ -155,16 +178,16 @@ export default function ProfilePage() {
       const data = await updateUserPassword(currentPassword, newPassword);
 
       if (data.success) {
-        setSuccessMessage('Password changed successfully');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setSuccessMessage("Password changed successfully");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        setErrors({ password: data.message || 'Failed to change password' });
+        setErrors({ password: data.message || "Failed to change password" });
       }
     } catch (error) {
-      setErrors({ password: 'An error occurred while changing password' });
+      setErrors({ password: "An error occurred while changing password" });
       console.log(error);
     } finally {
       setIsChangingPassword(false);
@@ -186,7 +209,7 @@ export default function ProfilePage() {
             {successMessage}
           </div>
           <button
-            onClick={() => setSuccessMessage('')}
+            onClick={() => setSuccessMessage("")}
             className="text-green-700 hover:text-green-900"
           >
             <XMarkIcon className="h-5 w-5" />
@@ -197,7 +220,9 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Profile Image Section */}
         <div className="glass p-6 rounded-lg shadow-md">
-          <h2 className="text-xl text-center font-semibold mb-4">Profile Picture</h2>
+          <h2 className="text-xl text-center font-semibold mb-4">
+            Profile Picture
+          </h2>
           <div className="flex flex-col items-center">
             <div
               className="relative w-32 h-32 rounded-full overflow-hidden mb-4 cursor-pointer group"
@@ -226,14 +251,39 @@ export default function ProfilePage() {
               accept="image/*"
               onChange={handleImageChange}
             />
+            {hasS3Config === null ? (
+              <div className="mt-2 flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                <span className="text-sm text-gray-600">
+                  Checking S3 configuration...
+                </span>
+              </div>
+            ) : hasS3Config === false ? (
+              <p className="mt-2 text-sm text-amber-600">
+                ⚠️ S3 storage not configured. Images will be optimized and
+                stored on your S3 bucket.
+                <br />
+                <Link
+                  href="/dashboard/settings"
+                  className="text-blue-600 hover:underline"
+                >
+                  Configure S3 settings
+                </Link>
+              </p>
+            ) : null}
             <Button
               size="sm"
               variant="secondary"
               onClick={handleImageClick}
               loading={isUploading}
               loadingText="Uploading..."
+              disabled={hasS3Config === null || hasS3Config === false}
             >
-              Change Picture
+              {hasS3Config === null
+                ? "Checking..."
+                : hasS3Config
+                ? "Change Picture"
+                : "Configure S3 First"}
             </Button>
             {errors.image && (
               <p className="mt-2 text-sm text-red-600">{errors.image}</p>

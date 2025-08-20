@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         image: user.image,
         role: isAdmin ? "Admin" : "User",
         isAdmin,
+        s3Config: user.s3Config,
       },
     });
   } catch (error) {

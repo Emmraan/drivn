@@ -11,6 +11,13 @@ interface User {
   image?: string;
   role?: string;
   isAdmin?: boolean;
+  s3Config?: {
+    accessKeyId?: string;
+    secretAccessKey?: string;
+    region?: string;
+    bucketName?: string;
+    endpoint?: string;
+  };
 }
 
 interface AuthContextType {

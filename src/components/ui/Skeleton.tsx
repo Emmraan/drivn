@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/utils/cn';
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/utils/cn";
 
 interface SkeletonProps {
   className?: string;
-  variant?: 'text' | 'circular' | 'rectangular';
+  variant?: "text" | "circular" | "rectangular";
   width?: string | number;
   height?: string | number;
   lines?: number;
@@ -14,41 +14,48 @@ interface SkeletonProps {
 
 export function Skeleton({
   className,
-  variant = 'rectangular',
+  variant = "rectangular",
   width,
   height,
   lines = 1,
 }: SkeletonProps) {
-  const baseClasses = 'animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700';
-  
+  const baseClasses =
+    "animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700";
+
   const variantClasses = {
-    text: 'rounded h-4',
-    circular: 'rounded-full',
-    rectangular: 'rounded-lg',
+    text: "rounded h-4",
+    circular: "rounded-full",
+    rectangular: "rounded-lg",
   };
 
   const style = {
-    width: width || (variant === 'text' ? '100%' : undefined),
-    height: height || (variant === 'text' ? '1rem' : variant === 'circular' ? '2.5rem' : '2rem'),
+    width: width || (variant === "text" ? "100%" : undefined),
+    height:
+      height ||
+      (variant === "text"
+        ? "1rem"
+        : variant === "circular"
+        ? "2.5rem"
+        : "2rem"),
   };
 
-  if (variant === 'text' && lines > 1) {
+  if (variant === "text" && lines > 1) {
     return (
-      <div className={cn('space-y-2', className)}>
+      <div className={cn("space-y-2", className)}>
         {Array.from({ length: lines }).map((_, index) => (
           <motion.div
             key={index}
             className={cn(baseClasses, variantClasses.text)}
             style={{
               ...style,
-              width: index === lines - 1 ? '75%' : '100%',
+              width: index === lines - 1 ? "75%" : "100%",
             }}
             initial={{ opacity: 0.6 }}
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{
               duration: 1.5,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
               delay: index * 0.1,
             }}
           />
@@ -66,7 +73,7 @@ export function Skeleton({
       transition={{
         duration: 1.5,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       }}
     />
   );
@@ -74,7 +81,7 @@ export function Skeleton({
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('glass rounded-xl p-6 space-y-4', className)}>
+    <div className={cn("glass rounded-xl p-6 space-y-4", className)}>
       <Skeleton variant="rectangular" height="1.5rem" width="60%" />
       <Skeleton variant="text" lines={3} />
       <div className="flex space-x-2">
@@ -85,25 +92,43 @@ export function SkeletonCard({ className }: { className?: string }) {
   );
 }
 
-export function SkeletonTable({ rows = 5, columns = 4, className }: { rows?: number; columns?: number; className?: string }) {
+export function SkeletonTable({
+  rows = 5,
+  columns = 4,
+  className,
+}: {
+  rows?: number;
+  columns?: number;
+  className?: string;
+}) {
   return (
-    <div className={cn('glass rounded-xl overflow-hidden', className)}>
+    <div className={cn("glass rounded-xl overflow-hidden", className)}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
           {Array.from({ length: columns }).map((_, index) => (
             <Skeleton key={`header-${index}`} variant="text" height="1rem" />
           ))}
         </div>
       </div>
-      
+
       {/* Rows */}
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div key={`row-${rowIndex}`} className="p-4">
-            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+            <div
+              className="grid gap-4"
+              style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+            >
               {Array.from({ length: columns }).map((_, colIndex) => (
-                <Skeleton key={`cell-${rowIndex}-${colIndex}`} variant="text" height="1rem" />
+                <Skeleton
+                  key={`cell-${rowIndex}-${colIndex}`}
+                  variant="text"
+                  height="1rem"
+                />
               ))}
             </div>
           </div>
@@ -113,11 +138,20 @@ export function SkeletonTable({ rows = 5, columns = 4, className }: { rows?: num
   );
 }
 
-export function SkeletonList({ items = 5, className }: { items?: number; className?: string }) {
+export function SkeletonList({
+  items = 5,
+  className,
+}: {
+  items?: number;
+  className?: string;
+}) {
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn("space-y-3", className)}>
       {Array.from({ length: items }).map((_, index) => (
-        <div key={index} className="flex items-center space-x-3 p-3 glass rounded-lg">
+        <div
+          key={index}
+          className="flex items-center space-x-3 p-3 glass rounded-lg"
+        >
           <Skeleton variant="circular" width="2.5rem" height="2.5rem" />
           <div className="flex-1 space-y-2">
             <Skeleton variant="text" width="40%" />
@@ -132,7 +166,7 @@ export function SkeletonList({ items = 5, className }: { items?: number; classNa
 
 export function SkeletonDashboard({ className }: { className?: string }) {
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className={cn("space-y-8", className)}>
       {/* Header */}
       <div>
         <Skeleton variant="text" width="10rem" height="2.5rem" />
@@ -161,13 +195,23 @@ export function SkeletonDashboard({ className }: { className?: string }) {
 
       {/* Quick Actions */}
       <div>
-        <Skeleton variant="text" width="8rem" height="1.5rem" className="mb-6" />
+        <Skeleton
+          variant="text"
+          width="8rem"
+          height="1.5rem"
+          className="mb-6"
+        />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="glass rounded-xl p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Skeleton variant="rectangular" width="3rem" height="3rem" className="rounded-lg" />
+                  <Skeleton
+                    variant="rectangular"
+                    width="3rem"
+                    height="3rem"
+                    className="rounded-lg"
+                  />
                 </div>
                 <div className="ml-4 space-y-2">
                   <Skeleton variant="text" width="6rem" height="1.125rem" />
@@ -182,13 +226,33 @@ export function SkeletonDashboard({ className }: { className?: string }) {
       {/* Getting Started Card */}
       <div className="glass rounded-xl p-8">
         <div className="text-center space-y-4">
-          <Skeleton variant="circular" width="3rem" height="3rem" className="mx-auto" />
-          <Skeleton variant="text" width="12rem" height="1.5rem" className="mx-auto" />
+          <Skeleton
+            variant="circular"
+            width="3rem"
+            height="3rem"
+            className="mx-auto"
+          />
+          <Skeleton
+            variant="text"
+            width="12rem"
+            height="1.5rem"
+            className="mx-auto"
+          />
           <div className="max-w-2xl mx-auto space-y-2">
             <Skeleton variant="text" width="100%" height="1rem" />
-            <Skeleton variant="text" width="80%" height="1rem" className="mx-auto" />
+            <Skeleton
+              variant="text"
+              width="80%"
+              height="1rem"
+              className="mx-auto"
+            />
           </div>
-          <Skeleton variant="rectangular" width="8rem" height="2.5rem" className="mx-auto" />
+          <Skeleton
+            variant="rectangular"
+            width="8rem"
+            height="2.5rem"
+            className="mx-auto"
+          />
         </div>
       </div>
     </div>
@@ -197,7 +261,7 @@ export function SkeletonDashboard({ className }: { className?: string }) {
 
 export function SkeletonSettings({ className }: { className?: string }) {
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className={cn("space-y-8", className)}>
       {/* Header */}
       <div className="flex items-center space-x-3">
         <Skeleton variant="circular" width="2rem" height="2rem" />
@@ -225,6 +289,51 @@ export function SkeletonSettings({ className }: { className?: string }) {
         <div className="flex space-x-3">
           <Skeleton variant="rectangular" width="6rem" height="2.5rem" />
           <Skeleton variant="rectangular" width="8rem" height="2.5rem" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProfileSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("container mx-auto px-4 py-8", className)}>
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-300 rounded w-48 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Profile Image Skeleton */}
+          <div className="glass p-6 rounded-lg shadow-md">
+            <div className="h-6 bg-gray-300 rounded w-32 mb-4"></div>
+            <div className="flex flex-col items-center">
+              <div className="w-32 h-32 bg-gray-300 rounded-full mb-4 animate-pulse"></div>
+              <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+            </div>
+          </div>
+          {/* Profile Info Skeleton */}
+          <div className="glass p-6 rounded-lg shadow-md md:col-span-2">
+            <div className="h-6 bg-gray-300 rounded w-40 mb-4"></div>
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-300 rounded w-20 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+              <div className="h-4 bg-gray-300 rounded w-16 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+              <div className="h-10 bg-gray-300 rounded w-32 mt-4"></div>
+            </div>
+          </div>
+          {/* Password Change Skeleton */}
+          <div className="glass p-6 rounded-lg shadow-md md:col-span-3">
+            <div className="h-6 bg-gray-300 rounded w-36 mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="h-4 bg-gray-300 rounded w-28 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+              <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+              <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+              <div className="h-10 bg-gray-300 rounded w-full"></div>
+            </div>
+            <div className="h-10 bg-gray-300 rounded w-40 mt-4"></div>
+          </div>
         </div>
       </div>
     </div>

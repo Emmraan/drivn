@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   DocumentIcon,
   FolderIcon,
@@ -9,11 +9,11 @@ import {
   ChartBarIcon,
   ArrowPathIcon,
   XCircleIcon,
-} from '@heroicons/react/24/outline';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/SkeletonLoader';
-import { useRouter } from 'next/navigation';
+} from "@heroicons/react/24/outline";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/SkeletonLoader";
+import { useRouter } from "next/navigation";
 
 interface AnalyticsData {
   totalFiles: number;
@@ -21,7 +21,7 @@ interface AnalyticsData {
   totalDownloads: number;
   storageUsed: number;
   recentActivity: Array<{
-    type: 'upload';
+    type: "upload";
     fileName: string;
     timestamp: string;
     size: number;
@@ -45,38 +45,43 @@ export default function S3AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('30d');
+  const [timeRange, setTimeRange] = useState("30d");
   const [hasS3Config, setHasS3Config] = useState(false);
   const router = useRouter();
 
-  const loadAnalytics = useCallback(async (range: string = timeRange) => {
-    setLoading(true);
-    setError(null);
+  const loadAnalytics = useCallback(
+    async (range: string = timeRange) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const [analyticsResponse, configResponse] = await Promise.all([
-        fetch(`/api/s3-analytics?timeRange=${range}`),
-        fetch('/api/s3-config'),
-      ]);
+      try {
+        const [analyticsResponse, configResponse] = await Promise.all([
+          fetch(`/api/s3-analytics?timeRange=${range}`),
+          fetch("/api/s3-config"),
+        ]);
 
-      const analyticsResult = await analyticsResponse.json();
-      const configResult = await configResponse.json();
+        const analyticsResult = await analyticsResponse.json();
+        const configResult = await configResponse.json();
 
-      if (configResult.success) {
-        setHasS3Config(configResult.hasConfig);
+        if (configResult.success) {
+          setHasS3Config(configResult.hasConfig);
+        }
+
+        if (analyticsResult.success) {
+          setData(analyticsResult.data);
+        } else {
+          setError(analyticsResult.message || "Failed to load analytics");
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load analytics"
+        );
+      } finally {
+        setLoading(false);
       }
-
-      if (analyticsResult.success) {
-        setData(analyticsResult.data);
-      } else {
-        setError(analyticsResult.message || 'Failed to load analytics');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load analytics');
-    } finally {
-      setLoading(false);
-    }
-  }, [timeRange]);
+    },
+    [timeRange]
+  );
 
   useEffect(() => {
     loadAnalytics();
@@ -88,31 +93,31 @@ export default function S3AnalyticsPage() {
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return (num / 1000000).toFixed(1) + "M";
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return (num / 1000).toFixed(1) + "K";
     }
     return num.toString();
   };
 
   const getFileTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      'Images': 'bg-blue-500',
-      'Videos': 'bg-red-500',
-      'Audio': 'bg-green-500',
-      'Documents': 'bg-yellow-500',
-      'Other': 'bg-gray-500',
+      Images: "bg-blue-500",
+      Videos: "bg-red-500",
+      Audio: "bg-green-500",
+      Documents: "bg-yellow-500",
+      Other: "bg-gray-500",
     };
-    return colors[type] || 'bg-gray-500';
+    return colors[type] || "bg-gray-500";
   };
 
   return (
@@ -127,7 +132,7 @@ export default function S3AnalyticsPage() {
             Storage analytics calculated directly from S3
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -136,23 +141,29 @@ export default function S3AnalyticsPage() {
             leftIcon={<ArrowPathIcon className="h-4 w-4" />}
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            {loading ? "Loading..." : "Refresh"}
           </Button>
         </div>
       </div>
 
       {/* Time Range Selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Range:</span>
-        {['7d', '30d', '90d'].map((range) => (
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Time Range:
+        </span>
+        {["7d", "30d", "90d"].map((range) => (
           <Button
             key={range}
-            variant={timeRange === range ? 'primary' : 'ghost'}
+            variant={timeRange === range ? "primary" : "ghost"}
             size="sm"
             onClick={() => handleTimeRangeChange(range)}
             disabled={loading}
           >
-            {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
+            {range === "7d"
+              ? "7 Days"
+              : range === "30d"
+              ? "30 Days"
+              : "90 Days"}
           </Button>
         ))}
       </div>
@@ -204,7 +215,9 @@ export default function S3AnalyticsPage() {
                     <DocumentIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Files</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Total Files
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatNumber(data.totalFiles)}
                     </p>
@@ -224,7 +237,9 @@ export default function S3AnalyticsPage() {
                     <FolderIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Folders</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Total Folders
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatNumber(data.totalFolders)}
                     </p>
@@ -244,7 +259,9 @@ export default function S3AnalyticsPage() {
                     <CloudArrowUpIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Storage Used</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Storage Used
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatBytes(data.storageUsed)}
                     </p>
@@ -264,7 +281,9 @@ export default function S3AnalyticsPage() {
                     <ChartBarIcon className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Downloads</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Downloads
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatNumber(data.totalDownloads)}
                     </p>
@@ -284,15 +303,25 @@ export default function S3AnalyticsPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                 File Type Distribution
               </h3>
-              
+
               {data.fileTypeStats.length > 0 ? (
                 <div className="space-y-4">
                   {data.fileTypeStats.map((stat) => {
-                    const percentage = data.totalFiles > 0 ? (stat.count / data.totalFiles) * 100 : 0;
+                    const percentage =
+                      data.totalFiles > 0
+                        ? (stat.count / data.totalFiles) * 100
+                        : 0;
                     return (
-                      <div key={stat._id} className="flex items-center justify-between">
+                      <div
+                        key={stat._id}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full ${getFileTypeColor(stat._id)} mr-3`} />
+                          <div
+                            className={`w-3 h-3 rounded-full ${getFileTypeColor(
+                              stat._id
+                            )} mr-3`}
+                          />
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
                             {stat._id}
                           </span>
@@ -306,7 +335,9 @@ export default function S3AnalyticsPage() {
                           </span>
                           <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
-                              className={`h-2 rounded-full ${getFileTypeColor(stat._id)}`}
+                              className={`h-2 rounded-full ${getFileTypeColor(
+                                stat._id
+                              )}`}
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
@@ -321,7 +352,9 @@ export default function S3AnalyticsPage() {
               ) : (
                 <div className="text-center py-8">
                   <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No files to analyze</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No files to analyze
+                  </p>
                 </div>
               )}
             </Card>
@@ -343,7 +376,8 @@ export default function S3AnalyticsPage() {
                     S3 Direct Analytics
                   </h3>
                   <p className="text-blue-800 dark:text-blue-200 text-sm">
-                    These analytics are calculated directly from your S3 bucket contents.
+                    These analytics are calculated directly from your S3 bucket
+                    contents.
                   </p>
                 </div>
               </div>
@@ -364,7 +398,7 @@ export default function S3AnalyticsPage() {
             </p>
             <Button
               variant="primary"
-              onClick={() => router.push('/dashboard/settings')}
+              onClick={() => router.push("/dashboard/settings")}
             >
               Configure Storage
             </Button>
