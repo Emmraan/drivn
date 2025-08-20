@@ -297,46 +297,126 @@ export function SkeletonSettings({ className }: { className?: string }) {
 
 export function ProfileSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("container mx-auto px-4 py-8", className)}>
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-300 rounded w-48 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Profile Image Skeleton */}
-          <div className="glass p-6 rounded-lg shadow-md">
-            <div className="h-6 bg-gray-300 rounded w-32 mb-4"></div>
-            <div className="flex flex-col items-center">
-              <div className="w-32 h-32 bg-gray-300 rounded-full mb-4 animate-pulse"></div>
-              <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-            </div>
-          </div>
-          {/* Profile Info Skeleton */}
-          <div className="glass p-6 rounded-lg shadow-md md:col-span-2">
-            <div className="h-6 bg-gray-300 rounded w-40 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-300 rounded w-20 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-              <div className="h-4 bg-gray-300 rounded w-16 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-              <div className="h-10 bg-gray-300 rounded w-32 mt-4"></div>
-            </div>
-          </div>
-          {/* Password Change Skeleton */}
-          <div className="glass p-6 rounded-lg shadow-md md:col-span-3">
-            <div className="h-6 bg-gray-300 rounded w-36 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="h-4 bg-gray-300 rounded w-28 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-              <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-              <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
-              <div className="h-10 bg-gray-300 rounded w-full"></div>
-            </div>
-            <div className="h-10 bg-gray-300 rounded w-40 mt-4"></div>
+    <motion.div
+      className={cn("container mx-auto px-4 py-8", className)}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Page Title */}
+      <Skeleton variant="text" width="12rem" height="2rem" className="mb-6" />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Profile Image Section */}
+        <div className="glass p-6 rounded-lg shadow-md">
+          <Skeleton
+            variant="text"
+            width="8rem"
+            height="1.5rem"
+            className="mb-4"
+          />
+          <div className="flex flex-col items-center">
+            <Skeleton
+              variant="circular"
+              width="8rem"
+              height="8rem"
+              className="mb-4"
+            />
+            <Skeleton
+              variant="text"
+              width="6rem"
+              height="1rem"
+              className="mb-2"
+            />
+            <Skeleton variant="rectangular" width="100%" height="2.5rem" />
           </div>
         </div>
+
+        {/* Profile Information Section */}
+        <div className="glass p-6 rounded-lg shadow-md md:col-span-2">
+          <Skeleton
+            variant="text"
+            width="10rem"
+            height="1.5rem"
+            className="mb-4"
+          />
+
+          <div className="space-y-4">
+            <div>
+              <Skeleton
+                variant="text"
+                width="5rem"
+                height="1rem"
+                className="mb-2"
+              />
+              <Skeleton variant="rectangular" width="100%" height="2.5rem" />
+            </div>
+            <div>
+              <Skeleton
+                variant="text"
+                width="4rem"
+                height="1rem"
+                className="mb-2"
+              />
+              <Skeleton variant="rectangular" width="100%" height="2.5rem" />
+            </div>
+            <Skeleton
+              variant="rectangular"
+              width="8rem"
+              height="2.5rem"
+              className="mt-4"
+            />
+          </div>
+        </div>
+
+        {/* Password Change Section */}
+        <div className="glass p-6 rounded-lg shadow-md md:col-span-3">
+          <Skeleton
+            variant="text"
+            width="9rem"
+            height="1.5rem"
+            className="mb-4"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Skeleton
+                variant="text"
+                width="7rem"
+                height="1rem"
+                className="mb-2"
+              />
+              <Skeleton variant="rectangular" width="100%" height="2.5rem" />
+            </div>
+            <div>
+              <Skeleton
+                variant="text"
+                width="6rem"
+                height="1rem"
+                className="mb-2"
+              />
+              <Skeleton variant="rectangular" width="100%" height="2.5rem" />
+            </div>
+            <div>
+              <Skeleton
+                variant="text"
+                width="8rem"
+                height="1rem"
+                className="mb-2"
+              />
+              <Skeleton variant="rectangular" width="100%" height="2.5rem" />
+            </div>
+          </div>
+
+          <Skeleton
+            variant="rectangular"
+            width="10rem"
+            height="2.5rem"
+            className="mt-4"
+          />
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

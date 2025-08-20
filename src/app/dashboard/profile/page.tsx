@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState("");
   const [hasS3Config, setHasS3Config] = useState<boolean | null>(null);
+  const [showSkeletonLoader, setShowSkeletonLoader] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -59,7 +60,18 @@ export default function ProfilePage() {
     };
   }, [profileImage]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowSkeletonLoader(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSkeletonLoader(true);
+    }
+  }, [loading]);
+
+  if (loading || showSkeletonLoader) {
     return <ProfileSkeleton />;
   }
 
