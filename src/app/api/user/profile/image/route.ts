@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import connectDB from "@/utils/database";
 import User from "@/auth/models/User";
-import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "@/utils/s3ClientFactory";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import sharp from "sharp";
@@ -104,8 +105,8 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Upload to S3 with public read access
-    const uploadCommand = new PutObjectCommand({
+    // Upload to S3 - try with ACL first, fallback without ACL for providers that don't support it
+    let uploadCommand = new PutObjectCommand({
       Bucket: bucketName,
       Key: s3Key,
       Body: optimizedImageBuffer,
@@ -118,59 +119,36 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    await s3Client.send(uploadCommand);
-
-    // Generate S3 URL based on configuration
-    let s3Url: string;
-
-    if (s3Config.endpoint) {
-      const endpointUrl = s3Config.endpoint.startsWith("http")
-        ? s3Config.endpoint
-        : `https://${s3Config.endpoint}`;
-
-      const cleanEndpoint = endpointUrl.replace(/\/$/, "");
-
-      // For custom endpoints, the URL format depends on the provider
-      if (
-        s3Config.endpoint.includes("backblaze") ||
-        s3Config.endpoint.includes("b2")
-      ) {
-        // Backblaze B2 format
-        s3Url = `${cleanEndpoint}/file/${bucketName}/${s3Key}`;
-      } else if (s3Config.endpoint.includes("tebi")) {
-        // Tebi S3-compatible format
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      } else if (
-        s3Config.endpoint.includes("digitalocean") ||
-        s3Config.endpoint.includes("spaces")
-      ) {
-        // DigitalOcean Spaces format
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      } else if (
-        s3Config.endpoint.includes("linode") ||
-        s3Config.endpoint.includes("objectstorage")
-      ) {
-        // Linode Object Storage format
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      } else if (s3Config.endpoint.includes("wasabi")) {
-        // Wasabi format
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      } else if (
-        s3Config.endpoint.includes("minio") ||
-        s3Config.endpoint.includes("localhost")
-      ) {
-        // MinIO or local development format
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      } else {
-        // Generic S3-compatible format (try path-style first)
-        s3Url = `${cleanEndpoint}/${bucketName}/${s3Key}`;
-      }
-    } else {
-      // AWS S3 default format
-      s3Url = `https://${bucketName}.s3.${
-        s3Config.region || process.env.AWS_REGION || "us-east-1"
-      }.amazonaws.com/${s3Key}`;
+    try {
+      await s3Client.send(uploadCommand);
+    } catch (aclError) {
+      // If ACL fails, try without ACL (some providers don't support ACL)
+      console.log("ACL not supported, retrying without ACL:", aclError);
+      uploadCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: optimizedImageBuffer,
+        ContentType: "image/jpeg",
+        Metadata: {
+          "user-id": String(user._id),
+          "uploaded-at": new Date().toISOString(),
+          "original-name": imageFile.name,
+        },
+      });
+      await s3Client.send(uploadCommand);
     }
+
+    // Generate presigned URL for better compatibility across S3 providers
+    // Using presigned URLs with maximum allowed expiration (1 week) for profile images
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+    });
+
+    // Use maximum allowed expiration (1 week = 604800 seconds)
+    const s3Url = await getSignedUrl(s3Client, getObjectCommand, {
+      expiresIn: 604800,
+    });
 
     // Update user profile with S3 URL
     const updatedUser = await User.findByIdAndUpdate(
