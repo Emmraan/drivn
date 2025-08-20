@@ -28,14 +28,14 @@ const termsContent = [
       "To access certain features of the Service, you may be required to create an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete. You are responsible for safeguarding your password and for any activities or actions under your account.",
   },
   {
-      title: "5. Use of the Service",
-      description:
-          "You agree to use the Service only for lawful purposes and in accordance with these Terms. You are prohibited from using the Service to: Violate any applicable national or international law or regulation; Infringe upon or violate our intellectual property rights or the intellectual property rights of others; Transmit any unsolicited or unauthorized advertising or promotional material; Transmit any data that contains viruses or any other harmful programs.",
+    title: "5. Use of the Service",
+    description:
+      "You agree to use the Service only for lawful purposes and in accordance with these Terms. You are prohibited from using the Service to: Violate any applicable national or international law or regulation; Infringe upon or violate our intellectual property rights or the intellectual property rights of others; Transmit any unsolicited or unauthorized advertising or promotional material; Transmit any data that contains viruses or any other harmful programs.",
   },
   {
-      title: "5.1. Data Storage Rights",
-      description:
-          "By using our Service, you grant us the right to use your configured S3-compatible storage bucket to store and manage user-related data, including but not limited to profile images, account settings, and other personal content you upload. We will only access and use this storage as necessary to provide the Service and maintain your account.",
+    title: "5.1. Data Storage Rights",
+    description:
+      "By using our Service, you grant us the right to use your configured S3-compatible storage bucket to store and manage user-related data, including but not limited to profile images, account settings, and other personal content you upload. We will only access and use this storage as necessary to provide the Service and maintain your account.",
   },
   {
     title: "6. Intellectual Property",
@@ -66,6 +66,58 @@ const termsContent = [
 
 const TermsPage = () => {
   const router = useRouter();
+
+  const ref0 = useRef(null);
+  const ref1 = useRef(null);
+  const ref2 = useRef(null);
+  const ref3 = useRef(null);
+  const ref4 = useRef(null);
+  const ref5 = useRef(null);
+  const ref6 = useRef(null);
+  const ref7 = useRef(null);
+  const ref8 = useRef(null);
+  const ref9 = useRef(null);
+  const ref10 = useRef(null);
+
+  const itemRefs = [
+    ref0,
+    ref1,
+    ref2,
+    ref3,
+    ref4,
+    ref5,
+    ref6,
+    ref7,
+    ref8,
+    ref9,
+    ref10,
+  ];
+
+  const inView0 = useInView(ref0, { once: true, margin: "-100px" });
+  const inView1 = useInView(ref1, { once: true, margin: "-100px" });
+  const inView2 = useInView(ref2, { once: true, margin: "-100px" });
+  const inView3 = useInView(ref3, { once: true, margin: "-100px" });
+  const inView4 = useInView(ref4, { once: true, margin: "-100px" });
+  const inView5 = useInView(ref5, { once: true, margin: "-100px" });
+  const inView6 = useInView(ref6, { once: true, margin: "-100px" });
+  const inView7 = useInView(ref7, { once: true, margin: "-100px" });
+  const inView8 = useInView(ref8, { once: true, margin: "-100px" });
+  const inView9 = useInView(ref9, { once: true, margin: "-100px" });
+  const inView10 = useInView(ref10, { once: true, margin: "-100px" });
+
+  const itemInViews = [
+    inView0,
+    inView1,
+    inView2,
+    inView3,
+    inView4,
+    inView5,
+    inView6,
+    inView7,
+    inView8,
+    inView9,
+    inView10,
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,19 +158,20 @@ const TermsPage = () => {
           {/* Content Container */}
           <div className="space-y-6">
             {termsContent.map((item, i) => {
-              const itemRef = useRef(null);
-              const itemInView = useInView(itemRef, { once: true, margin: "-100px" });
-
               return (
                 <motion.div
                   key={i}
-                  ref={itemRef}
+                  ref={itemRefs[i]}
                   initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                  animate={itemInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.9 }}
+                  animate={
+                    itemInViews[i]
+                      ? { opacity: 1, y: 0, scale: 1 }
+                      : { opacity: 0, y: 40, scale: 0.9 }
+                  }
                   transition={{
                     duration: 0.8,
                     delay: i * 0.05,
-                    ease: [0.25, 0.46, 0.45, 0.94]
+                    ease: [0.25, 0.46, 0.45, 0.94],
                   }}
                   className="glass glass-hover p-6 rounded-xl border border-glass-border-light dark:border-glass-border-dark"
                 >
