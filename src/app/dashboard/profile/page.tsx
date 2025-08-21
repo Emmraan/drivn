@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/auth/context/AuthContext";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { useProfileImage } from "@/hooks/useProfileImage";
 import {
   UserCircleIcon,
   CameraIcon,
@@ -26,7 +27,6 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -35,14 +35,15 @@ export default function ProfilePage() {
   const [hasS3Config, setHasS3Config] = useState<boolean | null>(null);
   const [showSkeletonLoader, setShowSkeletonLoader] = useState(true);
 
+  const {
+    imageUrl: profileImage,
+    handleImageError,
+  } = useProfileImage(user?.image || null, updateUserProfile);
+
   useEffect(() => {
     if (user) {
-      if (profileImage && profileImage.startsWith("blob:")) {
-        URL.revokeObjectURL(profileImage);
-      }
       setName(user.name || "");
       setEmail(user.email || "");
-      setProfileImage(user.image || null);
 
       if (user.s3Config) {
         setHasS3Config(true);
@@ -50,7 +51,7 @@ export default function ProfilePage() {
         setHasS3Config(false);
       }
     }
-  }, [user, profileImage]);
+  }, [user]);
 
   useEffect(() => {
     return () => {
@@ -105,9 +106,6 @@ export default function ProfilePage() {
     setIsUploading(true);
     setErrors({});
 
-    const previewUrl = URL.createObjectURL(file);
-    setProfileImage(previewUrl);
-
     updateProfileImage(file);
   };
 
@@ -125,17 +123,14 @@ export default function ProfilePage() {
 
       if (data.success) {
         updateUserProfile({ image: data.user.image });
-        setProfileImage(data.user.image);
         setSuccessMessage("Profile image updated successfully");
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         setErrors({ image: data.message || "Failed to update profile image" });
-        setProfileImage(user?.image || null);
       }
     } catch (error) {
       setErrors({ image: "An error occurred while updating profile image" });
       console.log(error);
-      setProfileImage(user?.image || null);
     } finally {
       setIsUploading(false);
     }
@@ -273,6 +268,9 @@ export default function ProfilePage() {
                   alt="Profile"
                   fill
                   className="object-cover"
+                  onError={handleImageError}
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/AB//2Q=="
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
