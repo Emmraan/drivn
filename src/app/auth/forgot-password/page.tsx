@@ -83,11 +83,11 @@ export default function ForgotPasswordPage() {
             </h1>
 
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>
+              We&apos;ve sent a password reset link to <strong>{email}</strong>
             </p>
 
             <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-              If you don't see the email, check your spam folder. The link will
+              If you don&apos;t see the email, check your spam folder. The link will
               expire in 1 hour.
             </p>
 
