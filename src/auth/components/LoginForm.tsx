@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { signIn } from 'next-auth/react';
-import { useAuth } from '@/auth/context/AuthContext';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
-import { LoginLoading } from '@/components/ui/LoadingScreens';
-import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { validateEmail, validatePassword } from '@/utils/validation';
-import debounce from '@/utils/debounce';
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { signIn } from "next-auth/react";
+import { useAuth } from "@/auth/context/AuthContext";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { LoginLoading } from "@/components/ui/LoadingScreens";
+import {
+  EnvelopeIcon,
+  LockClosedIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
+import { validateEmail, validatePassword } from "@/utils/validation";
+import debounce from "@/utils/debounce";
+import { useRouter } from "next/navigation";
 
 interface LoginFormProps {
   onToggleMode?: () => void;
@@ -18,29 +24,32 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState('');
+  const [resendMessage, setResendMessage] = useState("");
   const { login } = useAuth();
+  const router = useRouter();
 
-  const debouncedValidateEmail = useMemo(() =>
-    debounce((value: string) => {
-      setEmailError(validateEmail(value));
-    }, 500),
+  const debouncedValidateEmail = useMemo(
+    () =>
+      debounce((value: string) => {
+        setEmailError(validateEmail(value));
+      }, 500),
     [setEmailError]
   );
 
-  const debouncedValidatePassword = useMemo(() =>
-    debounce((value: string) => {
-      setPasswordError(validatePassword(value));
-    }, 500),
+  const debouncedValidatePassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setPasswordError(validatePassword(value));
+      }, 500),
     [setPasswordError]
   );
 
@@ -66,9 +75,9 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
     }
 
     setLoading(true);
-    setError('');
+    setError("");
     setShowResendVerification(false);
-    setResendMessage('');
+    setResendMessage("");
 
     try {
       const result = await login(email, password);
@@ -77,13 +86,13 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
         return;
       } else {
         setError(result.message);
-        if ('requiresVerification' in result && result.requiresVerification) {
+        if ("requiresVerification" in result && result.requiresVerification) {
           setShowResendVerification(true);
         }
         setLoading(false);
       }
     } catch (error) {
-      setError('An unexpected error occurred.');
+      setError("An unexpected error occurred.");
       setLoading(false);
       console.error(error);
     }
@@ -91,27 +100,27 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: '/dashboard' });
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
-      setError('Failed to sign in with Google.');
+      setError("Failed to sign in with Google.");
       console.error(error);
     }
   };
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError('Please enter your email address first.');
+      setError("Please enter your email address first.");
       return;
     }
 
     setResendLoading(true);
-    setResendMessage('');
+    setResendMessage("");
 
     try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
       });
@@ -119,14 +128,14 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       const result = await response.json();
 
       if (result.success) {
-        setResendMessage('Verification email sent! Please check your inbox.');
+        setResendMessage("Verification email sent! Please check your inbox.");
         setShowResendVerification(false);
-        setError('');
+        setError("");
       } else {
         setError(result.message);
       }
     } catch (error) {
-      setError('Failed to resend verification email. Please try again.');
+      setError("Failed to resend verification email. Please try again.");
       console.error(error);
     } finally {
       setResendLoading(false);
@@ -193,7 +202,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 transition={{ delay: 0.4 }}
               >
                 <Input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   label="Password"
                   placeholder="Enter your password"
                   value={password}
@@ -219,6 +228,21 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                   required
                   error={passwordError}
                 />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45 }}
+                className="flex justify-start items-start"
+              >
+                <button
+                  type="button"
+                  onClick={() => router.push("/auth/forgot-password")}
+                  className="text-sm text-primary-600 hover:text-primary-500 transition-colors"
+                >
+                  Forgot Password?
+                </button>
               </motion.div>
 
               {error && (
@@ -346,7 +370,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
                 transition={{ delay: 0.8 }}
               >
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Don&apos;t have an account?{' '}
+                  Don&apos;t have an account?{" "}
                   <button
                     onClick={onToggleMode}
                     className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
