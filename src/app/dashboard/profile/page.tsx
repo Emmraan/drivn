@@ -13,6 +13,9 @@ import {
   CameraIcon,
   CheckIcon,
   XMarkIcon,
+  LockClosedIcon,
+  EyeSlashIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { ProfileSkeleton } from "@/components/ui/Skeleton";
@@ -27,6 +30,9 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -453,25 +459,70 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 label="Current Password"
-                type="password"
+                type={showCurrentPassword ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
+                leftIcon={<LockClosedIcon className="w-5 h-5" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="hover:text-primary-600 transition-colors"
+                  >
+                    {showCurrentPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                }
                 placeholder="Current password"
+                required
                 error={errors.currentPassword}
               />
               <Input
                 label="New Password"
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                leftIcon={<LockClosedIcon className="w-5 h-5" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="hover:text-primary-600 transition-colors"
+                  >
+                    {showNewPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                }
                 placeholder="New password"
                 error={errors.newPassword}
               />
               <Input
                 label="Confirm New Password"
-                type="password"
+                type={showConfirmNewPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                leftIcon={<LockClosedIcon className="w-5 h-5" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmNewPassword(!showConfirmNewPassword)
+                    }
+                    className="hover:text-primary-600 transition-colors"
+                  >
+                    {showConfirmNewPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                }
                 placeholder="Confirm new password"
                 error={errors.confirmPassword}
               />
