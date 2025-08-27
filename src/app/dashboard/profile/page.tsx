@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -8,6 +8,8 @@ import { useAuth } from "@/auth/context/AuthContext";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useProfileImage } from "@/hooks/useProfileImage";
+import { validatePassword, validateConfirmPassword } from "@/utils/validation";
+import debounce from "@/utils/debounce";
 import {
   UserCircleIcon,
   CameraIcon,
@@ -32,16 +34,53 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [profileImageSuccess, setProfileImageSuccess] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [hasS3Config, setHasS3Config] = useState<boolean | null>(null);
   const [showSkeletonLoader, setShowSkeletonLoader] = useState(true);
+
+  const validateCurrentPassword = (password: string): string => {
+    if (!password) {
+      return "Current password is required.";
+    }
+    if (password.length < 1) {
+      return "Current password is required.";
+    }
+    return "";
+  };
+
+  const debouncedValidateCurrentPassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setCurrentPasswordError(validateCurrentPassword(value));
+      }, 500),
+    []
+  );
+
+  const debouncedValidateNewPassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setNewPasswordError(validatePassword(value));
+      }, 500),
+    []
+  );
+
+  const debouncedValidateConfirmPassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setConfirmPasswordError(validateConfirmPassword(newPassword, value));
+      }, 500),
+    [newPassword]
+  );
 
   const { imageUrl: profileImage, handleImageError } = useProfileImage(
     user?.image || null,
@@ -79,6 +118,18 @@ export default function ProfilePage() {
       setShowSkeletonLoader(true);
     }
   }, [loading]);
+
+  useEffect(() => {
+    if (currentPassword) debouncedValidateCurrentPassword(currentPassword);
+  }, [currentPassword, debouncedValidateCurrentPassword]);
+
+  useEffect(() => {
+    if (newPassword) debouncedValidateNewPassword(newPassword);
+  }, [newPassword, debouncedValidateNewPassword]);
+
+  useEffect(() => {
+    if (confirmPassword) debouncedValidateConfirmPassword(confirmPassword);
+  }, [confirmPassword, debouncedValidateConfirmPassword]);
 
   if (loading || showSkeletonLoader) {
     return <ProfileSkeleton />;
@@ -175,18 +226,23 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const currentPasswordErr = validateCurrentPassword(currentPassword);
+    const newPasswordErr = validatePassword(newPassword);
+    const confirmPasswordErr = validateConfirmPassword(
+      newPassword,
+      confirmPassword
+    );
+
+    setCurrentPasswordError(currentPasswordErr);
+    setNewPasswordError(newPasswordErr);
+    setConfirmPasswordError(confirmPasswordErr);
+
+    if (currentPasswordErr || newPasswordErr || confirmPasswordErr) {
+      return;
+    }
+
     setErrors({});
-
-    if (newPassword.length < 8) {
-      setErrors({ newPassword: "Password must be at least 8 characters long" });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setErrors({ confirmPassword: "Passwords do not match" });
-      return;
-    }
-
     setIsChangingPassword(true);
 
     try {
@@ -197,6 +253,10 @@ export default function ProfilePage() {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
+
+        setCurrentPasswordError("");
+        setNewPasswordError("");
+        setConfirmPasswordError("");
         setTimeout(() => setPasswordSuccess(""), 3000);
       } else {
         setErrors({ password: data.message || "Failed to change password" });
@@ -461,7 +521,15 @@ export default function ProfilePage() {
                 label="Current Password"
                 type={showCurrentPassword ? "text" : "password"}
                 value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  debouncedValidateCurrentPassword(e.target.value);
+                }}
+                onBlur={() =>
+                  setCurrentPasswordError(
+                    validateCurrentPassword(currentPassword)
+                  )
+                }
                 leftIcon={<LockClosedIcon className="w-5 h-5" />}
                 rightIcon={
                   <button
@@ -478,13 +546,19 @@ export default function ProfilePage() {
                 }
                 placeholder="Current password"
                 required
-                error={errors.currentPassword}
+                error={currentPasswordError}
               />
               <Input
                 label="New Password"
                 type={showNewPassword ? "text" : "password"}
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  debouncedValidateNewPassword(e.target.value);
+                }}
+                onBlur={() =>
+                  setNewPasswordError(validatePassword(newPassword))
+                }
                 leftIcon={<LockClosedIcon className="w-5 h-5" />}
                 rightIcon={
                   <button
@@ -500,23 +574,29 @@ export default function ProfilePage() {
                   </button>
                 }
                 placeholder="New password"
-                error={errors.newPassword}
+                error={newPasswordError}
               />
               <Input
                 label="Confirm New Password"
-                type={showConfirmNewPassword ? "text" : "password"}
+                type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  debouncedValidateConfirmPassword(e.target.value);
+                }}
+                onBlur={() =>
+                  setConfirmPasswordError(
+                    validateConfirmPassword(newPassword, confirmPassword)
+                  )
+                }
                 leftIcon={<LockClosedIcon className="w-5 h-5" />}
                 rightIcon={
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowConfirmNewPassword(!showConfirmNewPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="hover:text-primary-600 transition-colors"
                   >
-                    {showConfirmNewPassword ? (
+                    {showConfirmPassword ? (
                       <EyeSlashIcon className="w-5 h-5" />
                     ) : (
                       <EyeIcon className="w-5 h-5" />
@@ -524,12 +604,9 @@ export default function ProfilePage() {
                   </button>
                 }
                 placeholder="Confirm new password"
-                error={errors.confirmPassword}
+                error={confirmPasswordError}
               />
             </div>
-            {errors.password && (
-              <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-            )}
             <div className="mt-4">
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -541,6 +618,14 @@ export default function ProfilePage() {
                   variant="secondary"
                   loading={isChangingPassword}
                   loadingText="Changing Password..."
+                  disabled={
+                    !currentPassword ||
+                    !newPassword ||
+                    !confirmPassword ||
+                    !!currentPasswordError ||
+                    !!newPasswordError ||
+                    !!confirmPasswordError
+                  }
                 >
                   Change Password
                 </Button>
