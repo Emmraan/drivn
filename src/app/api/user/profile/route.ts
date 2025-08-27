@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
-import bcrypt from 'bcryptjs';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import bcrypt from "bcryptjs";
 
 /**
  * GET /api/user/profile
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Get user profile API error:', error);
+    console.error("Get user profile API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
       const existingUser = await User.findOne({ email: email.trim() });
       if (existingUser && existingUser._id.toString() !== user._id.toString()) {
         return NextResponse.json(
-          { success: false, message: 'Email is already in use' },
+          { success: false, message: "Email is already in use" },
           { status: 400 }
         );
       }
@@ -73,16 +73,37 @@ export async function PUT(request: NextRequest) {
     }
 
     if (currentPassword && newPassword) {
-      if (!user.password) {
+      const userWithPassword = await User.findById(user._id).select(
+        "+password"
+      );
+
+      if (!userWithPassword || !userWithPassword.password) {
         return NextResponse.json(
-          { success: false, message: 'No password set. Please use the reset password flow' },
+          {
+            success: false,
+            message: "No password set. Please use the reset password flow",
+          },
+          { status: 400 }
+        );
+      }
+
+      const isValidCurrentPassword = await bcrypt.compare(
+        currentPassword,
+        userWithPassword.password
+      );
+      if (!isValidCurrentPassword) {
+        return NextResponse.json(
+          { success: false, message: "Current password is incorrect" },
           { status: 400 }
         );
       }
 
       if (newPassword.length < 8) {
         return NextResponse.json(
-          { success: false, message: 'New password must be at least 8 characters long' },
+          {
+            success: false,
+            message: "New password must be at least 8 characters long",
+          },
           { status: 400 }
         );
       }
@@ -93,19 +114,17 @@ export async function PUT(request: NextRequest) {
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No changes to update',
+        message: "No changes to update",
       });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      user._id,
-      updateData,
-      { new: true }
-    ).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, {
+      new: true,
+    }).select("-password");
 
     return NextResponse.json({
       success: true,
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user: {
         _id: updatedUser._id,
         email: updatedUser.email,
@@ -115,9 +134,9 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Update user profile API error:', error);
+    console.error("Update user profile API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

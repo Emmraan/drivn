@@ -31,14 +31,16 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState("");
+  const [profileImageSuccess, setProfileImageSuccess] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
   const [hasS3Config, setHasS3Config] = useState<boolean | null>(null);
   const [showSkeletonLoader, setShowSkeletonLoader] = useState(true);
 
-  const {
-    imageUrl: profileImage,
-    handleImageError,
-  } = useProfileImage(user?.image || null, updateUserProfile);
+  const { imageUrl: profileImage, handleImageError } = useProfileImage(
+    user?.image || null,
+    updateUserProfile
+  );
 
   useEffect(() => {
     if (user) {
@@ -123,8 +125,8 @@ export default function ProfilePage() {
 
       if (data.success) {
         updateUserProfile({ image: data.user.image });
-        setSuccessMessage("Profile image updated successfully");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        setProfileImageSuccess("Profile image updated successfully");
+        setTimeout(() => setProfileImageSuccess(""), 3000);
       } else {
         setErrors({ image: data.message || "Failed to update profile image" });
       }
@@ -152,8 +154,8 @@ export default function ProfilePage() {
 
       if (data.success) {
         updateUserProfile({ name, email });
-        setSuccessMessage("Profile updated successfully");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        setProfileSuccess("Profile updated successfully");
+        setTimeout(() => setProfileSuccess(""), 3000);
       } else {
         setErrors({ general: data.message || "Failed to update profile" });
       }
@@ -185,11 +187,11 @@ export default function ProfilePage() {
       const data = await updateUserPassword(currentPassword, newPassword);
 
       if (data.success) {
-        setSuccessMessage("Password changed successfully");
+        setPasswordSuccess("Password changed successfully");
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        setTimeout(() => setPasswordSuccess(""), 3000);
       } else {
         setErrors({ password: data.message || "Failed to change password" });
       }
@@ -216,27 +218,6 @@ export default function ProfilePage() {
       >
         Profile Settings
       </motion.h1>
-
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-          className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between"
-        >
-          <div className="flex items-center">
-            <CheckIcon className="h-5 w-5 mr-2" />
-            {successMessage}
-          </div>
-          <button
-            onClick={() => setSuccessMessage("")}
-            className="text-green-700 hover:text-green-900"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </motion.div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Profile Image Section */}
@@ -333,6 +314,26 @@ export default function ProfilePage() {
                   : "Configure S3 First"}
               </Button>
             </motion.div>
+            {profileImageSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="mt-2 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <CheckIcon className="h-4 w-4 mr-2" />
+                  {profileImageSuccess}
+                </div>
+                <button
+                  onClick={() => setProfileImageSuccess("")}
+                  className="text-green-700 hover:text-green-900"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </motion.div>
+            )}
             {errors.image && (
               <p className="mt-2 text-sm text-red-600">{errors.image}</p>
             )}
@@ -371,6 +372,26 @@ export default function ProfilePage() {
                 placeholder="Your email"
                 error={errors.email}
               />
+              {profileSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <CheckIcon className="h-4 w-4 mr-2" />
+                    {profileSuccess}
+                  </div>
+                  <button
+                    onClick={() => setProfileSuccess("")}
+                    className="text-green-700 hover:text-green-900"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                </motion.div>
+              )}
               {errors.general && (
                 <p className="text-sm text-red-600">{errors.general}</p>
               )}
@@ -408,6 +429,26 @@ export default function ProfilePage() {
           >
             Change Password
           </motion.h2>
+          {passwordSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between"
+            >
+              <div className="flex items-center">
+                <CheckIcon className="h-4 w-4 mr-2" />
+                {passwordSuccess}
+              </div>
+              <button
+                onClick={() => setPasswordSuccess("")}
+                className="text-green-700 hover:text-green-900"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </motion.div>
+          )}
           <form onSubmit={handlePasswordChange}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input

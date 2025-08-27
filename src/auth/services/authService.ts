@@ -72,9 +72,7 @@ export class AuthService {
     }
   }
 
-  static async login(
-    data: LoginData
-  ): Promise<{
+  static async login(data: LoginData): Promise<{
     success: boolean;
     message: string;
     user?: Partial<IUser>;
@@ -132,9 +130,7 @@ export class AuthService {
     }
   }
 
-  static async verifyEmail(
-    token: string
-  ): Promise<{
+  static async verifyEmail(token: string): Promise<{
     success: boolean;
     message: string;
     user?: Partial<IUser>;
@@ -245,7 +241,11 @@ export class AuthService {
 
   static async forgotPassword(
     email: string
-  ): Promise<{ success: boolean; message: string; existingRequest?: { remainingTime: string } }> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    existingRequest?: { remainingTime: string };
+  }> {
     try {
       await connectDB();
 
@@ -266,14 +266,12 @@ export class AuthService {
         };
       }
 
-      // Check for existing active reset tokens
       const existingToken = await ResetToken.findOne({
         email: email.toLowerCase().trim(),
-        expires: { $gt: new Date() }
+        expires: { $gt: new Date() },
       });
 
       if (existingToken) {
-        // Calculate remaining time
         const now = new Date();
         const expires = new Date(existingToken.expires);
         const remainingMs = expires.getTime() - now.getTime();
@@ -284,22 +282,25 @@ export class AuthService {
 
         let remainingTime: string;
         if (remainingHours > 0) {
-          remainingTime = `${remainingHours} hour${remainingHours > 1 ? 's' : ''} and ${remainingMins} minute${remainingMins !== 1 ? 's' : ''}`;
+          remainingTime = `${remainingHours} hour${
+            remainingHours > 1 ? "s" : ""
+          } and ${remainingMins} minute${remainingMins !== 1 ? "s" : ""}`;
         } else {
-          remainingTime = `${remainingMins} minute${remainingMins !== 1 ? 's' : ''}`;
+          remainingTime = `${remainingMins} minute${
+            remainingMins !== 1 ? "s" : ""
+          }`;
         }
 
         return {
           success: false,
           message: `You have already requested a password reset. Please check your email or try again in ${remainingTime}.`,
-          existingRequest: { remainingTime }
+          existingRequest: { remainingTime },
         };
       }
 
-      // Clean up any expired tokens before creating new one
       await ResetToken.deleteMany({
         email: email.toLowerCase().trim(),
-        expires: { $lte: new Date() }
+        expires: { $lte: new Date() },
       });
 
       const resetToken = crypto.randomBytes(32).toString("hex");
