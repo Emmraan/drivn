@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState, useRef } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/auth/context/AuthContext';
-import ThemeToggle from '@/components/ui/ThemeToggle';
-import DropdownPortal from '@/components/ui/DropdownPortal';
-import { isUserAdmin, getUserRole } from '@/utils/clientAuth';
+import React, { useState, useRef } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/auth/context/AuthContext";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import DropdownPortal from "@/components/ui/DropdownPortal";
+import { isUserAdmin, getUserRole } from "@/utils/clientAuth";
 import {
   Bars3Icon,
   UserCircleIcon,
@@ -16,7 +16,7 @@ import {
   ShieldCheckIcon,
   CogIcon,
   UserIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 interface DashboardHeaderProps {
   user: {
@@ -31,7 +31,10 @@ interface DashboardHeaderProps {
   onMenuClick: () => void;
 }
 
-export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderProps) {
+export default function DashboardHeader({
+  user,
+  onMenuClick,
+}: DashboardHeaderProps) {
   const { logout } = useAuth();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -48,37 +51,37 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
     try {
       setIsProfileOpen(false);
       await logout();
-      router.push('/');
+      router.push("/");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
   const handleAdminDashboard = () => {
     setIsProfileOpen(false);
     setTimeout(() => {
-      router.push('/admin-dashboard');
+      router.push("/admin-dashboard");
     }, 100);
   };
 
   const handleSettings = () => {
     setIsProfileOpen(false);
     setTimeout(() => {
-      router.push('/dashboard/settings');
+      router.push("/dashboard/settings");
     }, 100);
   };
 
   const handleProfile = () => {
     setIsProfileOpen(false);
     setTimeout(() => {
-      router.push('/dashboard/profile');
+      router.push("/dashboard/profile");
     }, 100);
   };
 
   return (
     <header className="dashboard-header bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center gap-2 h-16">
           {/* Mobile menu button */}
           <div className="flex items-center lg:hidden">
             <button
@@ -132,8 +135,9 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
 
                 {/* Dropdown arrow */}
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
-                    }`}
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+                    isProfileOpen ? "rotate-180" : ""
+                  }`}
                 />
               </motion.button>
 
@@ -142,7 +146,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                 isOpen={isProfileOpen}
                 triggerRef={profileRef}
                 onClickOutside={handleCloseDropdown}
-                className="overflow-hidden w-64 glass backdrop-blur-md rounded-xl shadow-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                className="overflow-hidden w-64 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
               >
                 <AnimatePresence>
                   {isProfileOpen && (
@@ -175,7 +179,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                               {user.email}
                             </p>
                             {isAdmin && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 mt-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-300 text-primary-800 dark:bg-primary-900 dark:text-primary-200 mt-1">
                                 <ShieldCheckIcon className="h-3 w-3 mr-1" />
                                 Admin
                               </span>
@@ -185,11 +189,11 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                       </div>
 
                       {/* Menu Items */}
-                      <div className="py-1 bg-white dark:bg-gray-900">
+                      <div className="py-1">
                         {/* Profile */}
                         <motion.button
                           onClick={handleProfile}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 flex items-center space-x-3 rounded-md"
                           whileHover={{ x: 4 }}
                         >
                           <UserIcon className="h-4 w-4" />
@@ -199,7 +203,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                         {/* Settings */}
                         <motion.button
                           onClick={handleSettings}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 flex items-center space-x-3 rounded-md"
                           whileHover={{ x: 4 }}
                         >
                           <CogIcon className="h-4 w-4" />
@@ -210,7 +214,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                         {isAdmin && (
                           <motion.button
                             onClick={handleAdminDashboard}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-3"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 flex items-center space-x-3 rounded-md"
                             whileHover={{ x: 4 }}
                           >
                             <ShieldCheckIcon className="h-4 w-4" />
@@ -224,7 +228,7 @@ export default function DashboardHeader({ user, onMenuClick }: DashboardHeaderPr
                         {/* Logout */}
                         <motion.button
                           onClick={handleLogout}
-                          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-3"
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-3 rounded-md"
                           whileHover={{ x: 4 }}
                         >
                           <ArrowRightOnRectangleIcon className="h-4 w-4" />

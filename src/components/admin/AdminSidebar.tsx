@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/utils/cn';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/utils/cn";
 import {
   HomeIcon,
   UsersIcon,
@@ -14,7 +14,7 @@ import {
   XMarkIcon,
   ShieldCheckIcon,
   WrenchScrewdriverIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -22,12 +22,16 @@ interface AdminSidebarProps {
 }
 
 const navigation = [
-  { name: 'Overview', href: '/admin-dashboard', icon: HomeIcon },
-  { name: 'Users', href: '/admin-dashboard/users', icon: UsersIcon },
-  { name: 'Storage', href: '/admin-dashboard/storage', icon: CloudIcon },
-  { name: 'Analytics', href: '/admin-dashboard/analytics', icon: ChartBarIcon },
-  { name: 'Schema Management', href: '/admin-dashboard/update-schema', icon: WrenchScrewdriverIcon },
-  { name: 'Settings', href: '/admin-dashboard/settings', icon: CogIcon },
+  { name: "Overview", href: "/admin-dashboard", icon: HomeIcon },
+  { name: "Users", href: "/admin-dashboard/users", icon: UsersIcon },
+  { name: "Storage", href: "/admin-dashboard/storage", icon: CloudIcon },
+  { name: "Analytics", href: "/admin-dashboard/analytics", icon: ChartBarIcon },
+  {
+    name: "Schema Management",
+    href: "/admin-dashboard/update-schema",
+    icon: WrenchScrewdriverIcon,
+  },
+  { name: "Settings", href: "/admin-dashboard/settings", icon: CogIcon },
 ];
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
@@ -43,7 +47,9 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
               DRIVN
             </span>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Admin Panel</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Admin Panel
+            </div>
           </div>
         </Link>
         <button
@@ -62,19 +68,20 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onClose}
               className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                "group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200",
                 isActive
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                  ? "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
               )}
             >
               <item.icon
                 className={cn(
-                  'mr-3 h-5 w-5 transition-colors',
+                  "mr-3 h-5 w-5 transition-colors",
                   isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'
+                    ? "text-primary-600 dark:text-primary-400"
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
                 )}
               />
               {item.name}
@@ -83,7 +90,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   layoutId="activeTab"
                   className="absolute left-0 w-1 h-8 bg-primary-600 rounded-r-full"
                   initial={false}
-                  transition={{ type: 'spring', stiffness: 80 }}
+                  transition={{ type: "spring", stiffness: 80 }}
                 />
               )}
             </Link>
@@ -103,7 +110,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Admin Access
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-700 dark:text-gray-400">
               Full system control
             </p>
           </div>
@@ -128,8 +135,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
-            transition={{ type: 'spring', stiffness: 80 }}
-            className="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-lg"
+            transition={{ type: "spring", stiffness: 80 }}
+            className="fixed inset-y-0 left-0 z-50 w-64 backdrop-blur-md lg:hidden"
           >
             {sidebarContent}
           </motion.div>
