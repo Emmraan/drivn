@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   UsersIcon,
   CloudIcon,
   DocumentIcon,
   ChartBarIcon,
-} from '@heroicons/react/24/outline';
-import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
-import Card from '@/components/ui/Card';
+} from "@heroicons/react/24/outline";
+import { DashboardSkeleton } from "@/components/ui/SkeletonLoader";
+import Card from "@/components/ui/Card";
+import { logger } from "@/utils/logger";
 
 interface AdminStats {
   totalUsers: number;
@@ -29,15 +30,25 @@ export default function AdminDashboardPage() {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users');
+      const response = await fetch("/api/admin/users");
       const data = await response.json();
 
       if (data.success) {
         const users = data.data.users;
         const totalUsers = users.length;
-        const drivnUsers = users.filter((user: { canUseDrivnS3: boolean }) => user.canUseDrivnS3).length;
-        const totalFiles = users.reduce((sum: number, user: { stats: { totalFiles: number } }) => sum + user.stats.totalFiles, 0);
-        const totalStorage = users.reduce((sum: number, user: { stats: { totalSize: number } }) => sum + user.stats.totalSize, 0);
+        const drivnUsers = users.filter(
+          (user: { canUseDrivnS3: boolean }) => user.canUseDrivnS3
+        ).length;
+        const totalFiles = users.reduce(
+          (sum: number, user: { stats: { totalFiles: number } }) =>
+            sum + user.stats.totalFiles,
+          0
+        );
+        const totalStorage = users.reduce(
+          (sum: number, user: { stats: { totalSize: number } }) =>
+            sum + user.stats.totalSize,
+          0
+        );
 
         setStats({
           totalUsers,
@@ -47,18 +58,18 @@ export default function AdminDashboardPage() {
         });
       }
     } catch (error) {
-      console.error('Error loading admin stats:', error);
+      logger.error("Error loading admin stats:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   if (loading) {
@@ -67,36 +78,38 @@ export default function AdminDashboardPage() {
 
   const statCards = [
     {
-      name: 'Total Users',
-      value: stats?.totalUsers.toLocaleString() || '0',
+      name: "Total Users",
+      value: stats?.totalUsers.toLocaleString() || "0",
       icon: UsersIcon,
-      color: 'bg-blue-500',
-      change: '+12%',
-      changeType: 'positive' as const,
+      color: "bg-blue-500",
+      change: "+12%",
+      changeType: "positive" as const,
     },
     {
-      name: 'Total Files',
-      value: stats?.totalFiles.toLocaleString() || '0',
+      name: "Total Files",
+      value: stats?.totalFiles.toLocaleString() || "0",
       icon: DocumentIcon,
-      color: 'bg-green-500',
-      change: '+8%',
-      changeType: 'positive' as const,
+      color: "bg-green-500",
+      change: "+8%",
+      changeType: "positive" as const,
     },
     {
-      name: 'Total Storage',
+      name: "Total Storage",
       value: formatBytes(stats?.totalStorage || 0),
       icon: CloudIcon,
-      color: 'bg-purple-500',
-      change: '+15%',
-      changeType: 'positive' as const,
+      color: "bg-purple-500",
+      change: "+15%",
+      changeType: "positive" as const,
     },
     {
-      name: 'DRIVN S3 Users',
-      value: stats?.drivnUsers.toLocaleString() || '0',
+      name: "DRIVN S3 Users",
+      value: stats?.drivnUsers.toLocaleString() || "0",
       icon: ChartBarIcon,
-      color: 'bg-orange-500',
-      change: `${stats ? Math.round((stats.drivnUsers / stats.totalUsers) * 100) : 0}%`,
-      changeType: 'neutral' as const,
+      color: "bg-orange-500",
+      change: `${
+        stats ? Math.round((stats.drivnUsers / stats.totalUsers) * 100) : 0
+      }%`,
+      changeType: "neutral" as const,
     },
   ];
 
@@ -124,7 +137,7 @@ export default function AdminDashboardPage() {
             key={stat.name}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, type: 'spring', stiffness: 80 }}
+            transition={{ delay: index * 0.1, type: "spring", stiffness: 80 }}
           >
             <Card className="p-6">
               <div className="flex items-center justify-between">
@@ -143,17 +156,19 @@ export default function AdminDashboardPage() {
               <div className="mt-4 flex items-center">
                 <span
                   className={`text-sm font-medium ${
-                    stat.changeType === 'positive'
-                      ? 'text-green-600 dark:text-green-400'
-                      : stat.changeType === 'neutral'
-                      ? 'text-gray-600 dark:text-gray-400'
-                      : 'text-red-600 dark:text-red-400'
+                    stat.changeType === "positive"
+                      ? "text-green-600 dark:text-green-400"
+                      : stat.changeType === "neutral"
+                      ? "text-gray-600 dark:text-gray-400"
+                      : "text-red-600 dark:text-red-400"
                   }`}
                 >
                   {stat.change}
                 </span>
                 <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
-                  {stat.name === 'DRIVN S3 Users' ? 'of total users' : 'from last month'}
+                  {stat.name === "DRIVN S3 Users"
+                    ? "of total users"
+                    : "from last month"}
                 </span>
               </div>
             </Card>
@@ -172,50 +187,50 @@ export default function AdminDashboardPage() {
             Quick Actions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <motion.a
-            href="/admin-dashboard/users"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
-          >
-            <UsersIcon className="h-8 w-8 text-primary-600 mb-2" />
-            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
-              Manage Users
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              View and manage user accounts and permissions
-            </p>
-          </motion.a>
+            <motion.a
+              href="/admin-dashboard/users"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
+            >
+              <UsersIcon className="h-8 w-8 text-primary-600 mb-2" />
+              <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                Manage Users
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                View and manage user accounts and permissions
+              </p>
+            </motion.a>
 
-          <motion.a
-            href="/admin-dashboard/storage"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
-          >
-            <CloudIcon className="h-8 w-8 text-primary-600 mb-2" />
-            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
-              Storage Management
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Monitor storage usage and manage S3 access
-            </p>
-          </motion.a>
+            <motion.a
+              href="/admin-dashboard/storage"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
+            >
+              <CloudIcon className="h-8 w-8 text-primary-600 mb-2" />
+              <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                Storage Management
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Monitor storage usage and manage S3 access
+              </p>
+            </motion.a>
 
-          <motion.a
-            href="/admin-dashboard/analytics"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
-          >
-            <ChartBarIcon className="h-8 w-8 text-primary-600 mb-2" />
-            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
-              Analytics
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              View detailed analytics and usage reports
-            </p>
-          </motion.a>
+            <motion.a
+              href="/admin-dashboard/analytics"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-600 transition-colors group"
+            >
+              <ChartBarIcon className="h-8 w-8 text-primary-600 mb-2" />
+              <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                Analytics
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                View detailed analytics and usage reports
+              </p>
+            </motion.a>
           </div>
         </Card>
       </motion.div>

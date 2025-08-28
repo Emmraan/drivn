@@ -1,22 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   CloudIcon,
   ServerIcon,
   ChartBarIcon,
   XCircleIcon,
-} from '@heroicons/react/24/outline';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { StatCardSkeleton } from '@/components/ui/SkeletonLoader';
+} from "@heroicons/react/24/outline";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { StatCardSkeleton } from "@/components/ui/SkeletonLoader";
+import { logger } from "@/utils/logger";
 
 interface StorageStats {
   totalFiles: number;
   totalFolders: number;
   storageUsed: number;
-  bucketType: 'user';
+  bucketType: "user";
   hasOwnS3Config?: boolean;
 }
 
@@ -32,41 +33,46 @@ export default function StoragePage() {
   const loadStorageStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/s3-analytics');
+      const response = await fetch("/api/s3-analytics");
       const data = await response.json();
 
       if (data.success) {
         setStats(data.data);
       }
     } catch (error) {
-      console.error('Error loading storage stats:', error);
+      logger.error("Error loading storage stats:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getBucketTypeInfo = () => {
-    if (!stats) return { icon: XCircleIcon, text: 'No Storage Configured', color: 'text-red-600' };
+    if (!stats)
+      return {
+        icon: XCircleIcon,
+        text: "No Storage Configured",
+        color: "text-red-600",
+      };
 
     if (stats.hasOwnS3Config) {
       return {
         icon: ServerIcon,
-        text: 'Personal S3 Storage',
-        color: 'text-blue-600',
+        text: "Personal S3 Storage",
+        color: "text-blue-600",
       };
     } else {
       return {
         icon: XCircleIcon,
-        text: 'No Storage Configured',
-        color: 'text-red-600'
+        text: "No Storage Configured",
+        color: "text-red-600",
       };
     }
   };
@@ -126,7 +132,7 @@ export default function StoragePage() {
                 Storage Used
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats ? formatBytes(stats.storageUsed) : '0 Bytes'}
+                {stats ? formatBytes(stats.storageUsed) : "0 Bytes"}
               </p>
             </div>
           </div>
@@ -142,7 +148,7 @@ export default function StoragePage() {
                 Total Files
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats?.totalFiles.toLocaleString() || '0'}
+                {stats?.totalFiles.toLocaleString() || "0"}
               </p>
             </div>
           </div>
@@ -171,7 +177,6 @@ export default function StoragePage() {
           Storage Usage
         </h2>
         <div className="space-y-6">
-
           {/* Personal S3 Storage */}
           {stats?.hasOwnS3Config && (
             <div className="space-y-3">
@@ -193,7 +198,8 @@ export default function StoragePage() {
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You&apos;re using your own S3 bucket with no storage limits imposed by DRIVN.
+                  You&apos;re using your own S3 bucket with no storage limits
+                  imposed by DRIVN.
                 </p>
               </div>
             </div>
@@ -211,7 +217,7 @@ export default function StoragePage() {
               </p>
               <Button
                 variant="primary"
-                onClick={() => router.push('/dashboard/settings')}
+                onClick={() => router.push("/dashboard/settings")}
               >
                 Configure Storage
               </Button>
@@ -229,7 +235,7 @@ export default function StoragePage() {
           <Button
             variant="outline"
             className="justify-start"
-            onClick={() => router.push('/dashboard/settings')}
+            onClick={() => router.push("/dashboard/settings")}
           >
             <span className="flex justify-center items-center">
               <ServerIcon className="h-5 w-5 mr-2" />
@@ -239,7 +245,7 @@ export default function StoragePage() {
           <Button
             variant="outline"
             className="justify-start"
-            onClick={() => router.push('/dashboard/files')}
+            onClick={() => router.push("/dashboard/files")}
           >
             <span className="flex justify-center items-center">
               <CloudIcon className="h-5 w-5 mr-2" />

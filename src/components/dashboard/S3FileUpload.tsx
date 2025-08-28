@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowUpTrayIcon,
   XMarkIcon,
   DocumentIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
-import ProgressBar from '@/components/ui/ProgressBar';
+} from "@heroicons/react/24/outline";
+import Button from "@/components/ui/Button";
+import ProgressBar from "@/components/ui/ProgressBar";
+import { logger } from "@/utils/logger";
 
 interface S3FileUploadProps {
   isOpen: boolean;
@@ -23,11 +24,16 @@ interface UploadFile {
   file: File;
   id: string;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: "pending" | "uploading" | "success" | "error";
   error?: string;
 }
 
-export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadComplete }: S3FileUploadProps) {
+export default function S3FileUpload({
+  isOpen,
+  onClose,
+  currentPath,
+  onUploadComplete,
+}: S3FileUploadProps) {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -36,21 +42,24 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (!files) return;
 
-    const newFiles: UploadFile[] = Array.from(files).map(file => ({
+    const newFiles: UploadFile[] = Array.from(files).map((file) => ({
       file,
       id: Math.random().toString(36).substr(2, 9),
       progress: 0,
-      status: 'pending',
+      status: "pending",
     }));
 
-    setUploadFiles(prev => [...prev, ...newFiles]);
+    setUploadFiles((prev) => [...prev, ...newFiles]);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFileSelect(e.dataTransfer.files);
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      handleFileSelect(e.dataTransfer.files);
+    },
+    [handleFileSelect]
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -63,74 +72,93 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
   }, []);
 
   const removeFile = useCallback((id: string) => {
-    setUploadFiles(prev => prev.filter(f => f.id !== id));
+    setUploadFiles((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
   const uploadAllFiles = useCallback(async () => {
     if (uploadFiles.length === 0) return;
 
     setIsUploading(true);
-    setUploadFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
+    setUploadFiles((prev) =>
+      prev.map((f) => ({ ...f, status: "uploading" as const }))
+    );
 
-    const uploadPromises = uploadFiles.map(uploadFile => {
+    const uploadPromises = uploadFiles.map((uploadFile) => {
       return new Promise(async (resolve, reject) => {
         try {
-          const presignedUrlResponse = await fetch('/api/s3-files/presigned-url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fileName: uploadFile.file.name,
-              fileType: uploadFile.file.type,
-              fileSize: uploadFile.file.size,
-              path: currentPath,
-            }),
-          });
+          const presignedUrlResponse = await fetch(
+            "/api/s3-files/presigned-url",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fileName: uploadFile.file.name,
+                fileType: uploadFile.file.type,
+                fileSize: uploadFile.file.size,
+                path: currentPath,
+              }),
+            }
+          );
 
           if (!presignedUrlResponse.ok) {
             const errorData = await presignedUrlResponse.json();
-            throw new Error(errorData.message || 'Failed to get pre-signed URL');
+            throw new Error(
+              errorData.message || "Failed to get pre-signed URL"
+            );
           }
 
           const { data } = await presignedUrlResponse.json();
           const { url } = data;
 
           const xhr = new XMLHttpRequest();
-          xhr.open('PUT', url, true);
-          xhr.setRequestHeader('Content-Type', uploadFile.file.type);
+          xhr.open("PUT", url, true);
+          xhr.setRequestHeader("Content-Type", uploadFile.file.type);
 
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
               const progress = Math.round((event.loaded / event.total) * 100);
-              setUploadFiles(prev => prev.map(f =>
-                f.id === uploadFile.id ? { ...f, progress } : f
-              ));
+              setUploadFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFile.id ? { ...f, progress } : f
+                )
+              );
             }
           };
 
           xhr.onload = () => {
             if (xhr.status === 200) {
-              setUploadFiles(prev => prev.map(f =>
-                f.id === uploadFile.id ? { ...f, status: 'success' as const, progress: 100 } : f
-              ));
+              setUploadFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFile.id
+                    ? { ...f, status: "success" as const, progress: 100 }
+                    : f
+                )
+              );
               resolve(xhr.response);
             } else {
-              reject(new Error('S3 upload failed'));
+              reject(new Error("S3 upload failed"));
             }
           };
 
           xhr.onerror = () => {
-            reject(new Error('S3 upload failed'));
+            reject(new Error("S3 upload failed"));
           };
 
           xhr.send(uploadFile.file);
-
         } catch (error) {
-          console.error('Upload error:', error);
-          setUploadFiles(prev => prev.map(f =>
-            f.id === uploadFile.id
-              ? { ...f, status: 'error' as const, error: error instanceof Error ? error.message : 'Upload failed' }
-              : f
-          ));
+          logger.error("Upload error:", error);
+          setUploadFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadFile.id
+                ? {
+                    ...f,
+                    status: "error" as const,
+                    error:
+                      error instanceof Error ? error.message : "Upload failed",
+                  }
+                : f
+            )
+          );
           reject(error);
         }
       });
@@ -139,7 +167,7 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
     try {
       await Promise.all(uploadPromises);
     } catch (error) {
-      console.error('One or more uploads failed', error);
+      logger.error("One or more uploads failed", error);
     }
 
     setIsUploading(false);
@@ -149,14 +177,13 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
       onClose();
       setUploadFiles([]);
     }, 1500);
-
   }, [uploadFiles, currentPath, onUploadComplete, onClose]);
 
-  const getStatusIcon = (status: UploadFile['status']) => {
+  const getStatusIcon = (status: UploadFile["status"]) => {
     switch (status) {
-      case 'success':
+      case "success":
         return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'error':
+      case "error":
         return <ExclamationCircleIcon className="h-5 w-5 text-red-500" />;
       default:
         return <DocumentIcon className="h-5 w-5 text-gray-400" />;
@@ -164,11 +191,11 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   if (!isOpen) return null;
@@ -201,10 +228,11 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver
-              ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
-              }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              dragOver
+                ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20"
+                : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
+            }`}
           >
             <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <div>
@@ -212,7 +240,8 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
                 Drop files here or click to browse
               </p>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Upload to: {currentPath ? `/${currentPath.replace(/^\/+/, '')}` : '/root'}
+                Upload to:{" "}
+                {currentPath ? `/${currentPath.replace(/^\/+/, "")}` : "/root"}
               </p>
               <Button
                 variant="primary"
@@ -220,7 +249,7 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
                 onClick={() => fileInputRef.current?.click()}
                 className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
               >
-                <span className='flex items-center'>
+                <span className="flex items-center">
                   <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
                   Choose Files
                 </span>
@@ -258,18 +287,20 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
                           {formatFileSize(uploadFile.file.size)}
                         </p>
                         {uploadFile.error && (
-                          <p className="text-xs text-red-500 mt-1">{uploadFile.error}</p>
+                          <p className="text-xs text-red-500 mt-1">
+                            {uploadFile.error}
+                          </p>
                         )}
                       </div>
                     </div>
 
-                    {uploadFile.status === 'uploading' && (
+                    {uploadFile.status === "uploading" && (
                       <div className="ml-3 w-20">
                         <ProgressBar progress={uploadFile.progress} size="sm" />
                       </div>
                     )}
 
-                    {uploadFile.status === 'pending' && (
+                    {uploadFile.status === "pending" && (
                       <button
                         onClick={() => removeFile(uploadFile.id)}
                         className="ml-3 text-gray-400 hover:text-red-500"
@@ -295,7 +326,11 @@ export default function S3FileUpload({ isOpen, onClose, currentPath, onUploadCom
             disabled={uploadFiles.length === 0 || isUploading}
             loading={isUploading}
           >
-            {isUploading ? 'Uploading...' : `Upload ${uploadFiles.length} File${uploadFiles.length !== 1 ? 's' : ''}`}
+            {isUploading
+              ? "Uploading..."
+              : `Upload ${uploadFiles.length} File${
+                  uploadFiles.length !== 1 ? "s" : ""
+                }`}
           </Button>
         </div>
       </motion.div>

@@ -1,3 +1,5 @@
+import { logger } from "@/utils/logger";
+
 /**
  * Simple in-memory cache for S3 operations
  */
@@ -9,7 +11,7 @@ export class S3Cache {
   private readonly DEFAULT_TTL = 5 * 60 * 1000;
 
   set(key: string, data: unknown, ttl: number = this.DEFAULT_TTL) {
-    console.log("💾 Cache SET:", key);
+    logger.info("💾 Cache SET:", key);
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -20,17 +22,17 @@ export class S3Cache {
   get(key: string): unknown | null {
     const item = this.cache.get(key);
     if (!item) {
-      console.log("💾 Cache MISS:", key);
+      logger.info("💾 Cache MISS:", key);
       return null;
     }
 
     if (Date.now() - item.timestamp > item.ttl) {
-      console.log("💾 Cache EXPIRED:", key);
+      logger.info("💾 Cache EXPIRED:", key);
       this.cache.delete(key);
       return null;
     }
 
-    console.log("💾 Cache HIT:", key);
+    logger.info("💾 Cache HIT:", key);
     return item.data;
   }
 
@@ -42,7 +44,7 @@ export class S3Cache {
         this.cache.delete(key);
       }
     }
-    console.log(
+    logger.info(
       "💾 Cache INVALIDATED:",
       keysToDelete.length,
       "keys for pattern:",
@@ -51,7 +53,7 @@ export class S3Cache {
   }
 
   clear() {
-    console.log("💾 Cache CLEARED");
+    logger.info("💾 Cache CLEARED");
     this.cache.clear();
   }
 

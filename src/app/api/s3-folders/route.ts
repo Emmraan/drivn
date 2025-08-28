@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * POST /api/s3-folders
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -19,9 +20,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, parentPath } = body;
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Folder name is required' },
+        { success: false, message: "Folder name is required" },
         { status: 400 }
       );
     }
@@ -29,7 +30,10 @@ export async function POST(request: NextRequest) {
     const trimmedName = name.trim();
     if (trimmedName.length > 255) {
       return NextResponse.json(
-        { success: false, message: 'Folder name must be less than 255 characters' },
+        {
+          success: false,
+          message: "Folder name must be less than 255 characters",
+        },
         { status: 400 }
       );
     }
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
     const invalidChars = /[<>:"/\\|?*]/;
     if (invalidChars.test(trimmedName)) {
       return NextResponse.json(
-        { success: false, message: 'Folder name contains invalid characters' },
+        { success: false, message: "Folder name contains invalid characters" },
         { status: 400 }
       );
     }
@@ -45,7 +49,7 @@ export async function POST(request: NextRequest) {
     const result = await S3DirectService.createFolder(
       String(user._id),
       trimmedName,
-      parentPath || ''
+      parentPath || ""
     );
 
     if (result.success) {
@@ -61,9 +65,9 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('S3 folder create API error:', error);
+    logger.error("S3 folder create API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

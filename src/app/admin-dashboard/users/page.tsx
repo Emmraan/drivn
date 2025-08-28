@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
   DocumentIcon,
-} from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
-import { TableSkeleton } from '@/components/ui/SkeletonLoader';
-import Card from '@/components/ui/Card';
+} from "@heroicons/react/24/outline";
+import Button from "@/components/ui/Button";
+import { TableSkeleton } from "@/components/ui/SkeletonLoader";
+import Card from "@/components/ui/Card";
+import { logger } from "@/utils/logger";
 
 interface User {
   _id: string;
@@ -21,17 +22,16 @@ interface User {
   stats: {
     totalFiles: number;
     totalSize: number;
-    bucketType: 'user';
+    bucketType: "user";
   };
 }
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
 
   const loadUsers = useCallback(async () => {
     try {
@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
 
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20',
+        limit: "20",
         ...(searchQuery && { search: searchQuery }),
       });
 
@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
         setTotalPages(data.data.pagination.pages);
       }
     } catch (error) {
-      console.error('Error loading users:', error);
+      logger.error("Error loading users:", error);
     } finally {
       setLoading(false);
     }
@@ -75,27 +75,26 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, page, loadUsers]);
 
-
-
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -168,11 +167,14 @@ export default function AdminUsersPage() {
                             {user.email}
                           </div>
                           <div className="flex items-center mt-1">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${user.emailVerified
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                              }`}>
-                              {user.emailVerified ? 'Verified' : 'Unverified'}
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                user.emailVerified
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                              }`}
+                            >
+                              {user.emailVerified ? "Verified" : "Unverified"}
                             </span>
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                               {user.provider}
@@ -217,7 +219,7 @@ export default function AdminUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                   >
                     Previous
@@ -225,7 +227,7 @@ export default function AdminUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                   >
                     Next

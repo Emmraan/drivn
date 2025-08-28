@@ -1,17 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { StatCardSkeleton, CardSkeleton } from '@/components/ui/SkeletonLoader';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { StatCardSkeleton, CardSkeleton } from "@/components/ui/SkeletonLoader";
 import {
   CloudIcon,
   DocumentIcon,
   FolderIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface StorageStats {
   totalUsers: number;
@@ -25,7 +26,7 @@ interface StorageStats {
     storageUsed: number;
     fileCount: number;
     folderCount: number;
-    bucketType: 'user';
+    bucketType: "user";
   }>;
 }
 
@@ -38,18 +39,18 @@ export default function AdminStoragePage() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/admin/storage/stats');
+
+      const response = await fetch("/api/admin/storage/stats");
       const data = await response.json();
-      
+
       if (data.success) {
         setStats(data.stats);
       } else {
-        setError(data.message || 'Failed to load storage statistics');
+        setError(data.message || "Failed to load storage statistics");
       }
     } catch (error) {
-      console.error('Error loading storage stats:', error);
-      setError('Failed to load storage statistics');
+      logger.error("Error loading storage stats:", error);
+      setError("Failed to load storage statistics");
     } finally {
       setLoading(false);
     }
@@ -60,11 +61,11 @@ export default function AdminStoragePage() {
   }, []);
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   if (loading) {
@@ -165,8 +166,6 @@ export default function AdminStoragePage() {
           </Card>
         </motion.div>
 
-
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -250,7 +249,10 @@ export default function AdminStoragePage() {
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {stats?.storageByUser?.map((user) => (
-                  <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <tr
+                    key={user.userId}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -278,7 +280,10 @@ export default function AdminStoragePage() {
                   </tr>
                 )) || (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    <td
+                      colSpan={5}
+                      className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+                    >
                       No storage data available
                     </td>
                   </tr>

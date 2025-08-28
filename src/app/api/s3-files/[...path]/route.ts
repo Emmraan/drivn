@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * DELETE /api/s3-files/[...path]
@@ -14,17 +15,17 @@ export async function DELETE(
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { path } = await params;
-    const s3Key = path.join('/');
+    const s3Key = path.join("/");
 
     if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'S3 key is required' },
+        { success: false, message: "S3 key is required" },
         { status: 400 }
       );
     }
@@ -43,9 +44,9 @@ export async function DELETE(
       );
     }
   } catch (error) {
-    console.error('S3 file delete API error:', error);
+    logger.error("S3 file delete API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -63,31 +64,39 @@ export async function PATCH(
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { path } = await params;
-    const s3Key = path.join('/');
+    const s3Key = path.join("/");
     const body = await request.json();
     const { newName } = body;
 
     if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'S3 key is required' },
+        { success: false, message: "S3 key is required" },
         { status: 400 }
       );
     }
 
-    if (!newName || typeof newName !== 'string' || newName.trim().length === 0) {
+    if (
+      !newName ||
+      typeof newName !== "string" ||
+      newName.trim().length === 0
+    ) {
       return NextResponse.json(
-        { success: false, message: 'New file name is required' },
+        { success: false, message: "New file name is required" },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.renameFile(String(user._id), s3Key, newName.trim());
+    const result = await S3DirectService.renameFile(
+      String(user._id),
+      s3Key,
+      newName.trim()
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -102,9 +111,9 @@ export async function PATCH(
       );
     }
   } catch (error) {
-    console.error('S3 file rename API error:', error);
+    logger.error("S3 file rename API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

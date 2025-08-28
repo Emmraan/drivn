@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/auth/services/authService';
-import { validateName, validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { AuthService } from "@/auth/services/authService";
+import {
+  validateName,
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+} from "@/utils/validation";
+import { logger } from "@/utils/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +15,10 @@ export async function POST(request: NextRequest) {
 
     if (!name || !email || !password || !confirmPassword) {
       return NextResponse.json(
-        { success: false, message: 'Name, email, password, and confirm password are required' },
+        {
+          success: false,
+          message: "Name, email, password, and confirm password are required",
+        },
         { status: 400 }
       );
     }
@@ -38,29 +47,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const confirmPasswordValidation = validateConfirmPassword(password, confirmPassword);
+    const confirmPasswordValidation = validateConfirmPassword(
+      password,
+      confirmPassword
+    );
     if (confirmPasswordValidation) {
       return NextResponse.json(
         { success: false, message: confirmPasswordValidation },
         { status: 400 }
       );
     }
-    
 
     // External strong validation
     const URL = process.env.VALIDATOR_URL;
     const API_KEY = process.env.VALIDATOR_API_KEY;
 
-    if (process.env.VALIDATION_STRONG === 'true') {
+    if (process.env.VALIDATION_STRONG === "true") {
       try {
         const validationResponse = await fetch(URL!, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${API_KEY}`,
           },
           body: JSON.stringify({
-            validationType: 'dynamic',
+            validationType: "dynamic",
             formData: {
               email,
             },
@@ -80,20 +91,20 @@ export async function POST(request: NextRequest) {
               message:
                 Array.isArray(validationResult.errors) &&
                 validationResult.errors.length > 0 &&
-                typeof validationResult.errors[0].message === 'string'
-                  ? 'Disposable email is not allowed'
-                  : 'Email failed external validation',
+                typeof validationResult.errors[0].message === "string"
+                  ? "Disposable email is not allowed"
+                  : "Email failed external validation",
             },
             { status: 400 }
           );
         }
       } catch (validationError) {
-        console.error('Validation API error:', validationError);
+        logger.error("Validation API error:", validationError);
         return NextResponse.json(
           {
             success: false,
             message:
-              'External email validation failed. Please try again later.',
+              "External email validation failed. Please try again later.",
           },
           { status: 502 }
         );
@@ -112,9 +123,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error('Signup API error:', error);
+    logger.error("Signup API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

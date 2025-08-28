@@ -1,4 +1,5 @@
 import CryptoJS from "crypto-js";
+import { logger } from "@/utils/logger";
 
 /**
  * Encryption utilities for securing sensitive data like S3 credentials
@@ -33,7 +34,7 @@ export function encryptData<T>(data: T, userId: string): string {
     const encrypted = CryptoJS.AES.encrypt(jsonString, key).toString();
     return encrypted;
   } catch (error) {
-    console.error("Encryption error:", error);
+    logger.error("Encryption error:", error);
     throw new Error("Failed to encrypt data");
   }
 }
@@ -59,7 +60,7 @@ export function decryptData<T = unknown>(
 
     return JSON.parse(decryptedString) as T;
   } catch (error) {
-    console.error("Decryption error:", error);
+    logger.error("Decryption error:", error);
     throw new Error("Failed to decrypt data");
   }
 }

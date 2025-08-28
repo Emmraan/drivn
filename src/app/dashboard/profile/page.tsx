@@ -21,6 +21,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { ProfileSkeleton } from "@/components/ui/Skeleton";
+import { logger } from "@/utils/logger";
 
 export default function ProfilePage() {
   const { user, loading, updateUserProfile, updateUserPassword } = useAuth();
@@ -189,7 +190,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ image: "An error occurred while updating profile image" });
-      console.log(error);
+      logger.info(error);
     } finally {
       setIsUploading(false);
     }
@@ -218,7 +219,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ general: "An error occurred while updating profile" });
-      console.log(error);
+      logger.info(error);
     } finally {
       setIsUpdating(false);
     }
@@ -263,7 +264,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       setErrors({ password: "An error occurred while changing password" });
-      console.log(error);
+      logger.info(error);
     } finally {
       setIsChangingPassword(false);
     }

@@ -19,6 +19,7 @@ import {
   DocumentIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { logger } from "@/utils/logger";
 
 const getQuickActions = (
   setShowUploadModal: (show: boolean) => void,
@@ -92,7 +93,7 @@ export default function DashboardPage() {
         setHasS3Config(configData.hasConfig);
       }
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      logger.error("Error loading dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -183,7 +184,7 @@ export default function DashboardPage() {
           </p>
         </div>
       </motion.div>
-      
+
       {hasS3Config ? (
         <>
           {/* Stats */}

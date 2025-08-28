@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
+import { logger } from "@/utils/logger";
 
 interface DropdownPortalProps {
   children: React.ReactNode;
@@ -16,9 +17,9 @@ export default function DropdownPortal({
   children,
   isOpen,
   triggerRef,
-  className = '',
+  className = "",
   fallbackToInline = false,
-  onClickOutside
+  onClickOutside,
 }: DropdownPortalProps) {
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -32,8 +33,10 @@ export default function DropdownPortal({
     if (isOpen && onClickOutside && mounted) {
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as Node;
-        const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
-        const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+        const isOutsideTrigger =
+          triggerRef.current && !triggerRef.current.contains(target);
+        const isOutsideDropdown =
+          dropdownRef.current && !dropdownRef.current.contains(target);
 
         if (isOutsideTrigger && isOutsideDropdown) {
           onClickOutside();
@@ -41,12 +44,12 @@ export default function DropdownPortal({
       };
 
       const timeoutId = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
       }, 0);
 
       return () => {
         clearTimeout(timeoutId);
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutside);
       };
     }
   }, [isOpen, onClickOutside, mounted, triggerRef]);
@@ -58,19 +61,19 @@ export default function DropdownPortal({
         setPosition({
           top: rect.bottom + window.scrollY + 8,
           left: rect.right - 256 + window.scrollX,
-          width: 256
+          width: 256,
         });
       };
 
       updatePosition();
 
       const handleUpdate = () => updatePosition();
-      window.addEventListener('scroll', handleUpdate);
-      window.addEventListener('resize', handleUpdate);
+      window.addEventListener("scroll", handleUpdate);
+      window.addEventListener("resize", handleUpdate);
 
       return () => {
-        window.removeEventListener('scroll', handleUpdate);
-        window.removeEventListener('resize', handleUpdate);
+        window.removeEventListener("scroll", handleUpdate);
+        window.removeEventListener("resize", handleUpdate);
       };
     }
   }, [isOpen, triggerRef, mounted]);
@@ -79,7 +82,7 @@ export default function DropdownPortal({
     return null;
   }
 
-  if (fallbackToInline || typeof window === 'undefined') {
+  if (fallbackToInline || typeof window === "undefined") {
     return (
       <div className={`absolute dropdown-menu-top right-0 mt-2 ${className}`}>
         {children}
@@ -95,7 +98,7 @@ export default function DropdownPortal({
         top: position.top,
         left: position.left,
         width: position.width,
-        zIndex: 9999
+        zIndex: 9999,
       }}
     >
       {children}
@@ -105,7 +108,7 @@ export default function DropdownPortal({
   try {
     return createPortal(portalContent, document.body);
   } catch (error) {
-    console.warn('Portal failed, falling back to inline dropdown:', error);
+    logger.warn("Portal failed, falling back to inline dropdown:", error);
     return (
       <div className={`absolute dropdown-menu-top right-0 mt-2 ${className}`}>
         {children}

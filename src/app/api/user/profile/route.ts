@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import connectDB from "@/utils/database";
 import User from "@/auth/models/User";
 import bcrypt from "bcryptjs";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/user/profile
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Get user profile API error:", error);
+    logger.error("Get user profile API error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -134,7 +135,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Update user profile API error:", error);
+    logger.error("Update user profile API error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import { validateS3Config } from "@/utils/encryption";
+import { logger } from "@/utils/logger";
 
 /**
  * POST /api/s3-config/test
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(testResult, { status: 400 });
     }
   } catch (error) {
-    console.error("Error testing S3 configuration:", error);
+    logger.error("Error testing S3 configuration:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

@@ -17,6 +17,7 @@ import {
   CogIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface DashboardHeaderProps {
   user: {
@@ -53,7 +54,7 @@ export default function DashboardHeader({
       await logout();
       router.push("/");
     } catch (error) {
-      console.error("Logout error:", error);
+      logger.error("Logout error:", error);
     }
   };
 

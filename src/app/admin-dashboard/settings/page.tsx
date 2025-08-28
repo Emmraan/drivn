@@ -1,19 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import TextArea from '@/components/ui/TextArea';
-import { CardSkeleton } from '@/components/ui/SkeletonLoader';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import TextArea from "@/components/ui/TextArea";
+import { CardSkeleton } from "@/components/ui/SkeletonLoader";
 import {
   CogIcon,
   ShieldCheckIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface AdminSettings {
   platformSettings: {
@@ -46,18 +47,18 @@ export default function AdminSettingsPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/admin/settings');
+
+      const response = await fetch("/api/admin/settings");
       const data = await response.json();
-      
+
       if (data.success) {
         setSettings(data.settings);
       } else {
-        setError(data.message || 'Failed to load settings');
+        setError(data.message || "Failed to load settings");
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
-      setError('Failed to load settings');
+      logger.error("Error loading settings:", error);
+      setError("Failed to load settings");
     } finally {
       setLoading(false);
     }
@@ -70,26 +71,26 @@ export default function AdminSettingsPage() {
       setSaving(true);
       setError(null);
       setSuccess(null);
-      
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
+
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(settings),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        setSuccess('Settings saved successfully');
+        setSuccess("Settings saved successfully");
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(data.message || 'Failed to save settings');
+        setError(data.message || "Failed to save settings");
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
-      setError('Failed to save settings');
+      logger.error("Error saving settings:", error);
+      setError("Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -99,7 +100,10 @@ export default function AdminSettingsPage() {
     loadSettings();
   }, []);
 
-  const updatePlatformSetting = (key: keyof AdminSettings['platformSettings'], value: string | number | boolean | string[]) => {
+  const updatePlatformSetting = (
+    key: keyof AdminSettings["platformSettings"],
+    value: string | number | boolean | string[]
+  ) => {
     if (!settings) return;
     setSettings({
       ...settings,
@@ -110,7 +114,10 @@ export default function AdminSettingsPage() {
     });
   };
 
-  const updateSecuritySetting = (key: keyof AdminSettings['securitySettings'], value: number | boolean) => {
+  const updateSecuritySetting = (
+    key: keyof AdminSettings["securitySettings"],
+    value: number | boolean
+  ) => {
     if (!settings) return;
     setSettings({
       ...settings,
@@ -188,11 +195,7 @@ export default function AdminSettingsPage() {
           >
             Refresh
           </Button>
-          <Button
-            onClick={saveSettings}
-            loading={saving}
-            variant="primary"
-          >
+          <Button onClick={saveSettings} loading={saving} variant="primary">
             Save Changes
           </Button>
         </div>
@@ -220,7 +223,9 @@ export default function AdminSettingsPage() {
         >
           <div className="flex items-center">
             <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-            <span className="text-green-700 dark:text-green-400">{success}</span>
+            <span className="text-green-700 dark:text-green-400">
+              {success}
+            </span>
           </div>
         </motion.div>
       )}
@@ -239,53 +244,80 @@ export default function AdminSettingsPage() {
                 Platform Settings
               </h3>
             </div>
-            
+
             <div className="space-y-4">
               <Input
                 label="Site Name"
-                value={settings?.platformSettings?.siteName || ''}
-                onChange={(e) => updatePlatformSetting('siteName', e.target.value)}
+                value={settings?.platformSettings?.siteName || ""}
+                onChange={(e) =>
+                  updatePlatformSetting("siteName", e.target.value)
+                }
                 placeholder="Enter site name"
               />
-              
+
               <TextArea
                 label="Site Description"
-                value={settings?.platformSettings?.siteDescription || ''}
-                onChange={(e) => updatePlatformSetting('siteDescription', e.target.value)}
+                value={settings?.platformSettings?.siteDescription || ""}
+                onChange={(e) =>
+                  updatePlatformSetting("siteDescription", e.target.value)
+                }
                 placeholder="Enter site description"
                 rows={3}
               />
-              
+
               <Input
                 label="Max File Size (MB)"
                 type="number"
                 value={settings?.platformSettings?.maxFileSize || 0}
-                onChange={(e) => updatePlatformSetting('maxFileSize', parseInt(e.target.value))}
+                onChange={(e) =>
+                  updatePlatformSetting("maxFileSize", parseInt(e.target.value))
+                }
                 placeholder="Enter max file size"
               />
-              
+
               <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id="enableRegistration"
-                  checked={settings?.platformSettings?.enableRegistration || false}
-                  onChange={(e) => updatePlatformSetting('enableRegistration', e.target.checked)}
+                  checked={
+                    settings?.platformSettings?.enableRegistration || false
+                  }
+                  onChange={(e) =>
+                    updatePlatformSetting(
+                      "enableRegistration",
+                      e.target.checked
+                    )
+                  }
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
-                <label htmlFor="enableRegistration" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="enableRegistration"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Enable User Registration
                 </label>
               </div>
-              
+
               <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id="requireEmailVerification"
-                  checked={settings?.platformSettings?.requireEmailVerification || false}
-                  onChange={(e) => updatePlatformSetting('requireEmailVerification', e.target.checked)}
+                  checked={
+                    settings?.platformSettings?.requireEmailVerification ||
+                    false
+                  }
+                  onChange={(e) =>
+                    updatePlatformSetting(
+                      "requireEmailVerification",
+                      e.target.checked
+                    )
+                  }
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
-                <label htmlFor="requireEmailVerification" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="requireEmailVerification"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Require Email Verification
                 </label>
               </div>
@@ -294,7 +326,6 @@ export default function AdminSettingsPage() {
         </motion.div>
 
         {/* Storage Settings */}
-
 
         {/* Security Settings */}
         <motion.div
@@ -310,41 +341,61 @@ export default function AdminSettingsPage() {
                 Security Settings
               </h3>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Session Timeout (minutes)"
                 type="number"
                 value={settings?.securitySettings?.sessionTimeout || 0}
-                onChange={(e) => updateSecuritySetting('sessionTimeout', parseInt(e.target.value))}
+                onChange={(e) =>
+                  updateSecuritySetting(
+                    "sessionTimeout",
+                    parseInt(e.target.value)
+                  )
+                }
                 placeholder="Enter session timeout"
               />
-              
+
               <Input
                 label="Max Login Attempts"
                 type="number"
                 value={settings?.securitySettings?.maxLoginAttempts || 0}
-                onChange={(e) => updateSecuritySetting('maxLoginAttempts', parseInt(e.target.value))}
+                onChange={(e) =>
+                  updateSecuritySetting(
+                    "maxLoginAttempts",
+                    parseInt(e.target.value)
+                  )
+                }
                 placeholder="Enter max attempts"
               />
-              
+
               <Input
                 label="Password Min Length"
                 type="number"
                 value={settings?.securitySettings?.passwordMinLength || 0}
-                onChange={(e) => updateSecuritySetting('passwordMinLength', parseInt(e.target.value))}
+                onChange={(e) =>
+                  updateSecuritySetting(
+                    "passwordMinLength",
+                    parseInt(e.target.value)
+                  )
+                }
                 placeholder="Enter min length"
               />
-              
+
               <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id="enableTwoFactor"
                   checked={settings?.securitySettings?.enableTwoFactor || false}
-                  onChange={(e) => updateSecuritySetting('enableTwoFactor', e.target.checked)}
+                  onChange={(e) =>
+                    updateSecuritySetting("enableTwoFactor", e.target.checked)
+                  }
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
-                <label htmlFor="enableTwoFactor" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="enableTwoFactor"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Enable Two-Factor Authentication
                 </label>
               </div>

@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   XMarkIcon,
   ArrowDownTrayIcon,
   DocumentIcon,
   ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/SkeletonLoader';
-import Image from 'next/image';
+} from "@heroicons/react/24/outline";
+import Button from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/SkeletonLoader";
+import Image from "next/image";
+import { logger } from "@/utils/logger";
 
 interface FilePreviewModalProps {
   isOpen: boolean;
@@ -23,42 +24,46 @@ interface FilePreviewModalProps {
   } | null;
 }
 
-export default function FilePreviewModal({ isOpen, onClose, file }: FilePreviewModalProps) {  
+export default function FilePreviewModal({
+  isOpen,
+  onClose,
+  file,
+}: FilePreviewModalProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-const loadPreview = useCallback(async () => {
-  if (!file) return;
+  const loadPreview = useCallback(async () => {
+    if (!file) return;
 
-  setLoading(true);
-  setError(null);
-
-  try {
-    const response = await fetch(`/api/files/${file._id}/preview`);
-    const data = await response.json();
-
-    if (data.success) {
-      setPreviewUrl(data.url);
-    } else {
-      setError(data.message || 'Failed to load preview');
-    }
-  } catch (error) {
-    console.error('Error loading preview:', error);
-    setError('Failed to load preview');
-  } finally {
-    setLoading(false);
-  }
-}, [file]);
-
-useEffect(() => {
-  if (isOpen && file) {
-    loadPreview();
-  } else {
-    setPreviewUrl(null);
+    setLoading(true);
     setError(null);
-  }
-}, [isOpen, file, loadPreview]);
+
+    try {
+      const response = await fetch(`/api/files/${file._id}/preview`);
+      const data = await response.json();
+
+      if (data.success) {
+        setPreviewUrl(data.url);
+      } else {
+        setError(data.message || "Failed to load preview");
+      }
+    } catch (error) {
+      logger.error("Error loading preview:", error);
+      setError("Failed to load preview");
+    } finally {
+      setLoading(false);
+    }
+  }, [file]);
+
+  useEffect(() => {
+    if (isOpen && file) {
+      loadPreview();
+    } else {
+      setPreviewUrl(null);
+      setError(null);
+    }
+  }, [isOpen, file, loadPreview]);
 
   const handleDownload = async () => {
     if (!file) return;
@@ -68,7 +73,7 @@ useEffect(() => {
       const data = await response.json();
 
       if (data.success && data.url) {
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = data.url;
         link.download = file.name;
         document.body.appendChild(link);
@@ -76,23 +81,25 @@ useEffect(() => {
         document.body.removeChild(link);
       }
     } catch (error) {
-      console.error('Error downloading file:', error);
+      logger.error("Error downloading file:", error);
     }
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const isPreviewable = (mimeType: string) => {
-    return mimeType.startsWith('image/') ||
-      mimeType === 'application/pdf' ||
-      mimeType.startsWith('text/') ||
-      mimeType === 'application/json';
+    return (
+      mimeType.startsWith("image/") ||
+      mimeType === "application/pdf" ||
+      mimeType.startsWith("text/") ||
+      mimeType === "application/json"
+    );
   };
 
   if (!isOpen || !file) return null;
@@ -100,7 +107,10 @@ useEffect(() => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-md transition-opacity" onClick={onClose} />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-md transition-opacity"
+          onClick={onClose}
+        />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -148,7 +158,11 @@ useEffect(() => {
                   <Skeleton variant="text" width="40%" height="1.5rem" />
                   <Skeleton variant="text" width="60%" />
                 </div>
-                <Skeleton variant="rounded" height="20rem" className="animate-pulse" />
+                <Skeleton
+                  variant="rounded"
+                  height="20rem"
+                  className="animate-pulse"
+                />
                 <div className="flex justify-center space-x-4">
                   <Skeleton variant="rounded" width="6rem" height="2.5rem" />
                   <Skeleton variant="rounded" width="8rem" height="2.5rem" />
@@ -160,9 +174,7 @@ useEffect(() => {
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Preview Not Available
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  {error}
-                </p>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                 <Button
                   variant="primary"
                   onClick={handleDownload}
@@ -190,19 +202,20 @@ useEffect(() => {
               </div>
             ) : previewUrl ? (
               <div className="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                {file.mimeType.startsWith('image/') ? (
+                {file.mimeType.startsWith("image/") ? (
                   <Image
                     src={previewUrl}
                     alt={file.name}
                     className="w-full h-auto max-h-96 object-contain"
                   />
-                ) : file.mimeType === 'application/pdf' ? (
+                ) : file.mimeType === "application/pdf" ? (
                   <iframe
                     src={previewUrl}
                     className="w-full h-96"
                     title={file.name}
                   />
-                ) : file.mimeType.startsWith('text/') || file.mimeType === 'application/json' ? (
+                ) : file.mimeType.startsWith("text/") ||
+                  file.mimeType === "application/json" ? (
                   <iframe
                     src={previewUrl}
                     className="w-full h-96"

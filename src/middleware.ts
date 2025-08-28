@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { logger } from "@/utils/logger";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -40,7 +41,7 @@ export async function middleware(request: NextRequest) {
       isTokenValid = !!verified;
       userEmail = (verified.payload as { email?: string }).email || "";
     } catch (err) {
-      console.warn("JWT verification failed:", err);
+      logger.warn("JWT verification failed:", err);
     }
   }
 
@@ -49,7 +50,7 @@ export async function middleware(request: NextRequest) {
   if (isTokenValid) {
     if (isAdminRoute) {
       const adminEmail = process.env.ADMIN_EMAIL;
-      console.log("Admin check:", {
+      logger.info("Admin check:", {
         adminEmail,
         userEmail,
         isMatch:
@@ -57,10 +58,10 @@ export async function middleware(request: NextRequest) {
       });
 
       if (!adminEmail || userEmail.toLowerCase() !== adminEmail.toLowerCase()) {
-        console.log("Admin access denied, redirecting to dashboard");
+        logger.info("Admin access denied, redirecting to dashboard");
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
-      console.log("Admin access granted");
+      logger.info("Admin access granted");
     }
 
     if (isAuthRoute || isHomeRoute) {

@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/auth/middleware/adminMiddleware';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
-import FileMetadata from '@/models/FileMetadata';
-import { Types } from 'mongoose';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/auth/middleware/adminMiddleware";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import FileMetadata from "@/models/FileMetadata";
+import { Types } from "mongoose";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/admin/users
@@ -14,22 +15,22 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
 
     const searchQuery = search
       ? {
           $or: [
-            { email: { $regex: search, $options: 'i' } },
-            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: "i" } },
+            { name: { $regex: search, $options: "i" } },
           ],
         }
       : {};
 
     const skip = (page - 1) * limit;
     const users = await User.find(searchQuery)
-      .select('-password -s3Config.secretAccessKey')
+      .select("-password -s3Config.secretAccessKey")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -44,8 +45,8 @@ export const GET = requireAdmin(async (request: NextRequest) => {
             $group: {
               _id: null,
               totalFiles: { $sum: 1 },
-              totalSize: { $sum: '$fileSize' },
-              bucketTypes: { $addToSet: '$bucketType' },
+              totalSize: { $sum: "$fileSize" },
+              bucketTypes: { $addToSet: "$bucketType" },
             },
           },
         ]);
@@ -63,7 +64,7 @@ export const GET = requireAdmin(async (request: NextRequest) => {
           stats: {
             totalFiles: stats.totalFiles,
             totalSize: stats.totalSize,
-            bucketType: 'user' as const,
+            bucketType: "user" as const,
           },
         };
       })
@@ -82,9 +83,9 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       },
     });
   } catch (error) {
-    console.error('Admin users API error:', error);
+    logger.error("Admin users API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

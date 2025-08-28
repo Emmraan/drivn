@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/s3-files/download/[...path]
@@ -14,22 +15,25 @@ export async function GET(
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { path } = await params;
-    const s3Key = path.join('/');
+    const s3Key = path.join("/");
 
     if (!s3Key) {
       return NextResponse.json(
-        { success: false, message: 'S3 key is required' },
+        { success: false, message: "S3 key is required" },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.getDownloadUrl(String(user._id), s3Key);
+    const result = await S3DirectService.getDownloadUrl(
+      String(user._id),
+      s3Key
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -44,9 +48,9 @@ export async function GET(
       );
     }
   } catch (error) {
-    console.error('S3 file download URL API error:', error);
+    logger.error("S3 file download URL API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

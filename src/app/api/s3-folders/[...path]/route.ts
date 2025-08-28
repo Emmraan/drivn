@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * DELETE /api/s3-folders/[...path]
@@ -14,22 +15,25 @@ export async function DELETE(
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { path } = await params;
-    const folderPath = path.join('/');
+    const folderPath = path.join("/");
 
     if (!folderPath) {
       return NextResponse.json(
-        { success: false, message: 'Folder path is required' },
+        { success: false, message: "Folder path is required" },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.deleteFolder(String(user._id), folderPath);
+    const result = await S3DirectService.deleteFolder(
+      String(user._id),
+      folderPath
+    );
 
     if (result.success) {
       S3DirectService.forceClearUserCache(String(user._id));
@@ -46,9 +50,9 @@ export async function DELETE(
       );
     }
   } catch (error) {
-    console.error('S3 folder delete API error:', error);
+    logger.error("S3 folder delete API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -66,31 +70,39 @@ export async function PATCH(
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { path } = await params;
-    const folderPath = path.join('/');
+    const folderPath = path.join("/");
     const body = await request.json();
     const { newName } = body;
 
     if (!folderPath) {
       return NextResponse.json(
-        { success: false, message: 'Folder path is required' },
+        { success: false, message: "Folder path is required" },
         { status: 400 }
       );
     }
 
-    if (!newName || typeof newName !== 'string' || newName.trim().length === 0) {
+    if (
+      !newName ||
+      typeof newName !== "string" ||
+      newName.trim().length === 0
+    ) {
       return NextResponse.json(
-        { success: false, message: 'New folder name is required' },
+        { success: false, message: "New folder name is required" },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.renameFolder(String(user._id), folderPath, newName.trim());
+    const result = await S3DirectService.renameFolder(
+      String(user._id),
+      folderPath,
+      newName.trim()
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -105,9 +117,9 @@ export async function PATCH(
       );
     }
   } catch (error) {
-    console.error('S3 folder rename API error:', error);
+    logger.error("S3 folder rename API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

@@ -1,3 +1,5 @@
+import { logger } from "@/utils/logger";
+
 /**
  * Utility functions for handling profile images and URL management
  */
@@ -55,7 +57,7 @@ export function isPresignedUrlExpired(
 
     return new Date() >= bufferTime;
   } catch (error) {
-    console.error("Error checking presigned URL expiration:", error);
+    logger.error("Error checking presigned URL expiration:", error);
     return false;
   }
 }
@@ -120,7 +122,7 @@ export function extractS3KeyFromUrl(url: string): string | null {
 
     return null;
   } catch (error) {
-    console.error("Error extracting S3 key from URL:", error);
+    logger.error("Error extracting S3 key from URL:", error);
     return null;
   }
 }
@@ -146,7 +148,7 @@ export async function refreshProfileImageUrl(): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error("Error refreshing profile image URL:", error);
+    logger.error("Error refreshing profile image URL:", error);
     return null;
   }
 }

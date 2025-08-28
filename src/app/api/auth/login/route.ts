@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/auth/services/authService';
-import { validateEmail, validatePassword } from '@/utils/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { AuthService } from "@/auth/services/authService";
+import { validateEmail, validatePassword } from "@/utils/validation";
+import { logger } from "@/utils/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, message: 'Email and password are required' },
+        { success: false, message: "Email and password are required" },
         { status: 400 }
       );
     }
@@ -42,26 +43,31 @@ export async function POST(request: NextRequest) {
         user: result.user,
       });
 
-      response.cookies.set('auth-token', result.token, {
+      response.cookies.set("auth-token", result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60,
-        path: '/',
+        path: "/",
       });
 
       return response;
     } else {
-      return NextResponse.json({
-        success: result.success,
-        message: result.message,
-        requiresVerification: (result as { requiresVerification?: boolean }).requiresVerification || false,
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: result.success,
+          message: result.message,
+          requiresVerification:
+            (result as { requiresVerification?: boolean })
+              .requiresVerification || false,
+        },
+        { status: 401 }
+      );
     }
   } catch (error) {
-    console.error('Login API error:', error);
+    logger.error("Login API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

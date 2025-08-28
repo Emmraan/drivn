@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import { validateS3Config } from "@/utils/encryption";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/s3-config
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error retrieving S3 configuration:", error);
+    logger.error("Error retrieving S3 configuration:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("Error saving S3 configuration:", error);
+    logger.error("Error saving S3 configuration:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -151,7 +152,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("Error deleting S3 configuration:", error);
+    logger.error("Error deleting S3 configuration:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

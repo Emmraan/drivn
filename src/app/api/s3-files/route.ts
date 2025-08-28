@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/s3-files
@@ -11,19 +12,27 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const path = searchParams.get('path') || '';
-    const maxKeys = parseInt(searchParams.get('maxKeys') || '50');
-    const continuationToken = searchParams.get('continuationToken') || undefined;
-    const includeMetadata = searchParams.get('includeMetadata') === 'true';
-    const noCache = searchParams.get('noCache') === 'true';
+    const path = searchParams.get("path") || "";
+    const maxKeys = parseInt(searchParams.get("maxKeys") || "50");
+    const continuationToken =
+      searchParams.get("continuationToken") || undefined;
+    const includeMetadata = searchParams.get("includeMetadata") === "true";
+    const noCache = searchParams.get("noCache") === "true";
 
-    console.log('🔍 S3 files API called:', { path, maxKeys, continuationToken, includeMetadata, noCache, userId: String(user._id) });
+    logger.info("🔍 S3 files API called:", {
+      path,
+      maxKeys,
+      continuationToken,
+      includeMetadata,
+      noCache,
+      userId: String(user._id),
+    });
 
     if (noCache) {
       S3DirectService.forceClearUserCache(String(user._id));
@@ -58,9 +67,9 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('S3 files list API error:', error);
+    logger.error("S3 files list API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

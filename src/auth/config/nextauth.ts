@@ -1,6 +1,7 @@
-import GoogleProvider from 'next-auth/providers/google';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
+import GoogleProvider from "next-auth/providers/google";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import { logger } from "@/utils/logger";
 
 export const authOptions = {
   providers: [
@@ -10,21 +11,30 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }: { user: { email: string; name: string; image?: string }; account: { provider: string; providerAccountId: string } | null }) {
-      if (account?.provider === 'google') {
+    async signIn({
+      user,
+      account,
+    }: {
+      user: { email: string; name: string; image?: string };
+      account: { provider: string; providerAccountId: string } | null;
+    }) {
+      if (account?.provider === "google") {
         try {
           await connectDB();
 
           const existingUser = await User.findOne({ email: user.email });
 
           if (existingUser) {
-            if (existingUser.provider === 'credentials' && !existingUser.googleId) {
-              return '/login?error=OAuthAccountNotLinked';
+            if (
+              existingUser.provider === "credentials" &&
+              !existingUser.googleId
+            ) {
+              return "/login?error=OAuthAccountNotLinked";
             }
 
             if (!existingUser.googleId && account.providerAccountId) {
               existingUser.googleId = account.providerAccountId;
-              existingUser.provider = 'google';
+              existingUser.provider = "google";
               existingUser.image = user.image;
               existingUser.emailVerified = new Date();
               await existingUser.save();
@@ -34,7 +44,7 @@ export const authOptions = {
               email: user.email,
               name: user.name,
               image: user.image,
-              provider: 'google',
+              provider: "google",
               googleId: account.providerAccountId,
               emailVerified: new Date(),
             });
@@ -42,15 +52,23 @@ export const authOptions = {
 
           return true;
         } catch (error) {
-          console.error('Error during Google sign in:', error);
+          logger.error("Error during Google sign in:", error);
           return false;
         }
       }
 
       return true;
     },
-    async jwt({ token, user, account }: { token: { userId?: string; [key: string]: unknown }; user?: { email: string }; account?: { provider: string } | null }) {
-      if (account?.provider === 'google' && user) {
+    async jwt({
+      token,
+      user,
+      account,
+    }: {
+      token: { userId?: string; [key: string]: unknown };
+      user?: { email: string };
+      account?: { provider: string } | null;
+    }) {
+      if (account?.provider === "google" && user) {
         await connectDB();
         const dbUser = await User.findOne({ email: user.email });
         if (dbUser) {
@@ -59,7 +77,13 @@ export const authOptions = {
       }
       return token;
     },
-    async session({ session, token }: { session: { user?: { id?: string; [key: string]: unknown } }; token: { userId?: string } }) {
+    async session({
+      session,
+      token,
+    }: {
+      session: { user?: { id?: string; [key: string]: unknown } };
+      token: { userId?: string };
+    }) {
       if (token.userId && session.user) {
         session.user.id = token.userId as string;
       }
@@ -67,11 +91,11 @@ export const authOptions = {
     },
   },
   pages: {
-    signIn: '/login',
-    error: '/auth/error',
+    signIn: "/login",
+    error: "/auth/error",
   },
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

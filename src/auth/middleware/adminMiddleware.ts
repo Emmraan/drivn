@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server';
-import { getAuthenticatedUser } from './authMiddleware';
+import { NextRequest } from "next/server";
+import { getAuthenticatedUser } from "./authMiddleware";
+import { logger } from "@/utils/logger";
 
 /**
  * Check if the authenticated user is an admin
@@ -9,15 +10,15 @@ import { getAuthenticatedUser } from './authMiddleware';
 export async function getAuthenticatedAdmin(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
-    
+
     if (!user) {
       return null;
     }
 
     const adminEmail = process.env.ADMIN_EMAIL;
-    
+
     if (!adminEmail) {
-      console.warn('ADMIN_EMAIL environment variable not set');
+      logger.warn("ADMIN_EMAIL environment variable not set");
       return null;
     }
 
@@ -27,7 +28,7 @@ export async function getAuthenticatedAdmin(request: NextRequest) {
 
     return null;
   } catch (error) {
-    console.error('Admin middleware error:', error);
+    logger.error("Admin middleware error:", error);
     return null;
   }
 }
@@ -39,7 +40,7 @@ export async function getAuthenticatedAdmin(request: NextRequest) {
  */
 export function isAdminEmail(email: string): boolean {
   const adminEmail = process.env.ADMIN_EMAIL;
-  
+
   if (!adminEmail) {
     return false;
   }
@@ -60,7 +61,7 @@ export function requireAdmin<T extends unknown[]>(
 
     if (!admin) {
       return Response.json(
-        { success: false, message: 'Admin access required' },
+        { success: false, message: "Admin access required" },
         { status: 403 }
       );
     }

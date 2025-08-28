@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/auth/middleware/adminMiddleware';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
-import ActivityLog from '@/models/ActivityLog';
-import FileMetadata from '@/models/FileMetadata';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/auth/middleware/adminMiddleware";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import ActivityLog from "@/models/ActivityLog";
+import FileMetadata from "@/models/FileMetadata";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/admin/analytics
@@ -14,12 +15,14 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const range = searchParams.get('range') || '30d';
+    const range = searchParams.get("range") || "30d";
 
     const now = new Date();
-    const daysBack = range === '7d' ? 7 : range === '30d' ? 30 : 90;
+    const daysBack = range === "7d" ? 7 : range === "30d" ? 30 : 90;
     const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
-    const previousStartDate = new Date(startDate.getTime() - daysBack * 24 * 60 * 60 * 1000);
+    const previousStartDate = new Date(
+      startDate.getTime() - daysBack * 24 * 60 * 60 * 1000
+    );
 
     const currentUsers = await User.countDocuments({
       createdAt: { $gte: startDate },
@@ -30,11 +33,11 @@ export const GET = requireAdmin(async (request: NextRequest) => {
     const totalUsers = await User.countDocuments();
 
     const currentUploads = await ActivityLog.countDocuments({
-      action: 'upload',
+      action: "upload",
       timestamp: { $gte: startDate },
     });
     const previousUploads = await ActivityLog.countDocuments({
-      action: 'upload',
+      action: "upload",
       timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
@@ -47,7 +50,7 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$fileSize' },
+          totalSize: { $sum: "$fileSize" },
         },
       },
     ]);
@@ -61,7 +64,7 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$fileSize' },
+          totalSize: { $sum: "$fileSize" },
         },
       },
     ]);
@@ -70,51 +73,51 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       {
         $group: {
           _id: null,
-          totalSize: { $sum: '$fileSize' },
+          totalSize: { $sum: "$fileSize" },
         },
       },
     ]);
 
-    const currentActiveUsers = await ActivityLog.distinct('userId', {
-      action: 'upload',
+    const currentActiveUsers = await ActivityLog.distinct("userId", {
+      action: "upload",
       timestamp: { $gte: startDate },
     });
-    const previousActiveUsers = await ActivityLog.distinct('userId', {
-      action: 'upload',
+    const previousActiveUsers = await ActivityLog.distinct("userId", {
+      action: "upload",
       timestamp: { $gte: previousStartDate, $lt: startDate },
     });
 
     const topUsers = await ActivityLog.aggregate([
       {
         $match: {
-          action: 'upload',
+          action: "upload",
           timestamp: { $gte: startDate },
         },
       },
       {
         $group: {
-          _id: '$userId',
+          _id: "$userId",
           fileCount: { $sum: 1 },
-          storageUsed: { $sum: '$fileSize' },
-          lastActive: { $max: '$timestamp' },
+          storageUsed: { $sum: "$fileSize" },
+          lastActive: { $max: "$timestamp" },
         },
       },
       {
         $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user',
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
         },
       },
       {
-        $unwind: '$user',
+        $unwind: "$user",
       },
       {
         $project: {
-          userId: '$_id',
-          userName: '$user.name',
-          userEmail: '$user.email',
+          userId: "$_id",
+          userName: "$user.name",
+          userEmail: "$user.email",
           fileCount: 1,
           storageUsed: 1,
           lastActive: 1,
@@ -156,9 +159,12 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       activeUsers: {
         total: currentActiveUsers.length,
         change: currentActiveUsers.length - previousActiveUsers.length,
-        changePercent: calculateChange(currentActiveUsers.length, previousActiveUsers.length),
+        changePercent: calculateChange(
+          currentActiveUsers.length,
+          previousActiveUsers.length
+        ),
       },
-      topUsers: topUsers.map(user => ({
+      topUsers: topUsers.map((user) => ({
         userId: user.userId.toString(),
         userName: user.userName,
         userEmail: user.userEmail,
@@ -173,9 +179,9 @@ export const GET = requireAdmin(async (request: NextRequest) => {
       analytics,
     });
   } catch (error) {
-    console.error('Analytics error:', error);
+    logger.error("Analytics error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

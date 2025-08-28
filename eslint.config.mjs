@@ -21,6 +21,24 @@ const eslintConfig = [
       "@next/next/no-img-element": "warn",
       "prefer-const": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
+
+      // Custom guidance message with error for using console
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.object.name='console']",
+          message:
+            "🚨 AVOID using console directly! Use `import { logger } from '@/utils/logger'` instead. Available methods: logger.info(), logger.warn(), logger.error(), logger.debug(), logger.production()",
+        },
+      ],
+    },
+  },
+  {
+    // Override for logger.ts - allow ALL console usage (utility file)
+    files: ["src/utils/logger.ts"],
+    rules: {
+      "no-restricted-syntax": "off",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];

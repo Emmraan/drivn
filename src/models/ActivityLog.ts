@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types, Model } from "mongoose";
+import { logger } from "@/utils/logger";
 
 export interface IActivityLog extends Document {
   _id: string;
@@ -144,7 +145,7 @@ ActivityLogSchema.statics.logActivity = async function (
     await log.save();
     return log;
   } catch (error) {
-    console.error("Failed to log activity:", error);
+    logger.error("Failed to log activity:", error);
     return null;
   }
 };

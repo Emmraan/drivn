@@ -11,6 +11,7 @@ import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
 import { s3Cache } from "../utils/s3Cache";
 import ActivityLog, { IActivityLogModel } from "../models/ActivityLog";
 import FileMetadata from "../models/FileMetadata";
+import { logger } from "@/utils/logger";
 
 export interface S3FileItem {
   key: string;
@@ -47,13 +48,16 @@ async function fileExists(
     await s3Client.send(command);
     return true;
   } catch (error: unknown) {
-    if (error instanceof Error && 'name' in error && (error as Error).name === 'NotFound') {
+    if (
+      error instanceof Error &&
+      "name" in error &&
+      (error as Error).name === "NotFound"
+    ) {
       return false;
     }
     throw error;
   }
 }
-
 
 async function getUniqueS3Key(
   s3Client: S3Client,
@@ -107,7 +111,7 @@ export class S3FileOperations {
         fileSize = headResult.ContentLength || 0;
         fileName = headResult.Metadata?.["original-name"] || fileName;
       } catch (error) {
-        console.warn("Could not get file metadata before deletion:", error);
+        logger.warn("Could not get file metadata before deletion:", error);
       }
 
       const deleteCommand = new DeleteObjectCommand({
@@ -137,7 +141,7 @@ export class S3FileOperations {
         deletedCount: 1,
       };
     } catch (error) {
-      console.error("Delete error:", error);
+      logger.error("Delete error:", error);
       return {
         success: false,
         message: "Failed to delete file",
@@ -244,7 +248,7 @@ export class S3FileOperations {
         renamedFile.mimeType = headResult.ContentType;
         renamedFile.lastModified = headResult.LastModified || new Date();
       } catch (headError) {
-        console.warn("Could not get file metadata after rename:", headError);
+        logger.warn("Could not get file metadata after rename:", headError);
       }
 
       return {
@@ -253,7 +257,7 @@ export class S3FileOperations {
         file: renamedFile,
       };
     } catch (error) {
-      console.error("Rename error:", error);
+      logger.error("Rename error:", error);
       return {
         success: false,
         message: "Failed to rename file",
@@ -311,7 +315,7 @@ export class S3FileOperations {
         message: "Download URL generated successfully",
       };
     } catch (error) {
-      console.error("Download URL error:", error);
+      logger.error("Download URL error:", error);
       return {
         success: false,
         message: "Failed to generate download URL",
@@ -376,7 +380,7 @@ export class S3FileOperations {
         message: "Pre-signed URL generated successfully",
       };
     } catch (error) {
-      console.error("Generate pre-signed URL error:", error);
+      logger.error("Generate pre-signed URL error:", error);
       return {
         success: false,
         message: "Failed to generate pre-signed URL",

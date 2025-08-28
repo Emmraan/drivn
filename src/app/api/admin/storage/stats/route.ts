@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/auth/middleware/adminMiddleware';
-import connectDB from '@/utils/database';
-import User from '@/auth/models/User';
-import FileMetadata from '@/models/FileMetadata';
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/auth/middleware/adminMiddleware";
+import connectDB from "@/utils/database";
+import User from "@/auth/models/User";
+import FileMetadata from "@/models/FileMetadata";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/admin/storage/stats
@@ -19,51 +20,49 @@ export const GET = requireAdmin(async () => {
         $group: {
           _id: null,
           totalFiles: { $sum: 1 },
-          totalStorageUsed: { $sum: '$fileSize' },
+          totalStorageUsed: { $sum: "$fileSize" },
         },
       },
     ]);
 
     const totalFolders = 0;
 
-
-
     const storageByUser = await FileMetadata.aggregate([
       {
         $group: {
-          _id: '$userId',
-          storageUsed: { $sum: '$fileSize' },
+          _id: "$userId",
+          storageUsed: { $sum: "$fileSize" },
           fileCount: { $sum: 1 },
         },
       },
       {
         $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user',
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
         },
       },
       {
-        $unwind: '$user',
+        $unwind: "$user",
       },
       {
         $lookup: {
-          from: 'folders',
-          localField: '_id',
-          foreignField: 'userId',
-          as: 'folders',
+          from: "folders",
+          localField: "_id",
+          foreignField: "userId",
+          as: "folders",
         },
       },
       {
         $project: {
-          userId: '$_id',
-          userName: '$user.name',
-          userEmail: '$user.email',
+          userId: "$_id",
+          userName: "$user.name",
+          userEmail: "$user.email",
           storageUsed: 1,
           fileCount: 1,
-          folderCount: { $size: '$folders' },
-          bucketType: 'user',
+          folderCount: { $size: "$folders" },
+          bucketType: "user",
         },
       },
       {
@@ -95,9 +94,9 @@ export const GET = requireAdmin(async () => {
       stats,
     });
   } catch (error) {
-    console.error('Storage stats error:', error);
+    logger.error("Storage stats error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   CogIcon,
   PlusIcon,
@@ -9,14 +9,22 @@ import {
   PencilIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-} from '@heroicons/react/24/outline';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { TableSkeleton } from '@/components/ui/SkeletonLoader';
+} from "@heroicons/react/24/outline";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { TableSkeleton } from "@/components/ui/SkeletonLoader";
+import { logger } from "@/utils/logger";
 
 interface SchemaField {
   name: string;
-  type: 'String' | 'Number' | 'Boolean' | 'Date' | 'ObjectId' | 'Array' | 'Mixed';
+  type:
+    | "String"
+    | "Number"
+    | "Boolean"
+    | "Date"
+    | "ObjectId"
+    | "Array"
+    | "Mixed";
   required: boolean;
   default?: string | number | boolean | Date | null;
   unique?: boolean;
@@ -30,39 +38,38 @@ interface ModelSchema {
   timestamps: boolean;
 }
 
-const AVAILABLE_MODELS = [
-  'User',
-  'File',
-  'Folder',
-  'Admin',
-];
+const AVAILABLE_MODELS = ["User", "File", "Folder", "Admin"];
 
 const FIELD_TYPES = [
-  { value: 'String', label: 'String', description: 'Text data' },
-  { value: 'Number', label: 'Number', description: 'Numeric data' },
-  { value: 'Boolean', label: 'Boolean', description: 'True/false values' },
-  { value: 'Date', label: 'Date', description: 'Date and time' },
-  { value: 'ObjectId', label: 'ObjectId', description: 'MongoDB ObjectId reference' },
-  { value: 'Array', label: 'Array', description: 'Array of values' },
-  { value: 'Mixed', label: 'Mixed', description: 'Any type of data' },
+  { value: "String", label: "String", description: "Text data" },
+  { value: "Number", label: "Number", description: "Numeric data" },
+  { value: "Boolean", label: "Boolean", description: "True/false values" },
+  { value: "Date", label: "Date", description: "Date and time" },
+  {
+    value: "ObjectId",
+    label: "ObjectId",
+    description: "MongoDB ObjectId reference",
+  },
+  { value: "Array", label: "Array", description: "Array of values" },
+  { value: "Mixed", label: "Mixed", description: "Any type of data" },
 ];
 
 export default function UpdateSchemaPage() {
-  const [selectedModel, setSelectedModel] = useState<string>('User');
+  const [selectedModel, setSelectedModel] = useState<string>("User");
   const [currentSchema, setCurrentSchema] = useState<ModelSchema | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAddField, setShowAddField] = useState(false);
   const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'warning';
+    type: "success" | "error" | "warning";
     message: string;
   } | null>(null);
 
   const [newField, setNewField] = useState<SchemaField>({
-    name: '',
-    type: 'String',
+    name: "",
+    type: "String",
     required: false,
-    description: '',
+    description: "",
   });
 
   const loadModelSchema = useCallback(async () => {
@@ -78,15 +85,15 @@ export default function UpdateSchemaPage() {
         setCurrentSchema(data.schema);
       } else {
         setNotification({
-          type: 'error',
-          message: data.message || 'Failed to load schema',
+          type: "error",
+          message: data.message || "Failed to load schema",
         });
       }
     } catch (error) {
-      console.error('Error loading schema:', error);
+      logger.error("Error loading schema:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to load schema. Please try again.',
+        type: "error",
+        message: "Failed to load schema. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -109,16 +116,16 @@ export default function UpdateSchemaPage() {
   const handleAddField = () => {
     if (!newField.name.trim()) {
       setNotification({
-        type: 'error',
-        message: 'Field name is required',
+        type: "error",
+        message: "Field name is required",
       });
       return;
     }
 
     if (currentSchema?.fields.some((f) => f.name === newField.name)) {
       setNotification({
-        type: 'error',
-        message: 'Field name already exists',
+        type: "error",
+        message: "Field name already exists",
       });
       return;
     }
@@ -130,21 +137,25 @@ export default function UpdateSchemaPage() {
 
     setCurrentSchema(updatedSchema);
     setNewField({
-      name: '',
-      type: 'String',
+      name: "",
+      type: "String",
       required: false,
-      description: '',
+      description: "",
     });
     setShowAddField(false);
 
     setNotification({
-      type: 'success',
-      message: 'Field added successfully. Remember to save changes.',
+      type: "success",
+      message: "Field added successfully. Remember to save changes.",
     });
   };
 
   const handleDeleteField = (fieldName: string) => {
-    if (!confirm(`Are you sure you want to delete the field "${fieldName}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete the field "${fieldName}"? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
@@ -155,8 +166,8 @@ export default function UpdateSchemaPage() {
 
     setCurrentSchema(updatedSchema);
     setNotification({
-      type: 'success',
-      message: 'Field deleted successfully. Remember to save changes.',
+      type: "success",
+      message: "Field deleted successfully. Remember to save changes.",
     });
   };
 
@@ -166,9 +177,9 @@ export default function UpdateSchemaPage() {
     setSaving(true);
     try {
       const response = await fetch(`/api/admin/schema/${selectedModel}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(currentSchema),
       });
@@ -177,20 +188,20 @@ export default function UpdateSchemaPage() {
 
       if (data.success) {
         setNotification({
-          type: 'success',
-          message: 'Schema updated successfully!',
+          type: "success",
+          message: "Schema updated successfully!",
         });
       } else {
         setNotification({
-          type: 'error',
-          message: data.message || 'Failed to update schema',
+          type: "error",
+          message: data.message || "Failed to update schema",
         });
       }
     } catch (error) {
-      console.error('Error saving schema:', error);
+      logger.error("Error saving schema:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to save schema. Please try again.',
+        type: "error",
+        message: "Failed to save schema. Please try again.",
       });
     } finally {
       setSaving(false);
@@ -255,36 +266,41 @@ export default function UpdateSchemaPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${notification.type === 'success'
-              ? 'border-green-200 dark:border-green-800'
-              : notification.type === 'warning'
-                ? 'border-yellow-200 dark:border-yellow-800'
-                : 'border-red-200 dark:border-red-800'
-            }`}
+          className={`p-4 rounded-lg flex items-center space-x-3 glass backdrop-blur-md ${
+            notification.type === "success"
+              ? "border-green-200 dark:border-green-800"
+              : notification.type === "warning"
+              ? "border-yellow-200 dark:border-yellow-800"
+              : "border-red-200 dark:border-red-800"
+          }`}
         >
-          {notification.type === 'success' ? (
+          {notification.type === "success" ? (
             <CheckCircleIcon className="h-5 w-5 text-green-500 flex-shrink-0" />
-          ) : notification.type === 'warning' ? (
+          ) : notification.type === "warning" ? (
             <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 flex-shrink-0" />
           ) : (
             <ExclamationTriangleIcon className="h-5 w-5 text-red-500 flex-shrink-0" />
           )}
-          <p className={`text-sm font-medium ${notification.type === 'success'
-              ? 'text-green-800 dark:text-green-200'
-              : notification.type === 'warning'
-                ? 'text-yellow-800 dark:text-yellow-200'
-                : 'text-red-800 dark:text-red-200'
-            }`}>
+          <p
+            className={`text-sm font-medium ${
+              notification.type === "success"
+                ? "text-green-800 dark:text-green-200"
+                : notification.type === "warning"
+                ? "text-yellow-800 dark:text-yellow-200"
+                : "text-red-800 dark:text-red-200"
+            }`}
+          >
             {notification.message}
           </p>
           <button
             onClick={() => setNotification(null)}
-            className={`ml-auto text-sm underline ${notification.type === 'success'
-                ? 'text-green-700 dark:text-green-300'
-                : notification.type === 'warning'
-                  ? 'text-yellow-700 dark:text-yellow-300'
-                  : 'text-red-700 dark:text-red-300'
-              }`}
+            className={`ml-auto text-sm underline ${
+              notification.type === "success"
+                ? "text-green-700 dark:text-green-300"
+                : notification.type === "warning"
+                ? "text-yellow-700 dark:text-yellow-300"
+                : "text-red-700 dark:text-red-300"
+            }`}
           >
             Dismiss
           </button>
@@ -298,8 +314,9 @@ export default function UpdateSchemaPage() {
           <div className="text-sm text-yellow-700 dark:text-yellow-300">
             <p className="font-medium mb-1">⚠️ Caution: Schema Modifications</p>
             <p>
-              Modifying database schemas can affect existing data and application functionality.
-              Always backup your database before making changes and test thoroughly in a development environment.
+              Modifying database schemas can affect existing data and
+              application functionality. Always backup your database before
+              making changes and test thoroughly in a development environment.
             </p>
           </div>
         </div>
@@ -315,7 +332,8 @@ export default function UpdateSchemaPage() {
                   {currentSchema.modelName} Model Schema
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {currentSchema.fields.length} fields • Timestamps: {currentSchema.timestamps ? 'Enabled' : 'Disabled'}
+                  {currentSchema.fields.length} fields • Timestamps:{" "}
+                  {currentSchema.timestamps ? "Enabled" : "Disabled"}
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -400,7 +418,7 @@ export default function UpdateSchemaPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
-                        {field.description || 'No description'}
+                        {field.description || "No description"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -453,7 +471,9 @@ export default function UpdateSchemaPage() {
                   <input
                     type="text"
                     value={newField.name}
-                    onChange={(e) => setNewField({ ...newField, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewField({ ...newField, name: e.target.value })
+                    }
                     placeholder="e.g., phoneNumber"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
@@ -465,7 +485,12 @@ export default function UpdateSchemaPage() {
                   </label>
                   <select
                     value={newField.type}
-                    onChange={(e) => setNewField({ ...newField, type: e.target.value as SchemaField['type'] })}
+                    onChange={(e) =>
+                      setNewField({
+                        ...newField,
+                        type: e.target.value as SchemaField["type"],
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     {FIELD_TYPES.map((type) => (
@@ -482,7 +507,9 @@ export default function UpdateSchemaPage() {
                   </label>
                   <textarea
                     value={newField.description}
-                    onChange={(e) => setNewField({ ...newField, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewField({ ...newField, description: e.target.value })
+                    }
                     placeholder="Describe what this field is used for..."
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
@@ -499,10 +526,15 @@ export default function UpdateSchemaPage() {
                       type="checkbox"
                       id="required"
                       checked={newField.required}
-                      onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
+                      onChange={(e) =>
+                        setNewField({ ...newField, required: e.target.checked })
+                      }
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="required" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    <label
+                      htmlFor="required"
+                      className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                    >
                       Required field
                     </label>
                   </div>
@@ -512,10 +544,15 @@ export default function UpdateSchemaPage() {
                       type="checkbox"
                       id="unique"
                       checked={newField.unique || false}
-                      onChange={(e) => setNewField({ ...newField, unique: e.target.checked })}
+                      onChange={(e) =>
+                        setNewField({ ...newField, unique: e.target.checked })
+                      }
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="unique" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    <label
+                      htmlFor="unique"
+                      className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                    >
                       Unique values only
                     </label>
                   </div>
@@ -525,10 +562,15 @@ export default function UpdateSchemaPage() {
                       type="checkbox"
                       id="index"
                       checked={newField.index || false}
-                      onChange={(e) => setNewField({ ...newField, index: e.target.checked })}
+                      onChange={(e) =>
+                        setNewField({ ...newField, index: e.target.checked })
+                      }
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="index" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    <label
+                      htmlFor="index"
+                      className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                    >
                       Create database index
                     </label>
                   </div>
@@ -541,19 +583,16 @@ export default function UpdateSchemaPage() {
                   onClick={() => {
                     setShowAddField(false);
                     setNewField({
-                      name: '',
-                      type: 'String',
+                      name: "",
+                      type: "String",
                       required: false,
-                      description: '',
+                      description: "",
                     });
                   }}
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleAddField}
-                >
+                <Button variant="primary" onClick={handleAddField}>
                   Add Field
                 </Button>
               </div>

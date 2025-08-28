@@ -1,66 +1,85 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { validateName, validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
-import debounce from '@/utils/debounce';
-import { motion, AnimatePresence } from 'framer-motion';
-import { signIn } from 'next-auth/react';
-import { useAuth } from '@/auth/context/AuthContext';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
-import { AccountCreationLoading } from '@/components/ui/LoadingScreens';
-import { EnvelopeIcon, LockClosedIcon, UserIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  validateName,
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+} from "@/utils/validation";
+import debounce from "@/utils/debounce";
+import { motion, AnimatePresence } from "framer-motion";
+import { signIn } from "next-auth/react";
+import { useAuth } from "@/auth/context/AuthContext";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { AccountCreationLoading } from "@/components/ui/LoadingScreens";
+import {
+  EnvelopeIcon,
+  LockClosedIcon,
+  UserIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { logger } from "@/utils/logger";
 
 interface SignupFormProps {
   onToggleMode?: () => void;
   onSuccess?: () => void;
 }
 
-export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+export default function SignupForm({
+  onToggleMode,
+  onSuccess,
+}: SignupFormProps) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
-  const [agreedToTermsError, setAgreedToTermsError] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [agreedToTermsError, setAgreedToTermsError] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const { signup } = useAuth();
 
-  const debouncedValidateName = useMemo(() =>
-    debounce((value: string) => {
-      setNameError(validateName(value));
-    }, 500),
+  const debouncedValidateName = useMemo(
+    () =>
+      debounce((value: string) => {
+        setNameError(validateName(value));
+      }, 500),
     [setNameError]
   );
 
-  const debouncedValidateEmail = useMemo(() =>
-    debounce((value: string) => {
-      setEmailError(validateEmail(value));
-    }, 500),
+  const debouncedValidateEmail = useMemo(
+    () =>
+      debounce((value: string) => {
+        setEmailError(validateEmail(value));
+      }, 500),
     [setEmailError]
   );
 
-  const debouncedValidatePassword = useMemo(() =>
-    debounce((value: string) => {
-      setPasswordError(validatePassword(value));
-    }, 500),
+  const debouncedValidatePassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setPasswordError(validatePassword(value));
+      }, 500),
     [setPasswordError]
   );
 
-  const debouncedValidateConfirmPassword = useMemo(() =>
-    debounce((value: string) => {
-      setConfirmPasswordError(validateConfirmPassword(password, value));
-    }, 500),
+  const debouncedValidateConfirmPassword = useMemo(
+    () =>
+      debounce((value: string) => {
+        setConfirmPasswordError(validateConfirmPassword(password, value));
+      }, 500),
     [password]
   );
 
@@ -84,8 +103,13 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
     const nameErr = validateName(name);
     const emailErr = validateEmail(email);
     const passwordErr = validatePassword(password);
-    const confirmPasswordErr = validateConfirmPassword(password, confirmPassword);
-    const agreedToTermsErr = agreedToTerms ? '' : 'You must agree to the Terms of Service and Privacy Policy';
+    const confirmPasswordErr = validateConfirmPassword(
+      password,
+      confirmPassword
+    );
+    const agreedToTermsErr = agreedToTerms
+      ? ""
+      : "You must agree to the Terms of Service and Privacy Policy";
 
     setNameError(nameErr);
     setEmailError(emailErr);
@@ -93,7 +117,13 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
     setConfirmPasswordError(confirmPasswordErr);
     setAgreedToTermsError(agreedToTermsErr);
 
-    if (nameErr || emailErr || passwordErr || confirmPasswordErr || agreedToTermsErr) {
+    if (
+      nameErr ||
+      emailErr ||
+      passwordErr ||
+      confirmPasswordErr ||
+      agreedToTermsErr
+    ) {
       return false;
     }
     return true;
@@ -102,17 +132,17 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!validateForm()) {
-      setError('Please fix the validation errors');
+      setError("Please fix the validation errors");
       setLoading(false);
       return;
     }
 
     if (!name || !email || !password || !confirmPassword || !agreedToTerms) {
-      setError('All fields are required');
+      setError("All fields are required");
       setLoading(false);
       return;
     }
@@ -121,17 +151,17 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
       const result = await signup(email, password, name);
       if (result.success) {
         setSuccess(result.message);
-        setName('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
+        setName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
         onSuccess?.();
       } else {
-        setError(result.message || 'Sign up failed. Please try again.');
+        setError(result.message || "Sign up failed. Please try again.");
       }
     } catch (error) {
-      setError('An unexpected error occurred');
-      console.error(error);
+      setError("An unexpected error occurred");
+      logger.error(error);
     } finally {
       setLoading(false);
     }
@@ -139,10 +169,10 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: '/dashboard' });
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
-      setError('Failed to sign in with Google');
-      console.error(error);
+      setError("Failed to sign in with Google");
+      logger.error(error);
     }
   };
 
@@ -227,7 +257,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                 transition={{ delay: 0.5 }}
               >
                 <Input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   label="Password"
                   placeholder="Create a password (min. 8 characters)"
                   value={password}
@@ -261,7 +291,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                 transition={{ delay: 0.6 }}
               >
                 <Input
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   label="Confirm Password"
                   placeholder="Confirm your password"
                   value={confirmPassword}
@@ -269,12 +299,18 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                     setConfirmPassword(e.target.value);
                     debouncedValidateConfirmPassword(e.target.value);
                   }}
-                  onBlur={() => setConfirmPasswordError(validateConfirmPassword(password, confirmPassword))}
+                  onBlur={() =>
+                    setConfirmPasswordError(
+                      validateConfirmPassword(password, confirmPassword)
+                    )
+                  }
                   leftIcon={<LockClosedIcon className="w-5 h-5" />}
                   rightIcon={
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="hover:text-primary-600 transition-colors"
                     >
                       {showConfirmPassword ? (
@@ -302,8 +338,26 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
-                <label htmlFor="termsCheckbox" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                  I agree to the <Link href="/terms" rel="noopener noreferrer" className="text-primary-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" rel="noopener noreferrer" className="text-primary-600 hover:underline">Privacy Policy</Link>
+                <label
+                  htmlFor="termsCheckbox"
+                  className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+                >
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
                 </label>
               </motion.div>
               {agreedToTermsError && (
@@ -312,7 +366,9 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   animate={{ opacity: 1, scale: 1 }}
                   className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                 >
-                  <p className="text-sm text-red-600 dark:text-red-400">{agreedToTermsError}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {agreedToTermsError}
+                  </p>
                 </motion.div>
               )}
 
@@ -322,7 +378,9 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   animate={{ opacity: 1, scale: 1 }}
                   className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                 >
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
                 </motion.div>
               )}
 
@@ -332,7 +390,9 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   animate={{ opacity: 1, scale: 1 }}
                   className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
                 >
-                  <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    {success}
+                  </p>
                 </motion.div>
               )}
 
@@ -340,13 +400,22 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className='w-full flex justify-center'
+                className="w-full flex justify-center"
               >
                 <Button
                   type="submit"
                   className="w-full"
                   loading={loading}
-                  disabled={!name || !email || !password || !confirmPassword || !!nameError || !!emailError || !!passwordError || !!confirmPasswordError}
+                  disabled={
+                    !name ||
+                    !email ||
+                    !password ||
+                    !confirmPassword ||
+                    !!nameError ||
+                    !!emailError ||
+                    !!passwordError ||
+                    !!confirmPasswordError
+                  }
                 >
                   Create Account
                 </Button>
@@ -362,7 +431,9 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                   <div className="w-full border-t border-gray-300 dark:border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-500">Or continue with</span>
+                  <span className="px-2 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-500">
+                    Or continue with
+                  </span>
                 </div>
               </motion.div>
 
@@ -370,7 +441,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.9 }}
-                className='w-full flex justify-center'
+                className="w-full flex justify-center"
               >
                 <Button
                   type="button"
@@ -411,7 +482,7 @@ export default function SignupForm({ onToggleMode, onSuccess }: SignupFormProps)
                 transition={{ delay: 1.0 }}
               >
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Already have an account?{' '}
+                  Already have an account?{" "}
                   <button
                     onClick={onToggleMode}
                     className="font-medium text-primary-600 hover:text-primary-500 transition-colors"

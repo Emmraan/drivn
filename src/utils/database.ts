@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { logger } from "@/utils/logger";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -34,7 +35,7 @@ async function connectDB(): Promise<typeof mongoose> {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      console.log("✅ Connected to MongoDB");
+      logger.info("✅ Connected to MongoDB");
       return mongoose;
     });
   }

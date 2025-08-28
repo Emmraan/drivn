@@ -6,6 +6,7 @@ import User, { IUser } from "@/auth/models/User";
 import VerificationToken from "@/auth/models/VerificationToken";
 import ResetToken from "@/auth/models/ResetToken";
 import { emailService } from "./emailService";
+import { logger } from "@/utils/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
@@ -67,7 +68,7 @@ export class AuthService {
         },
       };
     } catch (error) {
-      console.error("Signup error:", error);
+      logger.error("Signup error:", error);
       return { success: false, message: "An error occurred during signup" };
     }
   }
@@ -125,7 +126,7 @@ export class AuthService {
         token,
       };
     } catch (error) {
-      console.error("Login error:", error);
+      logger.error("Login error:", error);
       return { success: false, message: "An error occurred during login" };
     }
   }
@@ -177,7 +178,7 @@ export class AuthService {
         token: authToken,
       };
     } catch (error) {
-      console.error("Email verification error:", error);
+      logger.error("Email verification error:", error);
       return {
         success: false,
         message: "An error occurred during email verification",
@@ -191,7 +192,7 @@ export class AuthService {
       await connectDB();
       return await User.findById(decoded.userId).select("-password");
     } catch (error) {
-      console.error("Get user from token error:", error);
+      logger.error("Get user from token error:", error);
       return null;
     }
   }
@@ -231,7 +232,7 @@ export class AuthService {
           "Verification email sent successfully. Please check your inbox.",
       };
     } catch (error) {
-      console.error("Resend verification error:", error);
+      logger.error("Resend verification error:", error);
       return {
         success: false,
         message: "An error occurred while sending verification email",
@@ -239,9 +240,7 @@ export class AuthService {
     }
   }
 
-  static async forgotPassword(
-    email: string
-  ): Promise<{
+  static async forgotPassword(email: string): Promise<{
     success: boolean;
     message: string;
     existingRequest?: { remainingTime: string };
@@ -321,7 +320,7 @@ export class AuthService {
           "Password reset email sent successfully. Please check your inbox.",
       };
     } catch (error) {
-      console.error("Forgot password error:", error);
+      logger.error("Forgot password error:", error);
       return {
         success: false,
         message: "An error occurred while sending password reset email",
@@ -366,7 +365,7 @@ export class AuthService {
           "Password reset successfully. You can now log in with your new password.",
       };
     } catch (error) {
-      console.error("Reset password error:", error);
+      logger.error("Reset password error:", error);
       return {
         success: false,
         message: "An error occurred while resetting password",

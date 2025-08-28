@@ -1,12 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  XMarkIcon,
-  FolderIcon,
-} from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { XMarkIcon, FolderIcon } from "@heroicons/react/24/outline";
+import Button from "@/components/ui/Button";
+import { logger } from "@/utils/logger";
 
 interface S3CreateFolderProps {
   isOpen: boolean;
@@ -15,58 +13,63 @@ interface S3CreateFolderProps {
   onFolderCreated: () => void;
 }
 
-export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCreated }: S3CreateFolderProps) {
-  const [name, setName] = useState('');
+export default function S3CreateFolder({
+  isOpen,
+  onClose,
+  parentPath,
+  onFolderCreated,
+}: S3CreateFolderProps) {
+  const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      setError('Folder name is required');
+      setError("Folder name is required");
       return;
     }
 
     const trimmedName = name.trim();
     if (trimmedName.length > 255) {
-      setError('Folder name must be less than 255 characters');
+      setError("Folder name must be less than 255 characters");
       return;
     }
 
     const invalidChars = /[<>:"/\\|?*]/;
     if (invalidChars.test(trimmedName)) {
-      setError('Folder name contains invalid characters');
+      setError("Folder name contains invalid characters");
       return;
     }
 
     setIsCreating(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('/api/s3-folders', {
-        method: 'POST',
+      const response = await fetch("/api/s3-folders", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: trimmedName,
-          parentPath: parentPath || '',
+          parentPath: parentPath || "",
         }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        setName('');
+        setName("");
         onFolderCreated();
         onClose();
       } else {
-        setError(result.message || 'Failed to create folder');
+        setError(result.message || "Failed to create folder");
       }
     } catch (error) {
-      console.error('Error creating folder:', error);
-      setError('Network error. Please try again.');
+      logger.error("Error creating folder:", error);
+      setError("Network error. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -74,8 +77,8 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
 
   const handleClose = () => {
     if (!isCreating) {
-      setName('');
-      setError('');
+      setName("");
+      setError("");
       onClose();
     }
   };
@@ -111,14 +114,17 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
             <div className="flex items-center">
               <FolderIcon className="h-5 w-5 text-primary-500 mr-2" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Creating in: {parentPath || 'root'}
+                Creating in: {parentPath || "root"}
               </span>
             </div>
           </div>
 
           {/* Folder Name Input */}
           <div>
-            <label htmlFor="folderName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="folderName"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Folder Name
             </label>
             <input
@@ -127,7 +133,7 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                setError('');
+                setError("");
               }}
               placeholder="Enter folder name"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -135,7 +141,9 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
               autoFocus
             />
             {error && (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                {error}
+              </p>
             )}
           </div>
 
@@ -162,7 +170,7 @@ export default function S3CreateFolder({ isOpen, onClose, parentPath, onFolderCr
               loading={isCreating}
               leftIcon={<FolderIcon className="h-4 w-4" />}
             >
-              {isCreating ? 'Creating...' : 'Create Folder'}
+              {isCreating ? "Creating..." : "Create Folder"}
             </Button>
           </div>
         </form>

@@ -14,6 +14,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface S3ConfigStatus {
   hasConfig: boolean;
@@ -47,11 +48,11 @@ export default function SettingsPage() {
         const data = await response.json();
         setConfigStatus(data);
       } else {
-        console.error("Failed to load S3 config");
+        logger.error("Failed to load S3 config");
         setConfigStatus({ hasConfig: false });
       }
     } catch (error) {
-      console.error("Error loading S3 config:", error);
+      logger.error("Error loading S3 config:", error);
       setConfigStatus({ hasConfig: false });
     } finally {
       setLoading(false);
@@ -72,7 +73,7 @@ export default function SettingsPage() {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error("Test connection error:", error);
+      logger.error("Test connection error:", error);
       return {
         success: false,
         message: "Failed to test connection. Please try again.",
@@ -106,7 +107,7 @@ export default function SettingsPage() {
         });
       }
     } catch (error) {
-      console.error("Save config error:", error);
+      logger.error("Save config error:", error);
       setNotification({
         type: "error",
         message: "Failed to save configuration. Please try again.",
@@ -144,7 +145,7 @@ export default function SettingsPage() {
         });
       }
     } catch (error) {
-      console.error("Delete config error:", error);
+      logger.error("Delete config error:", error);
       setNotification({
         type: "error",
         message: "Failed to delete configuration. Please try again.",

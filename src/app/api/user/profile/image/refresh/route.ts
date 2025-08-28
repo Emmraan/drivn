@@ -6,6 +6,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "@/utils/s3ClientFactory";
 import { S3ConfigService } from "@/services/s3ConfigService";
+import { logger } from "@/utils/logger";
 
 /**
  * POST /api/user/profile/image/refresh
@@ -38,7 +39,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "S3 configuration not found. Please configure your S3 settings first.",
+          message:
+            "S3 configuration not found. Please configure your S3 settings first.",
         },
         { status: 400 }
       );
@@ -49,16 +51,20 @@ export async function POST(request: NextRequest) {
     try {
       if (user.image.includes("X-Amz-Algorithm")) {
         const url = new URL(user.image);
-        s3Key = url.pathname.startsWith('/') ? url.pathname.substring(1) : url.pathname;
-        if (s3Key.startsWith(bucketName + '/')) {
+        s3Key = url.pathname.startsWith("/")
+          ? url.pathname.substring(1)
+          : url.pathname;
+        if (s3Key.startsWith(bucketName + "/")) {
           s3Key = s3Key.substring(bucketName.length + 1);
         }
       } else {
         const url = new URL(user.image);
-        const pathParts = url.pathname.split('/');
-        const profileImagesIndex = pathParts.findIndex(part => part === 'profile-images');
+        const pathParts = url.pathname.split("/");
+        const profileImagesIndex = pathParts.findIndex(
+          (part) => part === "profile-images"
+        );
         if (profileImagesIndex !== -1) {
-          s3Key = pathParts.slice(profileImagesIndex).join('/');
+          s3Key = pathParts.slice(profileImagesIndex).join("/");
         } else {
           return NextResponse.json(
             { success: false, message: "Invalid image URL format" },
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (error) {
-      console.error("Error parsing image URL:", error);
+      logger.error("Error parsing image URL:", error);
       return NextResponse.json(
         { success: false, message: "Invalid image URL format" },
         { status: 400 }
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Refresh profile image URL API error:", error);
+    logger.error("Refresh profile image URL API error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

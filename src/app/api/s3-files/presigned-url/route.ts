@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (!fileName || !fileType || !fileSize) {
       return NextResponse.json(
-        { success: false, message: 'Missing required file information' },
+        { success: false, message: "Missing required file information" },
         { status: 400 }
       );
     }
@@ -45,9 +46,9 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Generate pre-signed URL API error:', error);
+    logger.error("Generate pre-signed URL API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

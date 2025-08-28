@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import connectDB from "@/utils/database";
 import User from "@/auth/models/User";
-import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "@/utils/s3ClientFactory";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import sharp from "sharp";
+import { logger } from "@/utils/logger";
 
 /**
  * PUT /api/user/profile/image
@@ -97,11 +102,11 @@ export async function PUT(request: NextRequest) {
               Key: oldS3Key,
             });
             await s3Client.send(deleteCommand);
-            console.log("Deleted old profile image:", oldS3Key);
+            logger.info("Deleted old profile image:", oldS3Key);
           }
         }
       } catch (deleteError) {
-        console.error("Error deleting old profile image:", deleteError);
+        logger.error("Error deleting old profile image:", deleteError);
       }
     }
 
@@ -123,7 +128,7 @@ export async function PUT(request: NextRequest) {
       await s3Client.send(uploadCommand);
     } catch (aclError) {
       // If ACL fails, try without ACL (some providers don't support ACL)
-      console.log("ACL not supported, retrying without ACL:", aclError);
+      logger.info("ACL not supported, retrying without ACL:", aclError);
       uploadCommand = new PutObjectCommand({
         Bucket: bucketName,
         Key: s3Key,
@@ -169,7 +174,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Update profile image API error:", error);
+    logger.error("Update profile image API error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

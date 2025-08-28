@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encryptData, decryptData } from "./encryption";
+import { logger } from "@/utils/logger";
 
 /**
  * Secure cookie management utilities for storing encrypted S3 credentials
@@ -47,9 +48,9 @@ export function setS3ConfigCookie(
 
     response.cookies.set(COOKIE_NAME, encryptedConfig, cookieOptions);
 
-    console.log("S3 config cookie set for user:", userId);
+    logger.info("S3 config cookie set for user:", userId);
   } catch (error) {
-    console.error("Error setting S3 config cookie:", error);
+    logger.error("Error setting S3 config cookie:", error);
     throw new Error("Failed to set S3 configuration cookie");
   }
 }
@@ -74,7 +75,7 @@ export function getS3ConfigFromCookie<T = S3Config>(
     const decryptedConfig = decryptData<T>(encryptedConfig, userId);
     return decryptedConfig;
   } catch (error) {
-    console.error("Error getting S3 config from cookie:", error);
+    logger.error("Error getting S3 config from cookie:", error);
     return null;
   }
 }
@@ -93,9 +94,9 @@ export function clearS3ConfigCookie(response: NextResponse): void {
       path: "/",
     });
 
-    console.log("S3 config cookie cleared");
+    logger.info("S3 config cookie cleared");
   } catch (error) {
-    console.error("Error clearing S3 config cookie:", error);
+    logger.error("Error clearing S3 config cookie:", error);
   }
 }
 
@@ -198,10 +199,10 @@ export function rotateS3ConfigCookie(
 
     setS3ConfigCookie(response, userId, currentConfig);
 
-    console.log("S3 config cookie rotated for user:", userId);
+    logger.info("S3 config cookie rotated for user:", userId);
     return true;
   } catch (error) {
-    console.error("Error rotating S3 config cookie:", error);
+    logger.error("Error rotating S3 config cookie:", error);
     return false;
   }
 }

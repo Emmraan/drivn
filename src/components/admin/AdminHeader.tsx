@@ -18,6 +18,7 @@ import {
   HomeIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface AdminHeaderProps {
   user: {
@@ -48,7 +49,7 @@ export default function AdminHeader({ user, onMenuClick }: AdminHeaderProps) {
       await logout();
       router.push("/");
     } catch (error) {
-      console.error("Logout error:", error);
+      logger.error("Logout error:", error);
     }
   };
 

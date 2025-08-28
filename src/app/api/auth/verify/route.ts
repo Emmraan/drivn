@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { AuthService } from '@/auth/services/authService';
+import { NextRequest, NextResponse } from "next/server";
+import { AuthService } from "@/auth/services/authService";
+import { logger } from "@/utils/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false, message: 'Verification token is required' },
+        { success: false, message: "Verification token is required" },
         { status: 400 }
       );
     }
@@ -18,12 +19,12 @@ export async function POST(request: NextRequest) {
     if (result.success && result.token) {
       const response = NextResponse.json(result, { status: 200 });
 
-      response.cookies.set('auth-token', result.token, {
+      response.cookies.set("auth-token", result.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
       });
 
       return response;
@@ -31,9 +32,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error('Email verification API error:', error);
+    logger.error("Email verification API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -42,11 +43,11 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
+    const token = searchParams.get("token");
 
     if (!token) {
       return NextResponse.json(
-        { success: false, message: 'Verification token is required' },
+        { success: false, message: "Verification token is required" },
         { status: 400 }
       );
     }
@@ -59,9 +60,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error('Email verification API error:', error);
+    logger.error("Email verification API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

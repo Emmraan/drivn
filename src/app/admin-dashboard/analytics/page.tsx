@@ -16,6 +16,7 @@ import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from "@/utils/logger";
 
 interface AnalyticsData {
   userGrowth: {
@@ -76,7 +77,7 @@ export default function AdminAnalyticsPage() {
         setError(data.message || 'Failed to load analytics data');
       }
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      logger.error('Error loading analytics:', error);
       setError('Failed to load analytics data');
     } finally {
       setLoading(false);

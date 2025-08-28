@@ -15,6 +15,7 @@ import {
   EyeSlashIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { logger } from "@/utils/logger";
 
 interface S3ConfigFormProps {
   onSave: (config: S3ConfigData) => Promise<void>;
@@ -131,7 +132,7 @@ export default function S3ConfigForm({
     try {
       await onSave(config);
     } catch (error) {
-      console.error("Save error:", error);
+      logger.error("Save error:", error);
     } finally {
       setSaving(false);
     }

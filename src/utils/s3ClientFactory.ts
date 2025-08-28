@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { S3Config } from "./encryption";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import { getS3ConfigFromCookie } from "./cookieManager";
+import { logger } from "./logger";
 
 /**
  * S3 Client Factory
@@ -27,7 +28,7 @@ export async function createS3Client(
     }
 
     if (!s3Config) {
-      console.log("No S3 configuration found for user:", userId);
+      logger.warn("No S3 configuration found for user:", userId);
       return null;
     }
 
@@ -36,7 +37,7 @@ export async function createS3Client(
       !s3Config.secretAccessKey ||
       !s3Config.region
     ) {
-      console.error("Invalid S3 configuration - missing required fields");
+      logger.error("Invalid S3 configuration - missing required fields");
       return null;
     }
 
@@ -55,7 +56,7 @@ export async function createS3Client(
 
     const s3Client = new S3Client(clientConfig);
 
-    console.log("S3 client created successfully for user:", userId, {
+    logger.info("S3 client created successfully for user:", userId, {
       region: s3Config.region,
       bucketName: s3Config.bucketName,
       endpoint: s3Config.endpoint || "AWS S3",
@@ -63,7 +64,7 @@ export async function createS3Client(
 
     return s3Client;
   } catch (error) {
-    console.error("Error creating S3 client for user:", userId, error);
+    logger.error("Error creating S3 client for user:", userId, error);
     return null;
   }
 }
@@ -109,7 +110,7 @@ export async function getS3Config(
 
     return s3Config;
   } catch (error) {
-    console.error("Error getting S3 config for user:", userId, error);
+    logger.error("Error getting S3 config for user:", userId, error);
     return null;
   }
 }
@@ -143,7 +144,7 @@ export async function validateS3ClientConnection(
     await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
     return true;
   } catch (error) {
-    console.error("S3 client connection validation failed:", error);
+    logger.error("S3 client connection validation failed:", error);
     return false;
   }
 }
@@ -235,3 +236,4 @@ export async function getS3Client(
 export function invalidateS3Client(userId: string): void {
   s3ClientManager.removeClient(userId);
 }
+

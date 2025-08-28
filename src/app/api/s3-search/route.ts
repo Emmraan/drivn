@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/s3-search
@@ -11,34 +12,41 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-    const maxResults = parseInt(searchParams.get('maxResults') || '100');
-    const mimeTypeFilter = searchParams.get('mimeType') || undefined;
+    const query = searchParams.get("q");
+    const maxResults = parseInt(searchParams.get("maxResults") || "100");
+    const mimeTypeFilter = searchParams.get("mimeType") || undefined;
 
     if (!query || query.trim().length === 0) {
       return NextResponse.json(
-        { success: false, message: 'Search query is required' },
+        { success: false, message: "Search query is required" },
         { status: 400 }
       );
     }
 
     if (query.trim().length < 2) {
       return NextResponse.json(
-        { success: false, message: 'Search query must be at least 2 characters' },
+        {
+          success: false,
+          message: "Search query must be at least 2 characters",
+        },
         { status: 400 }
       );
     }
 
-    const result = await S3DirectService.searchFiles(String(user._id), query.trim(), {
-      maxResults,
-      mimeTypeFilter,
-    });
+    const result = await S3DirectService.searchFiles(
+      String(user._id),
+      query.trim(),
+      {
+        maxResults,
+        mimeTypeFilter,
+      }
+    );
 
     if (result.success) {
       return NextResponse.json({
@@ -57,9 +65,9 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('S3 search API error:', error);
+    logger.error("S3 search API error:", error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

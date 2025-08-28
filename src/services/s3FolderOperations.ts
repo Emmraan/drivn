@@ -8,6 +8,7 @@ import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
 import { s3Cache } from "../utils/s3Cache";
 import ActivityLog, { IActivityLogModel } from "../models/ActivityLog";
 import FileMetadata, { IFileMetadataModel } from "../models/FileMetadata";
+import { logger } from "@/utils/logger";
 
 export interface S3FolderItem {
   key: string;
@@ -82,7 +83,7 @@ export class S3FolderOperations {
           };
         }
       } catch (error) {
-        console.warn("Could not check for existing folder:", error);
+        logger.warn("Could not check for existing folder:", error);
       }
 
       const putCommand = new PutObjectCommand({
@@ -124,7 +125,7 @@ export class S3FolderOperations {
         folder,
       };
     } catch (error) {
-      console.error("Create folder error:", error);
+      logger.error("Create folder error:", error);
       return {
         success: false,
         message: "Failed to create folder",
@@ -157,7 +158,7 @@ export class S3FolderOperations {
         .replace(/\/$/, "");
       const folderPrefix = `${userId}${normalizedFolderPath}/`;
 
-      console.log("🗑️ Deleting folder with prefix:", folderPrefix);
+      logger.info("🗑️ Deleting folder with prefix:", folderPrefix);
 
       const allObjects: Array<{
         Key?: string;
@@ -182,7 +183,7 @@ export class S3FolderOperations {
         continuationToken = objects.NextContinuationToken;
       } while (continuationToken);
 
-      console.log(
+      logger.info(
         "🔍 Found objects to delete:",
         allObjects.map((obj) => obj.Key) || []
       );
@@ -201,11 +202,11 @@ export class S3FolderOperations {
 
       const folderMarkerKey = folderPrefix;
       if (!objectsToDelete.some((obj) => obj.Key === folderMarkerKey)) {
-        console.log("Adding folder marker to deletion list:", folderMarkerKey);
+        logger.info("Adding folder marker to deletion list:", folderMarkerKey);
         objectsToDelete.push({ Key: folderMarkerKey });
       }
 
-      console.log(
+      logger.info(
         "📝 Final objects prepared for deletion:",
         objectsToDelete.map((obj) => obj.Key)
       );
@@ -216,7 +217,7 @@ export class S3FolderOperations {
       for (let i = 0; i < objectsToDelete.length; i += batchSize) {
         const batch = objectsToDelete.slice(i, i + batchSize);
 
-        console.log(
+        logger.info(
           `🗑️ Deleting batch ${Math.floor(i / batchSize) + 1}:`,
           batch.map((obj) => obj.Key)
         );
@@ -233,19 +234,19 @@ export class S3FolderOperations {
         const deletedCount = batch.length - (deleteResult.Errors?.length || 0);
         totalDeleted += deletedCount;
 
-        console.log(
+        logger.info(
           `✅ Successfully deleted ${deletedCount} objects in this batch`
         );
 
         if (deleteResult.Deleted && deleteResult.Deleted.length > 0) {
-          console.log(
+          logger.info(
             "✅ Deleted objects:",
             deleteResult.Deleted.map((obj) => obj.Key)
           );
         }
 
         if (deleteResult.Errors && deleteResult.Errors.length > 0) {
-          console.error(
+          logger.error(
             "❌ Failed to delete some objects:",
             deleteResult.Errors
           );
@@ -307,7 +308,7 @@ export class S3FolderOperations {
               (prefix) => prefix.Prefix === folderPrefix
             );
 
-          console.log("🔍 Verification details:", {
+          logger.info("🔍 Verification details:", {
             remainingObjects: remainingObjects.Contents?.length || 0,
             folderInCommonPrefixes: folderStillInCommonPrefixes,
             checkedPrefix: folderPrefix,
@@ -319,7 +320,7 @@ export class S3FolderOperations {
 
           if (hasRemainingObjects || folderStillInCommonPrefixes) {
             verificationAttempts++;
-            console.log(
+            logger.info(
               `🔄 Verification attempt ${verificationAttempts}/${maxVerificationAttempts}:`,
               {
                 remainingObjects: hasRemainingObjects
@@ -330,11 +331,11 @@ export class S3FolderOperations {
             );
 
             if (verificationAttempts >= maxVerificationAttempts) {
-              console.warn(
+              logger.warn(
                 "⚠️ Folder still visible after maximum verification attempts. This is likely due to S3 eventual consistency and should resolve shortly."
               );
               try {
-                console.log(
+                logger.info(
                   "🔪 Attempting final, direct deletion of folder marker:",
                   folderPrefix
                 );
@@ -343,25 +344,25 @@ export class S3FolderOperations {
                   Delete: { Objects: [{ Key: folderPrefix }] },
                 });
                 await s3Client.send(deleteMarkerCommand);
-                console.log(
+                logger.info(
                   "✅ Final deletion command sent for folder marker."
                 );
               } catch (finalDeleteError) {
-                console.error(
+                logger.error(
                   "❌ Error during final direct deletion:",
                   finalDeleteError
                 );
               }
             }
           } else {
-            console.log(
+            logger.info(
               "✅ Folder deletion verified - no objects remain and not in CommonPrefixes:",
               folderPrefix
             );
             break;
           }
         } catch (verifyError) {
-          console.warn("Could not verify folder deletion:", verifyError);
+          logger.warn("Could not verify folder deletion:", verifyError);
           break;
         }
       }
@@ -374,7 +375,7 @@ export class S3FolderOperations {
       s3Cache.invalidate(`list:${userId}:${parentPath}`);
       s3Cache.invalidate(`list:${userId}:`);
 
-      console.log(
+      logger.info(
         `✅ Folder deletion completed: ${totalDeleted} items deleted, cache invalidated`
       );
 
@@ -384,7 +385,7 @@ export class S3FolderOperations {
         deletedCount: totalDeleted,
       };
     } catch (error) {
-      console.error("Delete folder error:", error);
+      logger.error("Delete folder error:", error);
       return {
         success: false,
         message: "Failed to delete folder",
@@ -537,7 +538,7 @@ export class S3FolderOperations {
         folder: renamedFolder,
       };
     } catch (error) {
-      console.error("Rename folder error:", error);
+      logger.error("Rename folder error:", error);
       return {
         success: false,
         message: "Failed to rename folder",

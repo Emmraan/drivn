@@ -17,6 +17,7 @@ import {
 import { validateEmail, validatePassword } from "@/utils/validation";
 import debounce from "@/utils/debounce";
 import { useRouter } from "next/navigation";
+import { logger } from "@/utils/logger";
 
 interface LoginFormProps {
   onToggleMode?: () => void;
@@ -94,7 +95,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
     } catch (error) {
       setError("An unexpected error occurred.");
       setLoading(false);
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -103,7 +104,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
       setError("Failed to sign in with Google.");
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -136,7 +137,7 @@ export default function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       }
     } catch (error) {
       setError("Failed to resend verification email. Please try again.");
-      console.error(error);
+      logger.error(error);
     } finally {
       setResendLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 export interface S3FileItem {
   key: string;
@@ -45,7 +46,7 @@ export function useS3Files(
       reset: boolean = true,
       forceRefresh: boolean = false
     ) => {
-      console.log("🔄 loadFiles called:", {
+      logger.info("🔄 loadFiles called:", {
         path,
         reset,
         forceRefresh,
@@ -71,11 +72,11 @@ export function useS3Files(
           params.append("continuationToken", nextToken);
         }
 
-        console.log("📡 Fetching S3 files with params:", params.toString());
+        logger.info("📡 Fetching S3 files with params:", params.toString());
         const response = await fetch(`/api/s3-files?${params}`);
         const result = await response.json();
 
-        console.log("📥 S3 files response:", {
+        logger.info("📥 S3 files response:", {
           success: result.success,
           fileCount: result.data?.files?.length,
           folderCount: result.data?.folders?.length,
@@ -83,12 +84,12 @@ export function useS3Files(
 
         if (result.success) {
           if (reset) {
-            console.log("🔄 Resetting files and folders state");
+            logger.info("🔄 Resetting files and folders state");
             setFiles(result.data.files || []);
             setFolders(result.data.folders || []);
             setNextToken(undefined);
           } else {
-            console.log("➕ Appending to existing files and folders");
+            logger.info("➕ Appending to existing files and folders");
             setFiles((prev) => [...prev, ...(result.data.files || [])]);
             setFolders((prev) => [...prev, ...(result.data.folders || [])]);
           }
@@ -97,11 +98,11 @@ export function useS3Files(
             setNextToken(result.data.nextToken);
           }
         } else {
-          console.error("❌ Failed to load files:", result.message);
+          logger.error("❌ Failed to load files:", result.message);
           setError(result.message || "Failed to load files");
         }
       } catch (err) {
-        console.error("❌ Error loading files:", err);
+        logger.error("❌ Error loading files:", err);
         setError(err instanceof Error ? err.message : "Failed to load files");
       } finally {
         setLoading(false);
@@ -112,14 +113,14 @@ export function useS3Files(
 
   const loadMore = useCallback(() => {
     if (hasMore && !loading) {
-      console.log("📄 Loading more items for path:", currentPath);
+      logger.info("📄 Loading more items for path:", currentPath);
       loadFiles(currentPath, false, false);
     }
   }, [hasMore, loading, loadFiles, currentPath]);
 
   const navigateToPath = useCallback(
     (newPath: string) => {
-      console.log("🧭 Navigating to path:", { from: currentPath, to: newPath });
+      logger.info("🧭 Navigating to path:", { from: currentPath, to: newPath });
       setCurrentPath(newPath);
       setNextToken(undefined);
       loadFiles(newPath, true, true);
@@ -128,14 +129,14 @@ export function useS3Files(
   );
 
   const refresh = useCallback(() => {
-    console.log("🔄 Manual refresh triggered for path:", currentPath);
+    logger.info("🔄 Manual refresh triggered for path:", currentPath);
     setNextToken(undefined);
     loadFiles(currentPath, true, true);
   }, [loadFiles, currentPath]);
 
   const uploadFiles = useCallback(
     async (filesToUpload: File[], uploadPath?: string) => {
-      console.log("📤 Starting file upload:", {
+      logger.info("📤 Starting file upload:", {
         fileCount: filesToUpload.length,
         uploadPath,
         currentPath,
@@ -156,18 +157,18 @@ export function useS3Files(
         });
 
         const result = await response.json();
-        console.log("📤 Upload result:", result);
+        logger.info("📤 Upload result:", result);
 
         if (result.success) {
-          console.log("✅ Upload successful, refreshing UI...");
+          logger.info("✅ Upload successful, refreshing UI...");
           await loadFiles(currentPath, true, true);
           return { success: true, data: result.data };
         } else {
-          console.error("❌ Upload failed:", result.message);
+          logger.error("❌ Upload failed:", result.message);
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Upload error:", error);
+        logger.error("❌ Upload error:", error);
         return {
           success: false,
           message: error instanceof Error ? error.message : "Upload failed",
@@ -179,7 +180,7 @@ export function useS3Files(
 
   const deleteFile = useCallback(
     async (s3Key: string) => {
-      console.log(
+      logger.info(
         "🗑️ Attempting optimistic delete for file with S3 key:",
         s3Key
       );
@@ -198,13 +199,13 @@ export function useS3Files(
         });
 
         const result = await response.json();
-        console.log("🗑️ Delete API result:", result);
+        logger.info("🗑️ Delete API result:", result);
 
         if (result.success) {
-          console.log("✅ File deleted successfully on backend.");
+          logger.info("✅ File deleted successfully on backend.");
           return { success: true };
         } else {
-          console.error(
+          logger.error(
             "❌ Backend delete failed, reverting UI:",
             result.message
           );
@@ -213,7 +214,7 @@ export function useS3Files(
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Delete network error, reverting UI:", error);
+        logger.error("❌ Delete network error, reverting UI:", error);
         setError(
           error instanceof Error
             ? error.message
@@ -234,7 +235,7 @@ export function useS3Files(
 
   const renameFile = useCallback(
     async (s3Key: string, newName: string) => {
-      console.log("✏️ Renaming file with S3 key:", { s3Key, newName });
+      logger.info("✏️ Renaming file with S3 key:", { s3Key, newName });
 
       try {
         const keySegments = s3Key
@@ -249,18 +250,18 @@ export function useS3Files(
         });
 
         const result = await response.json();
-        console.log("✏️ Rename result:", result);
+        logger.info("✏️ Rename result:", result);
 
         if (result.success) {
-          console.log("✅ Rename successful, refreshing UI...");
+          logger.info("✅ Rename successful, refreshing UI...");
           await loadFiles(currentPath, true, true);
           return { success: true, data: result.data };
         } else {
-          console.error("❌ Rename failed:", result.message);
+          logger.error("❌ Rename failed:", result.message);
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Rename error:", error);
+        logger.error("❌ Rename error:", error);
         return {
           success: false,
           message: error instanceof Error ? error.message : "Rename failed",
@@ -272,7 +273,7 @@ export function useS3Files(
 
   const createFolder = useCallback(
     async (folderName: string, parentPath?: string) => {
-      console.log("📁 Creating folder:", {
+      logger.info("📁 Creating folder:", {
         folderName,
         parentPath,
         currentPath,
@@ -289,10 +290,10 @@ export function useS3Files(
         });
 
         const result = await response.json();
-        console.log("📁 Create folder result:", result);
+        logger.info("📁 Create folder result:", result);
 
         if (result.success) {
-          console.log("✅ Folder creation successful, refreshing UI...");
+          logger.info("✅ Folder creation successful, refreshing UI...");
           const targetPath =
             parentPath !== undefined ? parentPath : currentPath;
           if (targetPath === currentPath) {
@@ -300,11 +301,11 @@ export function useS3Files(
           }
           return { success: true, data: result.data };
         } else {
-          console.error("❌ Create folder failed:", result.message);
+          logger.error("❌ Create folder failed:", result.message);
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Create folder error:", error);
+        logger.error("❌ Create folder error:", error);
         return {
           success: false,
           message:
@@ -317,7 +318,7 @@ export function useS3Files(
 
   const deleteFolder = useCallback(
     async (folderPath: string) => {
-      console.log("🗑️📁 Attempting optimistic delete for folder:", folderPath);
+      logger.info("🗑️📁 Attempting optimistic delete for folder:", folderPath);
 
       setFolders((prevFolders) =>
         prevFolders.filter((folder) => folder.path !== folderPath)
@@ -333,13 +334,13 @@ export function useS3Files(
         );
 
         const result = await response.json();
-        console.log("🗑️📁 Delete folder API result:", result);
+        logger.info("🗑️📁 Delete folder API result:", result);
 
         if (result.success) {
-          console.log("✅ Folder deleted successfully on backend.");
+          logger.info("✅ Folder deleted successfully on backend.");
           return { success: true, stats: result.stats };
         } else {
-          console.error(
+          logger.error(
             "❌ Backend folder delete failed, reverting UI:",
             result.message
           );
@@ -348,7 +349,7 @@ export function useS3Files(
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Folder delete network error, reverting UI:", error);
+        logger.error("❌ Folder delete network error, reverting UI:", error);
         setError(
           error instanceof Error
             ? error.message
@@ -369,7 +370,7 @@ export function useS3Files(
 
   const renameFolder = useCallback(
     async (folderPath: string, newName: string) => {
-      console.log("✏️📁 Renaming folder:", { folderPath, newName });
+      logger.info("✏️📁 Renaming folder:", { folderPath, newName });
 
       try {
         const response = await fetch(
@@ -382,18 +383,18 @@ export function useS3Files(
         );
 
         const result = await response.json();
-        console.log("✏️📁 Rename folder result:", result);
+        logger.info("✏️📁 Rename folder result:", result);
 
         if (result.success) {
-          console.log("✅ Folder rename successful, refreshing UI...");
+          logger.info("✅ Folder rename successful, refreshing UI...");
           await loadFiles(currentPath, true, true);
           return { success: true, data: result.data, stats: result.stats };
         } else {
-          console.error("❌ Folder rename failed:", result.message);
+          logger.error("❌ Folder rename failed:", result.message);
           return { success: false, message: result.message };
         }
       } catch (error) {
-        console.error("❌ Folder rename error:", error);
+        logger.error("❌ Folder rename error:", error);
         return {
           success: false,
           message:
@@ -430,7 +431,7 @@ export function useS3Files(
 
   useEffect(() => {
     if (autoLoad) {
-      console.log("🚀 Auto-loading files for path:", currentPath);
+      logger.info("🚀 Auto-loading files for path:", currentPath);
       const loadData = async () => {
         await loadFiles(currentPath, true, true);
       };

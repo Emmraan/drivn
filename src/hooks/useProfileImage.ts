@@ -3,6 +3,7 @@ import {
   isPresignedUrlExpired,
   refreshProfileImageUrl,
 } from "@/utils/imageUtils";
+import { logger } from "@/utils/logger";
 
 /**
  * Custom hook for managing profile images with automatic URL refresh
@@ -24,7 +25,7 @@ export function useProfileImage(
 
   const handleImageError = useCallback(async () => {
     if (isRefreshing || refreshAttempts >= 3) {
-      console.log(
+      logger.info(
         "Maximum image refresh attempts reached or already refreshing"
       );
       return;
@@ -39,7 +40,7 @@ export function useProfileImage(
       return;
     }
 
-    console.log(
+    logger.info(
       "Detected potentially expired profile image URL, attempting refresh..."
     );
     setIsRefreshing(true);
@@ -48,15 +49,15 @@ export function useProfileImage(
       const newImageUrl = await refreshProfileImageUrl();
 
       if (newImageUrl && newImageUrl !== currentImageUrl) {
-        console.log("Successfully refreshed profile image URL");
+        logger.info("Successfully refreshed profile image URL");
         setImageUrl(newImageUrl);
         updateUserProfile?.({ image: newImageUrl });
         setRefreshAttempts((prev) => prev + 1);
       } else {
-        console.log("Failed to refresh profile image URL");
+        logger.info("Failed to refresh profile image URL");
       }
     } catch (error) {
-      console.log("Error refreshing profile image:", error);
+      logger.info("Error refreshing profile image:", error);
     } finally {
       setIsRefreshing(false);
     }

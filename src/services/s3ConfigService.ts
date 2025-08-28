@@ -13,6 +13,7 @@ import {
   validateS3Config,
   sanitizeS3ConfigForLogging,
 } from "@/utils/encryption";
+import { logger } from "@/utils/logger";
 
 /**
  * Service for managing user S3 configurations
@@ -90,7 +91,7 @@ export class S3ConfigService {
           })
         );
 
-        console.log(
+        logger.info(
           "S3 connection test successful:",
           sanitizeS3ConfigForLogging(config)
         );
@@ -130,7 +131,7 @@ export class S3ConfigService {
       const errorName = hasName ? (error as { name: string }).name : "";
       const errorCode = hasCode ? (error as { code: string }).code : "";
 
-      console.error(
+      logger.error(
         "S3 connection test failed:",
         errorMessage,
         sanitizeS3ConfigForLogging(config)
@@ -216,7 +217,7 @@ export class S3ConfigService {
 
       await user.save();
 
-      console.log(
+      logger.info(
         "S3 configuration saved for user:",
         userId,
         sanitizeS3ConfigForLogging(config)
@@ -233,7 +234,7 @@ export class S3ConfigService {
         errorMessage = String((error as { message: unknown }).message);
       }
 
-      console.error("Error saving S3 configuration:", errorMessage);
+      logger.error("Error saving S3 configuration:", errorMessage);
 
       return {
         success: false,
@@ -262,7 +263,7 @@ export class S3ConfigService {
       );
       return decryptedConfig;
     } catch (error) {
-      console.error("Error retrieving S3 configuration:", error);
+      logger.error("Error retrieving S3 configuration:", error);
       return null;
     }
   }
@@ -289,7 +290,7 @@ export class S3ConfigService {
       user.s3Config = undefined;
       await user.save();
 
-      console.log("S3 configuration deleted for user:", userId);
+      logger.info("S3 configuration deleted for user:", userId);
 
       return {
         success: true,
@@ -301,7 +302,7 @@ export class S3ConfigService {
           ? String((error as { message: unknown }).message)
           : "Unknown error";
 
-      console.error("Error deleting S3 configuration:", errorMessage);
+      logger.error("Error deleting S3 configuration:", errorMessage);
 
       return {
         success: false,
@@ -321,7 +322,7 @@ export class S3ConfigService {
       const user = await User.findById(userId);
       return !!user?.s3Config?.accessKeyId;
     } catch (error) {
-      console.error("Error checking S3 configuration:", error);
+      logger.error("Error checking S3 configuration:", error);
       return false;
     }
   }

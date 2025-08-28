@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { validatePassword } from "@/utils/validation";
 import Link from "next/link";
+import { logger } from "@/utils/logger";
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState("");
@@ -79,7 +80,7 @@ function ResetPasswordForm() {
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

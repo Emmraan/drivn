@@ -9,6 +9,7 @@ import Card from "@/components/ui/Card";
 import { EnvelopeIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { validateEmail } from "@/utils/validation";
 import Link from "next/link";
+import { logger } from "@/utils/logger";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -58,7 +59,7 @@ export default function ForgotPasswordPage() {
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }
@@ -87,8 +88,8 @@ export default function ForgotPasswordPage() {
             </p>
 
             <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-              If you don&apos;t see the email, check your spam folder. The link will
-              expire in 1 hour.
+              If you don&apos;t see the email, check your spam folder. The link
+              will expire in 1 hour.
             </p>
 
             <div className="space-y-3">

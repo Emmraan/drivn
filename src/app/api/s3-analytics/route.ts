@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
 import { S3DirectService } from '@/services/s3DirectService';
 import ActivityLog from '@/models/ActivityLog';
 import connectDB from '@/utils/database';
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/s3-analytics
@@ -25,10 +26,10 @@ export async function GET(request: NextRequest) {
       const timeRange = request.nextUrl.searchParams.get('timeRange') as '7d' | '30d' | '90d' || '30d';
       const activityStats = await ActivityLog.getUserStats(String(user._id), timeRange);
       
-      console.log('Activity Stats:', activityStats);
+      logger.info('Activity Stats:', activityStats);
 
       const totalDownloads = activityStats.download?.count || 0;
-      console.log('Total Downloads:', totalDownloads);
+      logger.info('Total Downloads:', totalDownloads);
 
       const fileTypeStats = Object.entries(s3StatsResult.data.fileTypeStats).map(([extension, stats]) => ({
         _id: getFileTypeCategory(extension),
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('S3 analytics API error:', error);
+    logger.error('S3 analytics API error:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

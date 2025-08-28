@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/auth/middleware/authMiddleware';
-import { S3DirectService } from '@/services/s3DirectService';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
+import { S3DirectService } from "@/services/s3DirectService";
+import { logger } from "@/utils/logger";
 
 /**
  * GET /api/test-s3-connection
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -24,11 +25,11 @@ export async function GET(request: NextRequest) {
       userId: String(user._id),
     });
   } catch (error) {
-    console.error('S3 connection test API error:', error);
+    logger.error("S3 connection test API error:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Test failed',
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Test failed",
       },
       { status: 500 }
     );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import { isAdminEmail } from "@/auth/middleware/adminMiddleware";
+import { logger } from "@/utils/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Get user API error:", error);
+    logger.error("Get user API error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

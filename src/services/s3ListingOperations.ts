@@ -1,6 +1,7 @@
 import { ListObjectsV2Command, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
 import { s3Cache } from "../utils/s3Cache";
+import { logger } from "@/utils/logger";
 
 export interface S3FileItem {
   key: string;
@@ -87,7 +88,7 @@ export class S3ListingOperations {
         }
       }
 
-      console.log(
+      logger.info(
         "🔍 Listing S3 objects with prefix:",
         s3Prefix,
         useCache ? "(using cache)" : "(bypassing cache)"
@@ -101,7 +102,7 @@ export class S3ListingOperations {
         ...(continuationToken && { ContinuationToken: continuationToken }),
       });
 
-      console.log("🔍 Sending ListObjectsV2Command with params:", {
+      logger.info("🔍 Sending ListObjectsV2Command with params:", {
         Bucket: bucketName,
         Prefix: s3Prefix,
         Delimiter: "/",
@@ -111,7 +112,7 @@ export class S3ListingOperations {
 
       const response = await s3Client.send(listCommand);
 
-      console.log("🔍 S3 ListObjects response:", {
+      logger.info("🔍 S3 ListObjects response:", {
         CommonPrefixes: response.CommonPrefixes?.map((p) => p.Prefix) || [],
         Contents: response.Contents?.map((c) => c.Key) || [],
         IsTruncated: response.IsTruncated,
@@ -129,7 +130,7 @@ export class S3ListingOperations {
             );
             if (!folderName) return null;
 
-            console.log("🔍 Validating folder from CommonPrefix:", {
+            logger.info("🔍 Validating folder from CommonPrefix:", {
               prefix: prefix.Prefix,
               folderName,
             });
@@ -147,7 +148,7 @@ export class S3ListingOperations {
                 validateResponse.Contents.length > 0;
 
               if (hasObjects) {
-                console.log(
+                logger.info(
                   "✅ Folder validated - contains objects:",
                   prefix.Prefix
                 );
@@ -164,14 +165,14 @@ export class S3ListingOperations {
                   }/${folderName}`,
                 };
               } else {
-                console.log(
+                logger.info(
                   "❌ Folder invalid - no objects found:",
                   prefix.Prefix
                 );
                 return null;
               }
             } catch (error) {
-              console.warn("Could not validate folder:", prefix.Prefix, error);
+              logger.warn("Could not validate folder:", prefix.Prefix, error);
               return {
                 key: prefix.Prefix,
                 name: folderName,
@@ -226,7 +227,7 @@ export class S3ListingOperations {
               contentType = headResult.ContentType;
             }
           } catch (error) {
-            console.warn(`Could not get metadata for ${object.Key}:`, error);
+            logger.warn(`Could not get metadata for ${object.Key}:`, error);
             const parts = s3FileName.split("-");
             if (parts.length >= 3) {
               originalFileName = parts.slice(2).join("-");
@@ -283,12 +284,12 @@ export class S3ListingOperations {
         s3Cache.set(cacheKey, result, 2 * 60 * 1000);
       }
 
-      console.log(
+      logger.info(
         `📁 Listed ${files.length} files and ${folders.length} folders`
       );
       return result;
     } catch (error) {
-      console.error("List files error:", error);
+      logger.error("List files error:", error);
       return {
         success: false,
         files: [],
@@ -389,7 +390,7 @@ export class S3ListingOperations {
         return cached as SearchResult;
       }
 
-      console.log("🔍 Searching S3 objects for query:", query);
+      logger.info("🔍 Searching S3 objects for query:", query);
 
       const listCommand = new ListObjectsV2Command({
         Bucket: bucketName,
@@ -453,10 +454,10 @@ export class S3ListingOperations {
 
       s3Cache.set(cacheKey, result, 1 * 60 * 1000);
 
-      console.log(`🔍 Found ${matchingFiles.length} matching files`);
+      logger.info(`🔍 Found ${matchingFiles.length} matching files`);
       return result;
     } catch (error) {
-      console.error("Search files error:", error);
+      logger.error("Search files error:", error);
       return {
         success: false,
         files: [],
