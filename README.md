@@ -131,4 +131,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support & Contact
 
-For questions, issues, or support, please open an issue on the [GitHub repository](https://github.com/Emmraan/drivn/issues) or refer to the comprehensive [DRIVN Documentation](https://drivn-docs.vercel.app).
+For questions, issues, or support, please open an issue on the [GitHub repository](https://github.com/Emmraan/drivn/issues) or refer to the comprehensive [DRIVN Documentation](https://deepwiki.com/Emmraan/drivn).
