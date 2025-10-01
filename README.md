@@ -5,6 +5,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![AWS S3](https://img.shields.io/badge/AWS%20S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)](https://aws.amazon.com/s3/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Emmraan/drivn)
 
 DRIVN is a robust, full-featured Next.js application designed for secure and efficient file storage, management, and administrative control. It offers a centralized solution for organizations to handle documents with granular access permissions, leveraging modern web technologies and cloud storage.
 
@@ -131,4 +132,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support & Contact
 
-For questions, issues, or support, please open an issue on the [GitHub repository](https://github.com/Emmraan/drivn/issues) or refer to the comprehensive [DRIVN Documentation](https://drivn-docs.vercel.app).
+For questions, issues, or support, please open an issue on the [GitHub repository](https://github.com/Emmraan/drivn/issues) or refer to the comprehensive [DRIVN Documentation](https://deepwiki.com/Emmraan/drivn).

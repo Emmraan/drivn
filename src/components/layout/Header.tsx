@@ -10,7 +10,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Features', href: '#features' },
-  { name: 'Docs', href: '/docs' },
+  { name: 'Docs', href: 'https://deepwiki.com/Emmraan/drivn' },
   { name: 'Github', href: 'https://github.com/Emmraan/drivn' },
 ];
 
