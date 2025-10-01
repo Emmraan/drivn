@@ -10,19 +10,29 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "DRIVN - Secure Open Source Cloud Storage",
-  description: "Open-source, secure cloud storage that gives you complete control over your data. S3-compatible and privacy-first.",
-  keywords: ["cloud storage", "open source", "S3 compatible", "secure", "privacy", "file storage"],
+  description:
+    "Open-source, secure cloud storage that gives you complete control over your data. S3-compatible and privacy-first.",
+  keywords: [
+    "cloud storage",
+    "open source",
+    "S3 compatible",
+    "secure",
+    "privacy",
+    "file storage",
+  ],
   authors: [{ name: "DRIVN Team" }],
   openGraph: {
     title: "DRIVN - Secure Open Source Cloud Storage",
-    description: "Open-source, secure cloud storage that gives you complete control over your data.",
+    description:
+      "Open-source, secure cloud storage that gives you complete control over your data.",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "DRIVN - Secure Open Source Cloud Storage",
-    description: "Open-source, secure cloud storage that gives you complete control over your data.",
+    description:
+      "Open-source, secure cloud storage that gives you complete control over your data.",
   },
 };
 
@@ -33,9 +43,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="apple-mobile-web-app-title" content="Drivn" />
+      </head>
       <body className={`${inter.variable} font-sans antialiased bg-background`}>
         <Providers>
-          {children}
+        {children}
         </Providers>
       </body>
     </html>
