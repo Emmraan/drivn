@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
-import { s3Cache } from "../utils/s3Cache";
+import { redisCache } from "../utils/redisCache";
 import ActivityLog, { IActivityLogModel } from "../models/ActivityLog";
 import FileMetadata from "../models/FileMetadata";
 import { logger } from "@/utils/logger";
@@ -131,9 +131,12 @@ export class S3FileOperations {
         }
       );
 
+      await redisCache.invalidate(`activity:${userId}:*`);
+
       await FileMetadata.findOneAndDelete({ s3Key });
 
-      s3Cache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`analytics:${userId}:*`);
 
       return {
         success: true,
@@ -215,13 +218,16 @@ export class S3FileOperations {
         }
       );
 
+      await redisCache.invalidate(`activity:${userId}:*`);
+
       await FileMetadata.findOneAndUpdate(
         { s3Key },
         { s3Key: newS3Key, fileName: newName },
         { upsert: true }
       );
 
-      s3Cache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`analytics:${userId}:*`);
 
       const renamedFile: S3FileItem = {
         key: newS3Key,

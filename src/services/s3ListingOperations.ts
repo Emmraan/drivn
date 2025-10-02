@@ -1,6 +1,6 @@
 import { ListObjectsV2Command, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
-import { s3Cache } from "../utils/s3Cache";
+import { redisCache } from "../utils/redisCache";
 import { logger } from "@/utils/logger";
 
 export interface S3FileItem {
@@ -49,10 +49,16 @@ export class S3ListingOperations {
       maxKeys?: number;
       continuationToken?: string;
       useCache?: boolean;
+      includeMetadata?: boolean;
     } = {}
   ): Promise<ListResult> {
     try {
-      const { maxKeys = 1000, continuationToken, useCache = true } = options;
+      const {
+        maxKeys = 1000,
+        continuationToken,
+        useCache = true,
+        includeMetadata = false,
+      } = options;
 
       const s3Client = await getS3Client(userId);
       const bucketName = await getS3BucketName(userId);
@@ -80,9 +86,9 @@ export class S3ListingOperations {
 
       const cacheKey = `list:${userId}:${normalizedPath}:${maxKeys}:${
         continuationToken || ""
-      }`;
+      }:${includeMetadata}`;
       if (useCache) {
-        const cached = s3Cache.get(cacheKey);
+        const cached = await redisCache.get(cacheKey);
         if (cached) {
           return cached as ListResult;
         }
@@ -98,7 +104,7 @@ export class S3ListingOperations {
         Bucket: bucketName,
         Prefix: s3Prefix,
         Delimiter: "/",
-        MaxKeys: 1000,
+        MaxKeys: maxKeys,
         ...(continuationToken && { ContinuationToken: continuationToken }),
       });
 
@@ -120,81 +126,28 @@ export class S3ListingOperations {
 
       const folders: S3FileItem[] = [];
       if (response.CommonPrefixes) {
-        const folderValidationPromises = response.CommonPrefixes.map(
-          async (prefix) => {
-            if (!prefix.Prefix || prefix.Prefix === s3Prefix) return null;
+        for (const prefix of response.CommonPrefixes) {
+          if (!prefix.Prefix || prefix.Prefix === s3Prefix) continue;
 
-            const folderName = prefix.Prefix.replace(s3Prefix, "").replace(
-              "/",
-              ""
-            );
-            if (!folderName) return null;
+          const folderName = prefix.Prefix.replace(s3Prefix, "").replace(
+            "/",
+            ""
+          );
+          if (!folderName) continue;
 
-            logger.info("🔍 Validating folder from CommonPrefix:", {
-              prefix: prefix.Prefix,
-              folderName,
-            });
-
-            try {
-              const validateCommand = new ListObjectsV2Command({
-                Bucket: bucketName,
-                Prefix: prefix.Prefix,
-                MaxKeys: 1,
-              });
-
-              const validateResponse = await s3Client.send(validateCommand);
-              const hasObjects =
-                validateResponse.Contents &&
-                validateResponse.Contents.length > 0;
-
-              if (hasObjects) {
-                logger.info(
-                  "✅ Folder validated - contains objects:",
-                  prefix.Prefix
-                );
-                return {
-                  key: prefix.Prefix,
-                  name: folderName,
-                  size: 0,
-                  lastModified: new Date(),
-                  isFolder: true,
-                  path: `${
-                    normalizedPath === "/" || normalizedPath === ""
-                      ? ""
-                      : normalizedPath
-                  }/${folderName}`,
-                };
-              } else {
-                logger.info(
-                  "❌ Folder invalid - no objects found:",
-                  prefix.Prefix
-                );
-                return null;
-              }
-            } catch (error) {
-              logger.warn("Could not validate folder:", prefix.Prefix, error);
-              return {
-                key: prefix.Prefix,
-                name: folderName,
-                size: 0,
-                lastModified: new Date(),
-                isFolder: true,
-                path: `${
-                  normalizedPath === "/" || normalizedPath === ""
-                    ? ""
-                    : normalizedPath
-                }/${folderName}`,
-              };
-            }
-          }
-        );
-
-        const validatedFolders = await Promise.all(folderValidationPromises);
-        folders.push(
-          ...validatedFolders.filter(
-            (folder): folder is S3FileItem => folder !== null
-          )
-        );
+          folders.push({
+            key: prefix.Prefix,
+            name: folderName,
+            size: 0,
+            lastModified: new Date(),
+            isFolder: true,
+            path: `${
+              normalizedPath === "/" || normalizedPath === ""
+                ? ""
+                : normalizedPath
+            }/${folderName}`,
+          });
+        }
       }
 
       let files: S3FileItem[] = [];
@@ -212,22 +165,29 @@ export class S3ListingOperations {
           let originalFileName = s3FileName;
           let contentType = "application/octet-stream";
 
-          try {
-            const headCommand = new HeadObjectCommand({
-              Bucket: bucketName,
-              Key: object.Key,
-            });
-            const headResult = await s3Client.send(headCommand);
+          if (includeMetadata) {
+            try {
+              const headCommand = new HeadObjectCommand({
+                Bucket: bucketName,
+                Key: object.Key,
+              });
+              const headResult = await s3Client.send(headCommand);
 
-            if (headResult.Metadata?.["original-name"]) {
-              originalFileName = headResult.Metadata["original-name"];
-            }
+              if (headResult.Metadata?.["original-name"]) {
+                originalFileName = headResult.Metadata["original-name"];
+              }
 
-            if (headResult.ContentType) {
-              contentType = headResult.ContentType;
+              if (headResult.ContentType) {
+                contentType = headResult.ContentType;
+              }
+            } catch (error) {
+              logger.warn(`Could not get metadata for ${object.Key}:`, error);
+              const parts = s3FileName.split("-");
+              if (parts.length >= 3) {
+                originalFileName = parts.slice(2).join("-");
+              }
             }
-          } catch (error) {
-            logger.warn(`Could not get metadata for ${object.Key}:`, error);
+          } else {
             const parts = s3FileName.split("-");
             if (parts.length >= 3) {
               originalFileName = parts.slice(2).join("-");
@@ -281,7 +241,7 @@ export class S3ListingOperations {
       };
 
       if (useCache) {
-        s3Cache.set(cacheKey, result, 2 * 60 * 1000);
+        await redisCache.set(cacheKey, result, 2 * 60 * 1000);
       }
 
       logger.info(
@@ -385,7 +345,7 @@ export class S3ListingOperations {
       const cacheKey = `search:${userId}:${query}:${
         mimeTypeFilter || ""
       }:${maxResults}`;
-      const cached = s3Cache.get(cacheKey);
+      const cached = await redisCache.get(cacheKey);
       if (cached) {
         return cached as SearchResult;
       }
@@ -452,7 +412,7 @@ export class S3ListingOperations {
         query,
       };
 
-      s3Cache.set(cacheKey, result, 1 * 60 * 1000);
+      await redisCache.set(cacheKey, result, 1 * 60 * 1000);
 
       logger.info(`🔍 Found ${matchingFiles.length} matching files`);
       return result;

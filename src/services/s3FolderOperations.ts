@@ -5,7 +5,7 @@ import {
   CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getS3Client, getS3BucketName } from "../utils/s3ClientFactory";
-import { s3Cache } from "../utils/s3Cache";
+import { redisCache } from "../utils/redisCache";
 import ActivityLog, { IActivityLogModel } from "../models/ActivityLog";
 import FileMetadata, { IFileMetadataModel } from "../models/FileMetadata";
 import { logger } from "@/utils/logger";
@@ -110,7 +110,9 @@ export class S3FolderOperations {
         }
       );
 
-      s3Cache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`activity:${userId}:*`);
+
+      await redisCache.invalidate(`list:${userId}:/`);
 
       const folder: S3FolderItem = {
         key: folderKey,
@@ -265,6 +267,8 @@ export class S3FolderOperations {
         }
       );
 
+      await redisCache.invalidate(`activity:${userId}:*`);
+
       await (FileMetadata as unknown as IFileMetadataModel).deleteMany({
         userId,
         s3Key: {
@@ -367,13 +371,14 @@ export class S3FolderOperations {
         }
       }
 
-      s3Cache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`list:${userId}:/`);
       const parentPath = normalizedFolderPath.substring(
         0,
         normalizedFolderPath.lastIndexOf("/")
       );
-      s3Cache.invalidate(`list:${userId}:${parentPath}`);
-      s3Cache.invalidate(`list:${userId}:`);
+      await redisCache.invalidate(`list:${userId}:${parentPath}`);
+      await redisCache.invalidate(`list:${userId}:`);
+      await redisCache.invalidate(`analytics:${userId}:*`);
 
       logger.info(
         `✅ Folder deletion completed: ${totalDeleted} items deleted, cache invalidated`
@@ -513,6 +518,8 @@ export class S3FolderOperations {
         }
       );
 
+      await redisCache.invalidate(`activity:${userId}:*`);
+
       for (const result of successfulCopies) {
         if (result) {
           await FileMetadata.findOneAndUpdate(
@@ -523,7 +530,7 @@ export class S3FolderOperations {
         }
       }
 
-      s3Cache.invalidate(`list:${userId}:/`);
+      await redisCache.invalidate(`list:${userId}:/`);
 
       const renamedFolder: S3FolderItem = {
         key: newFolderPrefix,

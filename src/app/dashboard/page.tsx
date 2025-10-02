@@ -73,7 +73,7 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const [analyticsResponse, configResponse] = await Promise.all([
-        fetch("/api/s3-analytics?timeRange=30d"),
+        fetch("/api/s3-analytics?timeRange=7d"),
         fetch("/api/s3-config"),
       ]);
 

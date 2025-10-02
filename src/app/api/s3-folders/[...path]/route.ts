@@ -36,7 +36,7 @@ export async function DELETE(
     );
 
     if (result.success) {
-      S3DirectService.forceClearUserCache(String(user._id));
+      await S3DirectService.forceClearUserCache(String(user._id));
 
       return NextResponse.json({
         success: true,

@@ -4,7 +4,7 @@
 import { S3FileOperations } from "./s3FileOperations";
 import { S3FolderOperations } from "./s3FolderOperations";
 import { S3ListingOperations } from "./s3ListingOperations";
-import { s3Cache } from "../utils/s3Cache";
+import { redisCache } from "../utils/redisCache";
 import { S3ConfigService } from "./s3ConfigService";
 import { logger } from "@/utils/logger";
 
@@ -34,11 +34,13 @@ export class S3DirectService {
   static listFiles = S3ListingOperations.listFiles;
   static searchFiles = S3ListingOperations.searchFiles;
 
-  static clearCache = () => s3Cache.clear();
-  static invalidateCache = (pattern: string) => s3Cache.invalidate(pattern);
-  static forceClearUserCache = (userId: string) => s3Cache.invalidate(userId);
-  static getCacheSize = () => s3Cache.size();
-  static getCacheKeys = () => s3Cache.keys();
+  static clearCache = async () => await redisCache.clear();
+  static invalidateCache = async (pattern: string) =>
+    await redisCache.invalidate(pattern);
+  static forceClearUserCache = async (userId: string) =>
+    await redisCache.invalidate(userId);
+  static getCacheSize = () => redisCache.size();
+  static getCacheKeys = () => redisCache.keys();
 
   static listItems = S3ListingOperations.listFiles;
 

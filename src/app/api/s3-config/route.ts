@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/auth/middleware/authMiddleware";
 import { S3ConfigService } from "@/services/s3ConfigService";
 import { validateS3Config } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
+import { redisCache } from "@/utils/redisCache";
 
 /**
  * GET /api/s3-config
@@ -18,36 +19,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const refresh = request.nextUrl.searchParams.get("refresh") === "true";
+    const cacheKey = `dashboard/config:${String(user._id)}`;
+
+    if (refresh) {
+      await redisCache.invalidate(cacheKey);
+      logger.info("💾 Config cache invalidated for refresh");
+    }
+
+    const cachedResult = await redisCache.get(cacheKey);
+    if (cachedResult) {
+      logger.info("💾 Config cache HIT");
+      return NextResponse.json(cachedResult);
+    }
+
+    logger.info("💾 Config cache MISS, fetching...");
+
     const hasConfig = await S3ConfigService.hasS3Config(user._id);
 
+    let response;
     if (!hasConfig) {
-      return NextResponse.json({
+      response = {
         success: true,
         hasConfig: false,
         message: "No S3 configuration found",
-      });
+      };
+    } else {
+      const config = await S3ConfigService.getS3Config(user._id);
+
+      if (!config) {
+        response = {
+          success: true,
+          hasConfig: false,
+          message: "No S3 configuration found",
+        };
+      } else {
+        response = {
+          success: true,
+          hasConfig: true,
+          config: {
+            region: config.region,
+            bucketName: config.bucketName,
+            endpoint: config.endpoint,
+            forcePathStyle: config.forcePathStyle,
+          },
+        };
+      }
     }
 
-    const config = await S3ConfigService.getS3Config(user._id);
+    await redisCache.set(cacheKey, response, 10 * 60 * 1000);
 
-    if (!config) {
-      return NextResponse.json({
-        success: true,
-        hasConfig: false,
-        message: "No S3 configuration found",
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      hasConfig: true,
-      config: {
-        region: config.region,
-        bucketName: config.bucketName,
-        endpoint: config.endpoint,
-        forcePathStyle: config.forcePathStyle,
-      },
-    });
+    return NextResponse.json(response);
   } catch (error) {
     logger.error("Error retrieving S3 configuration:", error);
     return NextResponse.json(
@@ -117,6 +139,7 @@ export async function POST(request: NextRequest) {
     const result = await S3ConfigService.saveS3Config(user._id, s3Config);
 
     if (result.success) {
+      await redisCache.invalidate(`dashboard/config`);
       return NextResponse.json(result, { status: 200 });
     } else {
       return NextResponse.json(result, { status: 400 });
@@ -147,6 +170,7 @@ export async function DELETE(request: NextRequest) {
     const result = await S3ConfigService.deleteS3Config(user._id);
 
     if (result.success) {
+      await redisCache.invalidate(`dashboard/config`);
       return NextResponse.json(result, { status: 200 });
     } else {
       return NextResponse.json(result, { status: 400 });
