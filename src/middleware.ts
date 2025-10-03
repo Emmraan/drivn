@@ -2,19 +2,105 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { logger } from "@/utils/logger";
+import { checkRateLimit, getPolicyForPath } from "@/utils/rateLimitEdge";
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+const JWT_SECRET = process.env.JWT_SECRET
+  ? new TextEncoder().encode(process.env.JWT_SECRET)
+  : null;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
-    pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/")) {
+    const policy = getPolicyForPath(pathname);
+    const clientIP =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
+    let userId = clientIP;
+    const token = request.cookies.get("auth-token")?.value;
+    logger.info(
+      "Rate limit token check: token is",
+      token ? "present" : "undefined"
+    );
+    if (token) {
+      try {
+        logger.info(
+          "Calling jwtVerify for rate limit with token:",
+          typeof token,
+          token?.substring(0, 20)
+        );
+        const verified = await jwtVerify(token, JWT_SECRET!);
+        userId =
+          (verified.payload as { email?: string; id?: string }).id ||
+          (verified.payload as { email?: string }).email ||
+          clientIP;
+      } catch (err) {
+        logger.warn("JWT verification failed in rate limit:", err);
+      }
+    }
+
+    const rateLimitResult = await checkRateLimit(userId, policy);
+
+    if (!rateLimitResult.allowed) {
+      logger.warn("Rate limit exceeded:", {
+        userId,
+        pathname,
+        clientIP,
+        remaining: rateLimitResult.remaining,
+        resetTime: rateLimitResult.resetTime,
+        isAdaptive: rateLimitResult.isAdaptive,
+        sustainedUsage: rateLimitResult.sustainedUsage,
+      });
+
+      const response = NextResponse.json(
+        {
+          error: "Too Many Requests",
+          message: "Rate limit exceeded. Please try again later.",
+        },
+        { status: 429 }
+      );
+
+      response.headers.set("X-RateLimit-Limit", policy.maxRequests.toString());
+      response.headers.set(
+        "X-RateLimit-Remaining",
+        rateLimitResult.remaining.toString()
+      );
+      response.headers.set(
+        "X-RateLimit-Reset",
+        rateLimitResult.resetTime.toString()
+      );
+      if (rateLimitResult.retryAfter) {
+        response.headers.set(
+          "Retry-After",
+          rateLimitResult.retryAfter.toString()
+        );
+      }
+
+      return response;
+    }
+
+    const response = NextResponse.next();
+    response.headers.set("X-RateLimit-Limit", policy.maxRequests.toString());
+    response.headers.set(
+      "X-RateLimit-Remaining",
+      rateLimitResult.remaining.toString()
+    );
+    response.headers.set(
+      "X-RateLimit-Reset",
+      rateLimitResult.resetTime.toString()
+    );
+
+    return response;
   }
 
   const publicRoutes = ["/auth/verify"];
@@ -35,9 +121,15 @@ export async function middleware(request: NextRequest) {
   let isTokenValid = false;
   let userEmail = "";
 
-  if (token) {
+  logger.info("Auth check: token is", token ? "present" : "undefined");
+  if (token && JWT_SECRET) {
     try {
-      const verified = await jwtVerify(token, JWT_SECRET);
+      logger.info(
+        "Calling jwtVerify for auth with token:",
+        typeof token,
+        token?.substring(0, 20)
+      );
+      const verified = await jwtVerify(token, JWT_SECRET!);
       isTokenValid = !!verified;
       userEmail = (verified.payload as { email?: string }).email || "";
     } catch (err) {
@@ -85,11 +177,12 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     *
+     * API routes are now included for rate limiting.
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

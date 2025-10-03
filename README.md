@@ -20,6 +20,8 @@ DRIVN is a robust, full-featured Next.js application designed for secure and eff
 -   **Real-time Analytics**: In-depth insights into storage usage, file activity, and user behavior through real-time analytics.
 -   **Periodic Data Synchronization**: Automated sync service to maintain data consistency across all storage layers.
 -   **Secure API**: Robust API authentication using JWT tokens for secure and reliable communication.
+-   **Rate Limiting**: Distributed rate limiting using Redis to prevent API abuse, with token bucket couner + sliding window algorithm and tiered policies for different endpoints.
+-   **Monitoring**: Rate limit violations are logged with details including user ID, IP, endpoint, and reset time for monitoring and abuse detection.
 
 ## 📂 Project Structure
 
