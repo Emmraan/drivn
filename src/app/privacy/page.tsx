@@ -1,10 +1,35 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy - DRIVN",
+  description:
+    "Learn how DRIVN collects, uses, and protects your personal information. Our privacy-first approach ensures your data stays secure and private.",
+  keywords: [
+    "privacy policy",
+    "data protection",
+    "privacy",
+    "GDPR",
+    "data security",
+  ],
+  alternates: {
+    canonical: "https://drivn-one.vercel.app/privacy",
+  },
+  openGraph: {
+    title: "Privacy Policy - DRIVN",
+    description:
+      "Learn how DRIVN collects, uses, and protects your personal information.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Privacy Policy - DRIVN",
+    description:
+      "Learn how DRIVN collects, uses, and protects your personal information.",
+  },
+};
 
 const content = [
   {
@@ -53,43 +78,7 @@ const content = [
   },
 ];
 
-const PrivacyPolicyPage = () => {
-  const router = useRouter();
-
-  const ref0 = useRef(null);
-  const ref1 = useRef(null);
-  const ref2 = useRef(null);
-  const ref3 = useRef(null);
-  const ref4 = useRef(null);
-  const ref5 = useRef(null);
-  const ref6 = useRef(null);
-  const ref7 = useRef(null);
-  const ref8 = useRef(null);
-
-  const itemRefs = [ref0, ref1, ref2, ref3, ref4, ref5, ref6, ref7, ref8];
-
-  const inView0 = useInView(ref0, { once: true, margin: "-100px" });
-  const inView1 = useInView(ref1, { once: true, margin: "-100px" });
-  const inView2 = useInView(ref2, { once: true, margin: "-100px" });
-  const inView3 = useInView(ref3, { once: true, margin: "-100px" });
-  const inView4 = useInView(ref4, { once: true, margin: "-100px" });
-  const inView5 = useInView(ref5, { once: true, margin: "-100px" });
-  const inView6 = useInView(ref6, { once: true, margin: "-100px" });
-  const inView7 = useInView(ref7, { once: true, margin: "-100px" });
-  const inView8 = useInView(ref8, { once: true, margin: "-100px" });
-
-  const itemInViews = [
-    inView0,
-    inView1,
-    inView2,
-    inView3,
-    inView4,
-    inView5,
-    inView6,
-    inView7,
-    inView8,
-  ];
-
+export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -97,53 +86,31 @@ const PrivacyPolicyPage = () => {
       <main className="pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="mb-8"
-          >
-            <button
-              onClick={() => router.push("/signup")}
+          <div className="mb-8">
+            <Link
+              href="/signup"
               className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-2"
             >
               ← Back to Signup
-            </button>
-          </motion.div>
+            </Link>
+          </div>
 
           {/* Page Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-center mb-12"
-          >
+          <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
               Privacy Policy
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
               Learn how we collect, use, and protect your personal information
             </p>
-          </motion.div>
+          </div>
 
           {/* Content Container */}
           <div className="space-y-6">
             {content.map((item, i) => {
               return (
-                <motion.div
+                <div
                   key={i}
-                  ref={itemRefs[i]}
-                  initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                  animate={
-                    itemInViews[i]
-                      ? { opacity: 1, y: 0, scale: 1 }
-                      : { opacity: 0, y: 40, scale: 0.9 }
-                  }
-                  transition={{
-                    duration: 0.8,
-                    delay: i * 0.05,
-                    ease: [0.25, 0.46, 0.45, 0.94],
-                  }}
                   className="glass glass-hover p-6 rounded-xl border border-glass-border-light dark:border-glass-border-dark"
                 >
                   <h2 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">
@@ -152,16 +119,16 @@ const PrivacyPolicyPage = () => {
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                     {item.description}
                   </p>
-                </motion.div>
+                </div>
               );
             })}
 
             {/* Last Updated */}
-            <motion.div className="text-center pt-8">
+            <div className="text-center pt-8">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Last Updated: August 19, 2025
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
       </main>
@@ -169,6 +136,4 @@ const PrivacyPolicyPage = () => {
       <Footer />
     </div>
   );
-};
-
-export default PrivacyPolicyPage;
+}

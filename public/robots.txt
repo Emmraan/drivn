@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://drivn-one.vercel.app/sitemap.xml
