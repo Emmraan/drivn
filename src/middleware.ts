@@ -20,13 +20,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/")) {
-    const policy = getPolicyForPath(pathname);
     const clientIP =
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
 
     let userId = clientIP;
+    let isAuthenticated = false;
     const token = request.cookies.get("auth-token")?.value;
     logger.info(
       "Rate limit token check: token is",
@@ -44,9 +44,15 @@ export async function middleware(request: NextRequest) {
           (verified.payload as { email?: string; id?: string }).id ||
           (verified.payload as { email?: string }).email ||
           clientIP;
+        isAuthenticated = true;
       } catch (err) {
         logger.warn("JWT verification failed in rate limit:", err);
       }
+    }
+
+    let policy = getPolicyForPath(pathname);
+    if (pathname.startsWith("/api/auth/") && isAuthenticated) {
+      policy = getPolicyForPath("/api/user/profile");
     }
 
     const rateLimitResult = await checkRateLimit(userId, policy);

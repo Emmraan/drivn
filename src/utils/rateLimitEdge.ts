@@ -34,9 +34,10 @@ const circuitBreaker = new CircuitBreaker();
 
 function validateIdentifier(identifier: string): boolean {
   if (!identifier || typeof identifier !== "string") return false;
-  if (identifier.length === 0 || identifier.length > 100) return false;
-  if (!/^[a-zA-Z0-9._-]+$/.test(identifier)) return false;
+  if (identifier.length === 0 || identifier.length > 255) return false;
+  if (!/^[a-zA-Z0-9._@:-]+$/.test(identifier)) return false;
   if (identifier.includes("\n") || identifier.includes("\r")) return false;
+  if (identifier.includes("/*") || identifier.includes("*/")) return false;
   return true;
 }
 
@@ -163,39 +164,41 @@ interface RateLimitResult {
   sustainedUsage: number;
 }
 
-
 export const rateLimitPolicies: Record<string, RateLimitPolicy> = {
   auth: {
-    windowMs: 60 * 60 * 1000,
-    maxRequests: 5,
-    tokensPerInterval: 5,
-    intervalMs: 60 * 60 * 1000,
-    highUsageThreshold: 0.8,
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 10,
+    tokensPerInterval: 10,
+    intervalMs: 15 * 60 * 1000,
+    highUsageThreshold: 0.7,
     adaptiveMultiplier: 0.5,
   },
+
   api: {
     windowMs: 60 * 1000,
-    maxRequests: 100,
-    tokensPerInterval: 100,
+    maxRequests: 500,
+    tokensPerInterval: 500,
     intervalMs: 60 * 1000,
-    highUsageThreshold: 0.9,
-    adaptiveMultiplier: 0.7,
-  },
-  admin: {
-    windowMs: 60 * 60 * 1000,
-    maxRequests: 20,
-    tokensPerInterval: 20,
-    intervalMs: 60 * 60 * 1000,
-    highUsageThreshold: 0.85,
+    highUsageThreshold: 0.8,
     adaptiveMultiplier: 0.6,
   },
+
+  admin: {
+    windowMs: 60 * 60 * 1000,
+    maxRequests: 100,
+    tokensPerInterval: 100,
+    intervalMs: 60 * 60 * 1000,
+    highUsageThreshold: 0.8,
+    adaptiveMultiplier: 0.6,
+  },
+
   s3: {
     windowMs: 60 * 1000,
-    maxRequests: 50,
-    tokensPerInterval: 50,
+    maxRequests: 200,
+    tokensPerInterval: 200,
     intervalMs: 60 * 1000,
-    highUsageThreshold: 0.9,
-    adaptiveMultiplier: 0.7,
+    highUsageThreshold: 0.8,
+    adaptiveMultiplier: 0.6,
   },
 };
 
