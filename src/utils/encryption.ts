@@ -6,8 +6,10 @@ import { logger } from "@/utils/logger";
  * Uses AES-256 encryption with user-specific keys derived from user ID and app secret
  */
 
-const APP_SECRET =
-  process.env.ENCRYPTION_SECRET || "fallback-secret-key-change-in-production";
+const APP_SECRET: string = process.env.ENCRYPTION_SECRET!;
+if (!APP_SECRET) {
+  throw new Error("ENCRYPTION_SECRET environment variable is required");
+}
 
 /**
  * Generate a user-specific encryption key

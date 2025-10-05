@@ -8,7 +8,10 @@ import ResetToken from "@/auth/models/ResetToken";
 import { emailService } from "./emailService";
 import { logger } from "@/utils/logger";
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
+const JWT_SECRET: string = process.env.JWT_SECRET!;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
 
 export interface SignupData {
   email: string;
@@ -111,7 +114,7 @@ export class AuthService {
       const token = jwt.sign(
         { userId: user._id, email: user.email },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: "7d", algorithm: "HS256" }
       );
 
       return {
@@ -163,7 +166,7 @@ export class AuthService {
       const authToken = jwt.sign(
         { userId: user._id, email: user.email },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: "7d", algorithm: "HS256" }
       );
 
       return {
@@ -188,7 +191,9 @@ export class AuthService {
 
   static async getUserFromToken(token: string): Promise<IUser | null> {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+      const decoded = jwt.verify(token, JWT_SECRET, {
+        algorithms: ["HS256"],
+      }) as jwt.JwtPayload & { userId: string };
       await connectDB();
       return await User.findById(decoded.userId).select("-password");
     } catch (error) {

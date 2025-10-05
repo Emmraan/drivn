@@ -8,6 +8,10 @@ const JWT_SECRET = process.env.JWT_SECRET
   ? new TextEncoder().encode(process.env.JWT_SECRET)
   : null;
 
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -28,18 +32,11 @@ export async function middleware(request: NextRequest) {
     let userId = clientIP;
     let isAuthenticated = false;
     const token = request.cookies.get("auth-token")?.value;
-    logger.info(
-      "Rate limit token check: token is",
-      token ? "present" : "undefined"
-    );
     if (token) {
       try {
-        logger.info(
-          "Calling jwtVerify for rate limit with token:",
-          typeof token,
-          token?.substring(0, 20)
-        );
-        const verified = await jwtVerify(token, JWT_SECRET!);
+        const verified = await jwtVerify(token, JWT_SECRET!, {
+          algorithms: ["HS256"],
+        });
         userId =
           (verified.payload as { email?: string; id?: string }).id ||
           (verified.payload as { email?: string }).email ||
@@ -127,15 +124,11 @@ export async function middleware(request: NextRequest) {
   let isTokenValid = false;
   let userEmail = "";
 
-  logger.info("Auth check: token is", token ? "present" : "undefined");
   if (token && JWT_SECRET) {
     try {
-      logger.info(
-        "Calling jwtVerify for auth with token:",
-        typeof token,
-        token?.substring(0, 20)
-      );
-      const verified = await jwtVerify(token, JWT_SECRET!);
+      const verified = await jwtVerify(token, JWT_SECRET!, {
+        algorithms: ["HS256"],
+      });
       isTokenValid = !!verified;
       userEmail = (verified.payload as { email?: string }).email || "";
     } catch (err) {
