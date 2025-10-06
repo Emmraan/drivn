@@ -1,11 +1,14 @@
 import { Redis } from "@upstash/redis";
 import { logger } from "@/utils/logger";
 
+/* -----------------------------
+   🔌 Circuit Breaker
+----------------------------- */
 class CircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
-  private readonly failureThreshold = 5;
-  private readonly recoveryTime = 60000;
+  private readonly failureThreshold = 10;
+  private readonly recoveryTime = 30000;
 
   recordFailure(): void {
     this.failures++;
@@ -13,18 +16,15 @@ class CircuitBreaker {
   }
 
   recordSuccess(): void {
-    if (this.failures > 0) {
-      this.failures = 0;
-    }
+    if (this.failures > 0) this.failures = 0;
   }
 
   shouldBlock(): boolean {
     if (this.failures >= this.failureThreshold) {
-      if (Date.now() - this.lastFailureTime < this.recoveryTime) {
-        return true;
-      } else {
-        this.failures = 0;
-      }
+      const withinRecovery =
+        Date.now() - this.lastFailureTime < this.recoveryTime;
+      if (withinRecovery) return true;
+      this.failures = 0;
     }
     return false;
   }
@@ -32,121 +32,115 @@ class CircuitBreaker {
 
 const circuitBreaker = new CircuitBreaker();
 
+/* -----------------------------
+   🧠 Input Validator
+----------------------------- */
 function validateIdentifier(identifier: string): boolean {
-  if (!identifier || typeof identifier !== "string") return false;
-  if (identifier.length === 0 || identifier.length > 255) return false;
-  if (!/^[a-zA-Z0-9._@:-]+$/.test(identifier)) return false;
-  if (identifier.includes("\n") || identifier.includes("\r")) return false;
-  if (identifier.includes("/*") || identifier.includes("*/")) return false;
-  return true;
+  return (
+    typeof identifier === "string" &&
+    identifier.length > 0 &&
+    identifier.length <= 255 &&
+    /^[a-zA-Z0-9._@:-]+$/.test(identifier)
+  );
 }
 
+/* -----------------------------
+   ⚙️ Optimized Lua Script
+----------------------------- */
 const rateLimitScript = `
-  local tokenKey = KEYS[1]
-  local windowKey = KEYS[2]
-  local metricsKey = KEYS[3]
+local tokenKey = KEYS[1]
+local windowKey = KEYS[2]
+local metricsKey = KEYS[3]
 
-  -- Arguments: now, oneSecondAgo, policy.maxRequests, policy.tokensPerInterval,
-  -- policy.windowMs/1000, policy.intervalMs, policy.highUsageThreshold, policy.adaptiveMultiplier
-  local now = tonumber(ARGV[1])
-  local oneSecondAgo = tonumber(ARGV[2])
-  local maxRequests = tonumber(ARGV[3])
-  local tokensPerInterval = tonumber(ARGV[4])
-  local windowSeconds = tonumber(ARGV[5])
-  local intervalMs = tonumber(ARGV[6])
-  local highUsageThreshold = tonumber(ARGV[7])
-  local adaptiveMultiplier = tonumber(ARGV[8])
+local now = tonumber(ARGV[1])
+local oneSecondAgo = tonumber(ARGV[2])
+local maxRequests = tonumber(ARGV[3])
+local tokensPerInterval = tonumber(ARGV[4])
+local windowSeconds = tonumber(ARGV[5])
+local intervalMs = tonumber(ARGV[6])
+local highUsageThreshold = tonumber(ARGV[7])
+local adaptiveMultiplier = tonumber(ARGV[8])
 
-  -- Get server time for consistency
-  local serverTime = redis.call('TIME')
-  local serverNow = serverTime[1] * 1000 + math.floor(serverTime[2] / 1000)
+local serverTime = redis.call("TIME")
+local serverNow = serverTime[1] * 1000 + math.floor(serverTime[2] / 1000)
 
-  -- Read current token state
-  local tokenData = redis.call('HGETALL', tokenKey)
-  local tokens = tokensPerInterval
-  local lastRefill = serverNow
-  local refillRate = tokensPerInterval / intervalMs
-  local isAdaptive = false
+-- read token state
+local data = redis.call("HGETALL", tokenKey)
+local tokens = tokensPerInterval
+local lastRefill = serverNow
+local refillRate = tokensPerInterval / intervalMs
+local isAdaptive = false
 
-  if #tokenData > 0 then
-    for i = 1, #tokenData, 2 do
-      if tokenData[i] == 'tokens' then
-        tokens = tonumber(tokenData[i+1]) or tokensPerInterval
-      elseif tokenData[i] == 'lastRefill' then
-        lastRefill = tonumber(tokenData[i+1]) or serverNow
-      elseif tokenData[i] == 'refillRate' then
-        refillRate = tonumber(tokenData[i+1]) or refillRate
-      elseif tokenData[i] == 'isAdaptive' then
-        isAdaptive = tokenData[i+1] == 'true'
-      end
+if #data > 0 then
+  for i = 1, #data, 2 do
+    local k, v = data[i], data[i + 1]
+    if k == "tokens" then tokens = tonumber(v) or tokens
+    elseif k == "lastRefill" then lastRefill = tonumber(v) or serverNow
+    elseif k == "refillRate" then refillRate = tonumber(v) or refillRate
+    elseif k == "isAdaptive" then isAdaptive = v == "true"
     end
   end
+end
 
-  -- Calculate token refill
-  local timePassed = math.max(0, serverNow - lastRefill)
-  local tokensToAdd = math.floor(timePassed * refillRate)
-  tokens = math.min(tokensPerInterval, tokens + tokensToAdd)
-  lastRefill = serverNow
+-- smooth refill (fractional)
+local elapsed = math.max(0, serverNow - lastRefill)
+tokens = math.min(tokensPerInterval, tokens + (elapsed * refillRate))
+lastRefill = serverNow
 
-  -- Get sustained usage (full window)
-  local sustainedUsage = redis.call('ZCOUNT', windowKey, serverNow - (windowSeconds * 1000), serverNow)
+-- sliding window cleanup & count
+local windowStart = serverNow - (windowSeconds * 1000)
+redis.call("ZREMRANGEBYSCORE", windowKey, 0, windowStart)
+local sustainedUsage = redis.call("ZCOUNT", windowKey, windowStart, serverNow)
+local recentRequests = redis.call("ZCOUNT", windowKey, oneSecondAgo, serverNow)
+local maxPerSecond = math.ceil(maxRequests / windowSeconds)
 
-  -- Get recent requests (1 second window)
-  local recentRequests = redis.call('ZCOUNT', windowKey, oneSecondAgo, serverNow)
+-- adaptive adjustment
+local highUsage = sustainedUsage >= (maxRequests * highUsageThreshold)
+if highUsage and not isAdaptive then
+  refillRate = refillRate * adaptiveMultiplier
+  isAdaptive = true
+elseif not highUsage and isAdaptive then
+  refillRate = tokensPerInterval / intervalMs
+  isAdaptive = false
+end
 
-  -- Calculate max per second
-  local maxRequestsPerSecond = math.ceil(maxRequests / windowSeconds)
+-- check limits
+local allowed = 0
+if tokens >= 1 and recentRequests < maxPerSecond then
+  allowed = 1
+  tokens = tokens - 1
+  redis.call("ZADD", windowKey, serverNow, tostring(serverNow))
+  redis.call("HINCRBY", metricsKey, "hits", 1)
+else
+  redis.call("HINCRBY", metricsKey, "blocks", 1)
+end
 
-  -- Check sustained usage for adaptive behavior
-  local highUsage = sustainedUsage >= (maxRequests * highUsageThreshold)
+-- persist state
+redis.call("HSET", tokenKey,
+  "tokens", tostring(tokens),
+  "lastRefill", tostring(lastRefill),
+  "refillRate", tostring(refillRate),
+  "isAdaptive", tostring(isAdaptive)
+)
 
-  if highUsage and not isAdaptive then
-    refillRate = refillRate * adaptiveMultiplier
-    isAdaptive = true
-  elseif not highUsage and isAdaptive then
-    refillRate = tokensPerInterval / intervalMs
-    isAdaptive = false
-  end
+-- expirations
+redis.call("EXPIRE", tokenKey, windowSeconds + 60)
+redis.call("EXPIRE", windowKey, windowSeconds + 60)
+redis.call("EXPIRE", metricsKey, 86400)
 
-  -- Check limits
-  local tokenBucketAllows = tokens >= 1
-  local slidingWindowAllows = recentRequests < maxRequestsPerSecond
-  local allowed = tokenBucketAllows and slidingWindowAllows and 1 or 0
-
-  -- Update state if allowed
-  if allowed == 1 then
-    tokens = tokens - 1
-    redis.call('ZADD', windowKey, serverNow, tostring(serverNow))
-    redis.call('ZREMRANGEBYSCORE', windowKey, 0, serverNow - (windowSeconds * 1000))
-    redis.call('HINCRBY', metricsKey, 'hits', 1)
-  else
-    redis.call('HINCRBY', metricsKey, 'blocks', 1)
-  end
-
-  -- Save updated token state
-  redis.call('HSET', tokenKey,
-    'tokens', tostring(tokens),
-    'lastRefill', tostring(lastRefill),
-    'refillRate', tostring(refillRate),
-    'isAdaptive', tostring(isAdaptive)
-  )
-
-  -- Set expirations
-  redis.call('EXPIRE', tokenKey, windowSeconds + 60)
-  redis.call('EXPIRE', windowKey, windowSeconds + 60)
-  redis.call('EXPIRE', metricsKey, 86400)  -- 24 hours
-
-  -- Return results
-  return {
-    allowed,                    -- 1: allowed (0/1)
-    math.max(0, math.floor(tokens)), -- 2: remaining tokens
-    sustainedUsage,             -- 3: sustained usage count
-    isAdaptive and 1 or 0,      -- 4: is adaptive (0/1)
-    refillRate                  -- 5: current refill rate
-  }
+return {
+  allowed,
+  math.floor(tokens),
+  sustainedUsage,
+  isAdaptive and 1 or 0,
+  refillRate
+}
 `;
 
-interface RateLimitPolicy {
+/* -----------------------------
+   🧩 Rate Limit Policies
+----------------------------- */
+export interface RateLimitPolicy {
   windowMs: number;
   maxRequests: number;
   tokensPerInterval: number;
@@ -155,7 +149,7 @@ interface RateLimitPolicy {
   adaptiveMultiplier: number;
 }
 
-interface RateLimitResult {
+export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetTime: number;
@@ -166,14 +160,13 @@ interface RateLimitResult {
 
 export const rateLimitPolicies: Record<string, RateLimitPolicy> = {
   auth: {
-    windowMs: 15 * 60 * 1000,
-    maxRequests: 10,
-    tokensPerInterval: 10,
-    intervalMs: 15 * 60 * 1000,
-    highUsageThreshold: 0.7,
-    adaptiveMultiplier: 0.5,
+    windowMs: 15 * 1000,
+    maxRequests: 50,
+    tokensPerInterval: 50,
+    intervalMs: 15 * 1000,
+    highUsageThreshold: 0.8,
+    adaptiveMultiplier: 0.7,
   },
-
   api: {
     windowMs: 60 * 1000,
     maxRequests: 500,
@@ -182,16 +175,14 @@ export const rateLimitPolicies: Record<string, RateLimitPolicy> = {
     highUsageThreshold: 0.8,
     adaptiveMultiplier: 0.6,
   },
-
   admin: {
-    windowMs: 60 * 60 * 1000,
+    windowMs: 10 * 60 * 1000,
     maxRequests: 100,
     tokensPerInterval: 100,
-    intervalMs: 60 * 60 * 1000,
+    intervalMs: 10 * 60 * 1000,
     highUsageThreshold: 0.8,
     adaptiveMultiplier: 0.6,
   },
-
   s3: {
     windowMs: 60 * 1000,
     maxRequests: 200,
@@ -202,11 +193,17 @@ export const rateLimitPolicies: Record<string, RateLimitPolicy> = {
   },
 };
 
+/* -----------------------------
+   🧩 Redis Client
+----------------------------- */
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+/* -----------------------------
+   ⚡ Rate Limit Check
+----------------------------- */
 export async function checkRateLimit(
   identifier: string,
   policy: RateLimitPolicy
@@ -217,37 +214,38 @@ export async function checkRateLimit(
       allowed: false,
       remaining: 0,
       resetTime: Math.ceil((Date.now() + policy.intervalMs) / 1000),
-      retryAfter: 60,
+      retryAfter: 1,
       isAdaptive: false,
       sustainedUsage: 0,
     };
   }
 
-  const limiterKey = `ratelimit:limiter:${identifier}`;
   try {
-    const limiterCount = await redis.incr(limiterKey);
-    await redis.expire(limiterKey, 1);
-
-    if (limiterCount > 20) {
-      logger.warn(`Rate limiter abuse detected for ${identifier}`);
+    const key = `ratelimit:guard:${identifier}`;
+    const count = await redis.incr(key);
+    await redis.expire(key, 2);
+    if (count > 100) {
+      logger.warn(`Rate limiter guard triggered for ${identifier}`);
       return {
         allowed: false,
         remaining: 0,
-        resetTime: Math.ceil((Date.now() + 1000) / 1000),
-        retryAfter: 1,
+        resetTime: Math.ceil((Date.now() + 2000) / 1000),
+        retryAfter: 2,
         isAdaptive: false,
         sustainedUsage: 0,
       };
     }
-  } catch {}
+  } catch (err) {
+    logger.error("Guard pre-check failed:", err);
+  }
 
   if (circuitBreaker.shouldBlock()) {
-    logger.error(`Rate limiter circuit breaker open for ${identifier}`);
+    logger.error(`Rate limiter circuit open for ${identifier}`);
     return {
       allowed: false,
       remaining: 0,
       resetTime: Math.ceil((Date.now() + policy.intervalMs) / 1000),
-      retryAfter: 60,
+      retryAfter: 30,
       isAdaptive: false,
       sustainedUsage: 0,
     };
@@ -284,14 +282,10 @@ export async function checkRateLimit(
     const isAdaptive = result[3] === 1;
 
     if (!allowed) {
-      logger.warn(`Rate limit blocked for ${identifier}`, {
+      logger.warn(`Rate limit BLOCKED: ${identifier}`, {
         sustainedUsage,
         remaining,
         isAdaptive,
-        policy: Object.keys(rateLimitPolicies).find(
-          (key) =>
-            rateLimitPolicies[key as keyof typeof rateLimitPolicies] === policy
-        ),
       });
     }
 
@@ -308,67 +302,57 @@ export async function checkRateLimit(
       isAdaptive,
       sustainedUsage,
     };
-  } catch (error) {
+  } catch (err) {
     circuitBreaker.recordFailure();
+    logger.error(`Rate limit check failed for ${identifier}:`, err);
 
-    logger.error(`Rate limit check failed for ${identifier}:`, error);
-
-    const shouldBlock = circuitBreaker.shouldBlock();
-
+    const block = circuitBreaker.shouldBlock();
     return {
-      allowed: !shouldBlock,
-      remaining: shouldBlock ? 0 : policy.maxRequests - 1,
-      resetTime: Math.ceil((now + policy.intervalMs) / 1000),
-      retryAfter: shouldBlock ? 60 : undefined,
+      allowed: !block,
+      remaining: block ? 0 : policy.maxRequests - 1,
+      resetTime: Math.ceil((Date.now() + policy.intervalMs) / 1000),
+      retryAfter: block ? 30 : undefined,
       isAdaptive: false,
       sustainedUsage: 0,
     };
   }
 }
 
+/* -----------------------------
+   🧩 Policy Router
+----------------------------- */
 export function getPolicyForPath(pathname: string): RateLimitPolicy {
   if (pathname.startsWith("/api/auth/")) return rateLimitPolicies.auth;
   if (pathname.startsWith("/api/admin/")) return rateLimitPolicies.admin;
   if (pathname.startsWith("/api/s3-")) return rateLimitPolicies.s3;
-  if (pathname.startsWith("/api/")) return rateLimitPolicies.api;
   return rateLimitPolicies.api;
 }
 
+/* -----------------------------
+   🧩 Metrics Helpers
+----------------------------- */
 export async function getRateLimitMetrics(identifier: string) {
-  if (!validateIdentifier(identifier)) {
-    return { hits: 0, blocks: 0, total: 0 };
-  }
+  if (!validateIdentifier(identifier)) return { hits: 0, blocks: 0, total: 0 };
 
   try {
-    const metricsKey = `ratelimit:metrics:${identifier}`;
-    const data = (await redis.hgetall(metricsKey)) as Record<
-      string,
-      string
-    > | null;
-
-    return {
-      hits: data ? parseInt(data.hits || "0") : 0,
-      blocks: data ? parseInt(data.blocks || "0") : 0,
-      total: data
-        ? parseInt(data.hits || "0") + parseInt(data.blocks || "0")
-        : 0,
-    };
-  } catch (error) {
-    logger.error(`Failed to get metrics for ${identifier}:`, error);
+    const data = (await redis.hgetall(
+      `ratelimit:metrics:${identifier}`
+    )) as Record<string, string> | null;
+    const hits = parseInt(data?.hits || "0");
+    const blocks = parseInt(data?.blocks || "0");
+    return { hits, blocks, total: hits + blocks };
+  } catch (err) {
+    logger.error(`Metrics fetch failed for ${identifier}:`, err);
     return { hits: 0, blocks: 0, total: 0 };
   }
 }
 
 export async function resetRateLimitMetrics(identifier: string) {
-  if (!validateIdentifier(identifier)) {
-    return;
-  }
-
+  if (!validateIdentifier(identifier)) return;
   try {
-    const metricsKey = `ratelimit:metrics:${identifier}`;
-    await redis.del(metricsKey);
+    await redis.del(`ratelimit:metrics:${identifier}`);
     logger.info(`Rate limit metrics reset for ${identifier}`);
-  } catch {
-    logger.error(`Failed to reset metrics for ${identifier}`);
+  } catch (err) {
+    logger.error(`Failed to reset metrics for ${identifier}:`, err);
   }
 }
